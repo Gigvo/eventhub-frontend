@@ -17,32 +17,32 @@ import Image from "next/image";
 const menuItems = [
   {
     name: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
     name: "Buat Event",
-    href: "/",
+    href: "/buat-event",
     icon: CirclePlus,
   },
   {
     name: "Katalog Perusahaan",
-    href: "/",
+    href: "/katalog-perusahaan",
     icon: BriefcaseBusiness,
   },
   {
     name: "Proposal Smart Review",
-    href: "/",
+    href: "/proposal-smart-review",
     icon: ClipboardCheck,
   },
   {
     name: "Cari Sponsor",
-    href: "/",
+    href: "/cari-sponsor",
     icon: Handshake,
   },
   {
     name: "Pesan",
-    href: "/",
+    href: "/pesan",
     icon: MessageSquare,
   },
 ];

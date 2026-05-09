@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist, Inter } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/sidebar";
@@ -7,10 +7,10 @@ import Navbar from "@/components/navbar";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
-const jakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-jakarta-sans",
-  subsets: ["latin"],
-});
+// const jakartaSans = Plus_Jakarta_Sans({
+//   variable: "--font-jakarta-sans",
+//   subsets: ["latin"],
+// });
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,7 +33,7 @@ export default function RootLayout({
       className={cn(
         "h-full",
         "antialiased",
-        jakartaSans.variable,
+        // jakartaSans.variable,
         inter.variable,
         "font-sans",
         geist.variable,
