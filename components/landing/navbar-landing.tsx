@@ -12,19 +12,19 @@ export default function NavbarLanding() {
         </span>
 
         <Link
-          href={"#"}
+          href={"/features"}
           className="text-[14px] text-[#6B7280] hover:text-[#111827] transition-colors"
         >
           Features
         </Link>
         <Link
-          href={"#"}
+          href={"/pricing"}
           className="text-[14px] text-[#6B7280] hover:text-[#111827] transition-colors"
         >
           Pricing
         </Link>
         <Link
-          href={"#"}
+          href={"/katalog-event"}
           className="text-[14px] text-[#6B7280] hover:text-[#111827] transition-colors"
         >
           Katalog Event

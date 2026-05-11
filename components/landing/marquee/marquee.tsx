@@ -38,8 +38,6 @@ export default function Marquee({ children }: Props) {
     calculateMultiplier();
   }, [calculateMultiplier]);
 
-  console.log(multiplier);
-
   const multiplyChildren = useCallback(
     (multiplier: number) => {
       const arraySize = multiplier >= 0 ? multiplier : 0;
