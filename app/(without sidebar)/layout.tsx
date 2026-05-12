@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist, Inter } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
-import NavbarLanding from "@/components/landing/navbar-landing";
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -37,10 +36,7 @@ export default function RootLayout({
         geist.variable,
       )}
     >
-      <body className="">
-        <NavbarLanding />
-        {children}
-      </body>
+      <body className="">{children}</body>
     </html>
   );
 }

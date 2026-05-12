@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/pagination";
 import EventCard from "@/components/katalog-event/event-card";
 import Footer from "@/components/footer";
+import NavbarLanding from "@/components/landing/navbar-landing";
 
 // Mock data for events
 const mockEvents = [
@@ -136,6 +138,7 @@ interface FilterState {
 const ITEMS_PER_PAGE = 3;
 
 export default function KatalogEvent() {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("terbaru");
   const [filters, setFilters] = useState<FilterState>({
@@ -280,10 +283,14 @@ export default function KatalogEvent() {
     return items;
   };
 
-  const handleViewDetails = (id: string) => {};
+  const handleViewDetails = (id: string) => {
+    router.push(`/katalog-event/${id}`);
+  };
 
   return (
     <>
+      <NavbarLanding />
+
       <div className="min-h-screen bg-gray-50 py-8 mx-60">
         <div className="container mx-auto px-4">
           {/* Header */}

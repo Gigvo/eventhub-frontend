@@ -11,6 +11,8 @@ const BRANDS = ["SAMSUNG", "TOKOPEDIA", "TELKOMSEL", "TRAVELOKA", "GRAB"];
 export default function Home() {
   return (
     <>
+      <NavbarLanding />
+
       <section className="flex items-center justify-center gap-16 max-w-7xl mx-auto">
         <div className="flex-1">
           <Badge className="font-inter text-[#4A72FF] bg-[#EEF2FF] hover:bg-[#EEF2FF] border-none px-4 py-2 rounded-full mb-8 flex items-center w-fit gap-2 font-bold tracking-wide text-xs">
