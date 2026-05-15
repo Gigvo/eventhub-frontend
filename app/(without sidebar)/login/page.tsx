@@ -2,6 +2,10 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { apiCall } from "@/lib/api-client";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -9,6 +13,9 @@ export default function Login() {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -18,10 +25,31 @@ export default function Login() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", formData);
-    // Handle login logic here
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // 1. Sign in with Firebase
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+
+      // 2. Sync user to backend (token is auto-attached via apiCall)
+      await apiCall("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({}),
+        requireAuth: true,
+      });
+
+      // 3. Redirect to dashboard
+      router.push("/dashboard");
+    } catch (err: any) {
+      const errorMessage = err.message || "Login gagal";
+      setError(errorMessage);
+      console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -82,6 +110,13 @@ export default function Login() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[8px] text-sm">
+                {error}
+              </div>
+            )}
+
             {/* Email */}
             <div>
               <label className="text-[12px] font-semibold text-gray-700 block mb-2">
@@ -95,6 +130,7 @@ export default function Login() {
                 placeholder="nama@perusahaan.com"
                 className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -120,11 +156,13 @@ export default function Login() {
                   placeholder="••••••••"
                   className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm pr-10"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -134,9 +172,10 @@ export default function Login() {
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-[#003EC7] text-white font-semibold py-3 rounded-[8px] hover:bg-blue-800 transition"
+              disabled={isLoading}
+              className="w-full bg-[#003EC7] text-white font-semibold py-3 rounded-[8px] hover:bg-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Masuk
+              {isLoading ? "Sedang masuk..." : "Masuk"}
             </button>
 
             {/* Divider */}
@@ -149,7 +188,8 @@ export default function Login() {
             {/* Google Login */}
             <button
               type="button"
-              className="w-full border border-gray-300 py-3 rounded-[8px] flex items-center justify-center gap-3 hover:bg-gray-50 transition"
+              disabled={isLoading}
+              className="w-full border border-gray-300 py-3 rounded-[8px] flex items-center justify-center gap-3 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Image
                 src="/icons/google.svg"
@@ -165,8 +205,9 @@ export default function Login() {
               <p className="text-sm text-gray-700">
                 Belum punya akun?{" "}
                 <a
-                  href="/register"
+                  href={isLoading ? "#" : "/register"}
                   className="text-[#003EC7] font-semibold hover:underline"
+                  onClick={(e) => isLoading && e.preventDefault()}
                 >
                   Daftar sekarang
                 </a>

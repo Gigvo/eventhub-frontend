@@ -2,6 +2,10 @@
 import React, { useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import Image from "next/image";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { apiCall } from "@/lib/api-client";
+import { useRouter } from "next/navigation";
 
 export default function Register() {
   const [userRole, setUserRole] = useState<"organizer" | "sponsor" | null>(
@@ -11,10 +15,24 @@ export default function Register() {
     fullName: "",
     email: "",
     whatsapp: "",
+    city: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
+    // EO fields
+    organizationName: "",
+    organizationType: "",
+    campus: "",
+    description: "",
+    // Company fields
+    companyName: "",
+    industry: "",
+    website: "",
+    targetAudience: "",
   });
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -24,10 +42,75 @@ export default function Register() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register:", { userRole, ...formData });
-    // Handle registration logic here
+    setError(null);
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Password tidak cocok");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password minimal 6 karakter");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // 1. Create Firebase account
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password,
+      );
+
+      // 2. Prepare profile based on role
+      const profile =
+        userRole === "organizer"
+          ? {
+              organizationName: formData.organizationName,
+              organizationType: formData.organizationType,
+              campus: formData.campus,
+              phoneNumber: formData.whatsapp,
+              city: formData.city,
+              description: formData.description,
+            }
+          : {
+              companyName: formData.companyName,
+              industry: formData.industry,
+              website: formData.website,
+              phoneNumber: formData.whatsapp,
+              city: formData.city,
+              description: formData.description,
+              targetAudience: formData.targetAudience,
+            };
+
+      // 3. Register in backend
+      await apiCall("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          role: userRole === "organizer" ? "EO" : "COMPANY",
+          name: formData.fullName,
+          profile,
+        }),
+        requireAuth: true,
+      });
+
+      // 4. Redirect to dashboard
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      console.error("Error response:", err.response);
+
+      // Try to get more detailed error info
+      const errorMessage = err.message || "Registrasi gagal";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
   return (
     <div className="flex h-full">
@@ -125,6 +208,13 @@ export default function Register() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[8px] text-sm">
+              {error}
+            </div>
+          )}
+
           {/* Role Selection */}
           <div>
             <p className="text-[12px] font-semibold text-[#737688] mb-3">
@@ -134,7 +224,8 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setUserRole("organizer")}
-                className={`flex-1 rounded-[8px] border-2 flex flex-col items-center justify-center py-4 px-10 gap-1.5 transition ${
+                disabled={isLoading}
+                className={`flex-1 rounded-[8px] border-2 flex flex-col items-center justify-center py-4 px-10 gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed ${
                   userRole === "organizer"
                     ? "border-[#003EC7] bg-blue-50"
                     : "border-[#E5E7EB] hover:border-gray-300"
@@ -153,7 +244,8 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setUserRole("sponsor")}
-                className={`flex-1 rounded-[8px] border-2 flex flex-col items-center justify-center py-4 px-10 gap-1.5 transition ${
+                disabled={isLoading}
+                className={`flex-1 rounded-[8px] border-2 flex flex-col items-center justify-center py-4 px-10 gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed ${
                   userRole === "sponsor"
                     ? "border-[#003EC7] bg-blue-50"
                     : "border-[#E5E7EB] hover:border-gray-300"
@@ -186,8 +278,147 @@ export default function Register() {
                 onChange={handleInputChange}
                 placeholder="Budi Santoso"
                 className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                required
+                disabled={isLoading}
               />
             </div>
+
+            {/* Role-Specific Fields */}
+            {userRole === "organizer" && (
+              <>
+                {/* Organization Name */}
+                <div>
+                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                    Nama Organisasi
+                  </label>
+                  <input
+                    type="text"
+                    name="organizationName"
+                    value={formData.organizationName}
+                    onChange={handleInputChange}
+                    placeholder="BEM Fakultas Teknik"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Organization Type */}
+                <div>
+                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                    Jenis Organisasi
+                  </label>
+                  <select
+                    name="organizationType"
+                    value={formData.organizationType}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        organizationType: e.target.value,
+                      }))
+                    }
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm bg-white"
+                    required
+                    disabled={isLoading}
+                  >
+                    <option value="">Pilih jenis organisasi</option>
+                    <option value="BEM">BEM</option>
+                    <option value="HIMA">HIMA</option>
+                    <option value="UKM">UKM</option>
+                    <option value="COMMUNITY">Komunitas</option>
+                    <option value="OTHER">Lainnya</option>
+                  </select>
+                </div>
+
+                {/* Campus */}
+                <div>
+                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                    Kampus/Universitas
+                  </label>
+                  <input
+                    type="text"
+                    name="campus"
+                    value={formData.campus}
+                    onChange={handleInputChange}
+                    placeholder="Universitas Gadjah Mada"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </>
+            )}
+
+            {userRole === "sponsor" && (
+              <>
+                {/* Company Name */}
+                <div>
+                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                    Nama Perusahaan
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleInputChange}
+                    placeholder="PT Teknologi Maju"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Industry */}
+                <div>
+                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                    Industri
+                  </label>
+                  <input
+                    type="text"
+                    name="industry"
+                    value={formData.industry}
+                    onChange={handleInputChange}
+                    placeholder="Technology"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Website */}
+                <div>
+                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleInputChange}
+                    placeholder="https://company.com"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Target Audience */}
+                <div>
+                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                    Target Audiens
+                  </label>
+                  <input
+                    type="text"
+                    name="targetAudience"
+                    value={formData.targetAudience}
+                    onChange={handleInputChange}
+                    placeholder="Mahasiswa dan profesional muda"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Email */}
             <div>
@@ -201,6 +432,8 @@ export default function Register() {
                 onChange={handleInputChange}
                 placeholder="budi@email.com"
                 className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                required
+                disabled={isLoading}
               />
             </div>
 
@@ -216,6 +449,45 @@ export default function Register() {
                 onChange={handleInputChange}
                 placeholder="+62 8123456789"
                 className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* City */}
+            <div>
+              <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                Kota
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+                placeholder="Jakarta"
+                className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="text-[12px] font-semibold text-gray-700 block mb-2">
+                Deskripsi
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder="Ceritakan tentang organisasi/perusahaan Anda"
+                className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm h-24 resize-none"
+                disabled={isLoading}
               />
             </div>
 
@@ -232,6 +504,8 @@ export default function Register() {
                   onChange={handleInputChange}
                   placeholder="••••••••"
                   className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                  required
+                  disabled={isLoading}
                 />
               </div>
               <div>
@@ -245,6 +519,8 @@ export default function Register() {
                   onChange={handleInputChange}
                   placeholder="••••••••"
                   className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
+                  required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -257,6 +533,8 @@ export default function Register() {
                 checked={formData.agreeToTerms}
                 onChange={handleInputChange}
                 className="mt-1 w-4 h-4 accent-[#003EC7] cursor-pointer rounded"
+                disabled={isLoading}
+                required
               />
               <label className="text-[12px] text-gray-700 cursor-pointer">
                 Saya setuju dengan{" "}
@@ -281,10 +559,10 @@ export default function Register() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!userRole || !formData.agreeToTerms}
+            disabled={!userRole || !formData.agreeToTerms || isLoading}
             className="w-full bg-[#003EC7] text-white font-semibold py-3 rounded-[8px] hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           >
-            Buat Akun
+            {isLoading ? "Sedang membuat akun..." : "Buat Akun"}
           </button>
 
           {/* Divider */}
@@ -297,7 +575,8 @@ export default function Register() {
           {/* Google Sign Up */}
           <button
             type="button"
-            className="w-full border border-gray-300 py-3 rounded-[8px] flex items-center justify-center gap-3 hover:bg-gray-50 transition"
+            disabled={isLoading}
+            className="w-full border border-gray-300 py-3 rounded-[8px] flex items-center justify-center gap-3 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Image
               src="/icons/google.svg"
@@ -313,8 +592,9 @@ export default function Register() {
             <p className="text-sm text-gray-700">
               Sudah punya akun?{" "}
               <a
-                href="#"
+                href={isLoading ? "#" : "/login"}
                 className="text-[#003EC7] font-semibold hover:underline"
+                onClick={(e) => isLoading && e.preventDefault()}
               >
                 Masuk di sini
               </a>

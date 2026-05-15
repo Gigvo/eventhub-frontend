@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Select,
@@ -24,109 +24,39 @@ import {
 import EventCard from "@/components/katalog-event/event-card";
 import Footer from "@/components/footer";
 import NavbarLanding from "@/components/landing/navbar-landing";
+import { apiCall } from "@/lib/api-client";
+import { useAuth } from "@/providers/auth-provider";
+import { Search, Filter, Info } from "lucide-react";
 
-// Mock data for events
-const mockEvents = [
-  {
-    id: "1",
-    title: "Indonesia Cloud Summit 2024",
-    image: "/event-1.png",
-    category: "TEKNOLOGI",
-    organizer: "TechGlobal Indonesia",
-    organizerAvatar: "/avatar-1.png",
-    date: "24 Okt - 26 Okt 2024",
-    location: "Jakarta Selatan",
-    budget: "Rp 250jt - 1.2M",
-  },
-  {
-    id: "2",
-    title: "Java Jazz After Party",
-    image: "/event-1.png",
-    category: "MUSIK & SENI",
-    organizer: "LoudWave Entertainment",
-    organizerAvatar: "/avatar-1.png",
-    date: "15 Nov 2024",
-    location: "BSD City, Tangerang",
-    budget: "Rp 50jt - 300jt",
-  },
-  {
-    id: "3",
-    title: "Startup Founder Expo 2024",
-    image: "/event-1.png",
-    category: "STARTUP",
-    organizer: "Founder Circle ID",
-    organizerAvatar: "/avatar-1.png",
-    date: "02 Des 2024",
-    location: "Surabaya, Jatim",
-    budget: "Rp 150jt - 600jt",
-  },
-  {
-    id: "4",
-    title: "Digital Marketing Conference",
-    image: "/event-1.png",
-    category: "TEKNOLOGI",
-    organizer: "Digital Pro Indonesia",
-    organizerAvatar: "/avatar-1.png",
-    date: "10 Jan 2025",
-    location: "Jakarta Pusat",
-    budget: "Rp 300jt - 1.5M",
-  },
-  {
-    id: "5",
-    title: "Fashion Week Jakarta",
-    image: "/event-1.png",
-    category: "MUSIK & SENI",
-    organizer: "Fashion Indonesia Group",
-    organizerAvatar: "/avatar-1.png",
-    date: "20 Jan 2025",
-    location: "Jakarta Selatan",
-    budget: "Rp 500jt - 2.5M",
-  },
-  {
-    id: "6",
-    title: "Tech Innovation Summit",
-    image: "/event-1.png",
-    category: "TEKNOLOGI",
-    organizer: "Innovation Hub Asia",
-    organizerAvatar: "/avatar-1.png",
-    date: "15 Feb 2025",
-    location: "Bandung",
-    budget: "Rp 200jt - 800jt",
-  },
-  {
-    id: "7",
-    title: "Business Networking Event",
-    image: "/event-1.png",
-    category: "STARTUP",
-    organizer: "Business Connect ID",
-    organizerAvatar: "/avatar-1.png",
-    date: "01 Mar 2025",
-    location: "Jakarta Timur",
-    budget: "Rp 100jt - 400jt",
-  },
-  {
-    id: "8",
-    title: "Music Festival 2025",
-    image: "/event-1.png",
-    category: "MUSIK & SENI",
-    organizer: "Festival Productions",
-    organizerAvatar: "/avatar-1.png",
-    date: "22 Mar 2025",
-    location: "Yogyakarta",
-    budget: "Rp 400jt - 2M",
-  },
-  {
-    id: "9",
-    title: "E-Sports Tournament",
-    image: "/event-1.png",
-    category: "TEKNOLOGI",
-    organizer: "Gaming League ID",
-    organizerAvatar: "/avatar-1.png",
-    date: "10 Apr 2025",
-    location: "Medan",
-    budget: "Rp 150jt - 700jt",
-  },
-];
+interface ApiEvent {
+  id: string;
+  title: string;
+  category: string;
+  city: string;
+  startDate: string;
+  endDate: string;
+  bannerUrl: string | null;
+  eoProfile: {
+    organizationName: string;
+  };
+  tiers?: Array<{
+    name: string;
+    price: number;
+  }>;
+}
+
+interface EventCardProps {
+  id: string;
+  title: string;
+  image: string;
+  category: string;
+  organizer: string;
+  organizerAvatar: string;
+  date: string;
+  location: string;
+  budget: string;
+  onViewDetails: (id: string) => void;
+}
 
 interface FilterState {
   categories: string[];
@@ -135,18 +65,107 @@ interface FilterState {
   budgetMax: string;
 }
 
-const ITEMS_PER_PAGE = 3;
+const ITEMS_PER_PAGE = 4;
 
 export default function KatalogEvent() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("terbaru");
+  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     scales: [],
     budgetMin: "",
     budgetMax: "",
   });
+  const [selectedCategory, setSelectedCategory] = useState<string>("semua");
+  const [selectedScale, setSelectedScale] = useState<string>("semua");
+  const [events, setEvents] = useState<EventCardProps[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch events from API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+
+        if (selectedCategory !== "semua") {
+          queryParams.append("category", selectedCategory);
+        }
+
+        if (selectedScale !== "semua") {
+          queryParams.append("city", selectedScale);
+        }
+
+        const query = queryParams.toString();
+        const endpoint = `/catalog/events${query ? "?" + query : ""}`;
+
+        const response = await apiCall<{
+          data: ApiEvent[];
+          pagination: { total: number };
+        }>(endpoint, { requireAuth: false });
+
+        // Transform API response to EventCard format
+        const transformedEvents: EventCardProps[] = response.data.map(
+          (event: ApiEvent) => {
+            const startDate = new Date(event.startDate);
+            const endDate = new Date(event.endDate);
+
+            // Format date range
+            const dateRange =
+              startDate.getTime() === endDate.getTime()
+                ? startDate.toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : `${startDate.getDate()} - ${endDate.toLocaleDateString(
+                    "id-ID",
+                    {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    },
+                  )}`;
+
+            // Get budget from tiers
+            const budget =
+              event.tiers && event.tiers.length > 0
+                ? `Rp ${(event.tiers[0].price / 1000000).toFixed(0)}jt+`
+                : "TBA";
+
+            return {
+              id: event.id,
+              title: event.title,
+              image: event.bannerUrl || "/event-1.png",
+              category: event.category,
+              organizer: event.eoProfile.organizationName,
+              organizerAvatar: "/avatar-1.png",
+              date: dateRange,
+              location: event.city,
+              budget: budget,
+              onViewDetails: () => {},
+            };
+          },
+        );
+
+        setEvents(transformedEvents);
+      } catch (err) {
+        console.error("Failed to fetch events:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch events");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [selectedCategory, selectedScale]);
 
   // Handle category filter
   const handleCategoryChange = (category: string) => {
@@ -156,7 +175,7 @@ export default function KatalogEvent() {
         ? prev.categories.filter((c) => c !== category)
         : [...prev.categories, category],
     }));
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1);
   };
 
   // Handle scale filter
@@ -181,68 +200,27 @@ export default function KatalogEvent() {
     setCurrentPage(1);
   };
 
-  // Helper function to parse budget range
-  const parseBudgetValue = (budgetStr: string): [number, number] => {
-    // Extract numbers from format like "Rp 250jt - 1.2M"
-    const match = budgetStr.match(/[\d.]+/g);
-    if (!match || match.length < 2) return [0, Infinity];
-
-    const parseNumber = (numStr: string, unit: string): number => {
-      const num = parseFloat(numStr);
-      if (unit.includes("M")) return num * 1000000000; // Miliar
-      if (unit.includes("jt")) return num * 1000000; // Juta
-      return num;
-    };
-
-    const minMatch = budgetStr.match(/([\d.]+)\s*jt/i);
-    const maxMatch = budgetStr.match(/([\d.]+)\s*M/i);
-
-    const min = minMatch ? parseFloat(minMatch[1]) * 1000000 : 0;
-    const max = maxMatch
-      ? parseFloat(maxMatch[1]) * 1000000000
-      : parseFloat(minMatch?.[1] || "0") * 1000000;
-
-    return [min, max];
-  };
-
-  // Filter events based on selected filters
-  let filteredEvents = mockEvents.filter((event) => {
-    const categoryMatch =
-      filters.categories.length === 0 ||
-      filters.categories.some((cat) =>
-        event.category.toLowerCase().includes(cat.toLowerCase()),
-      );
-
-    const scaleMatch =
-      filters.scales.length === 0 ||
-      filters.scales.some((scale) =>
-        event.location.toLowerCase().includes(scale.toLowerCase()),
-      );
-
-    // Budget filter
-    let budgetMatch = true;
-    if (filters.budgetMin || filters.budgetMax) {
-      const [eventMin, eventMax] = parseBudgetValue(event.budget);
-      const filterMin = filters.budgetMin ? parseInt(filters.budgetMin) : 0;
-      const filterMax = filters.budgetMax
-        ? parseInt(filters.budgetMax)
-        : Infinity;
-
-      budgetMatch = eventMin <= filterMax && eventMax >= filterMin;
-    }
-
-    return categoryMatch && scaleMatch && budgetMatch;
-  });
-
   // Sort events
+  let sortedEvents = [...events];
+
+  // Filter by search query
+  if (searchQuery.trim()) {
+    sortedEvents = sortedEvents.filter(
+      (event) =>
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.category.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }
+
   if (sortBy === "terbaru") {
-    filteredEvents = filteredEvents.reverse();
+    sortedEvents = sortedEvents.reverse();
   }
 
   // Pagination
-  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedEvents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedEvents = filteredEvents.slice(
+  const paginatedEvents = sortedEvents.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE,
   );
@@ -291,147 +269,107 @@ export default function KatalogEvent() {
     <>
       <NavbarLanding />
 
-      <div className="min-h-screen bg-gray-50 py-8 mx-60">
-        <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm text-gray-500">Beranda /</span>
-              <span className="text-sm text-gray-700 font-medium">
-                Katalog Event
-              </span>
+      {!authLoading && !isAuthenticated && (
+        <div className="bg-blue-100 border-b border-blue-200 px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Info className="w-5 h-5 text-blue-600" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">
+                Masuk untuk mengakses sponsorship
+              </p>
+              <p className="text-xs text-blue-700">
+                Akses fitur eksklusif AI Matching dan lebih sponsorship langsung
+                ke penyelengara event.
+              </p>
             </div>
-            <h1 className="text-4xl font-bold mb-6">Katalog Event</h1>
+          </div>
+          <button
+            onClick={() => router.push("/login")}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-2 rounded-md whitespace-nowrap"
+          >
+            Login Sekarang
+          </button>
+        </div>
+      )}
 
-            {/* Sort Dropdown */}
-            <div className="flex justify-end items-center gap-2">
-              <span className="text-sm font-medium mr-2 text-[#434656]">
-                URUTKAN:
+      <div className="min-h-screen bg-gray-50 py-8 px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold mb-2">Katalog Event</h1>
+            <p className="text-gray-600 text-sm mb-6">
+              Telisuri ribuan event potensial untuk brand Anda di seluruh
+              Indonesia.
+            </p>
+          </div>
+
+          {/* Filter Bar and Search */}
+          <div className="flex items-center justify-between gap-4 mb-8 bg-white p-4 rounded-lg">
+            <div className="flex items-center gap-2 flex-1">
+              <Filter className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-600 mr-2">
+                Filter:
               </span>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="terbaru">Terbaru</SelectItem>
-                  <SelectItem value="terlama">Terlama</SelectItem>
-                  <SelectItem value="populer">Populer</SelectItem>
+                  <SelectItem value="semua">Semua</SelectItem>
+                  <SelectItem value="TECHNOLOGY">Technology</SelectItem>
+                  <SelectItem value="WORKSHOP">Workshop</SelectItem>
+                  <SelectItem value="CONFERENCE">Conference</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Select value={selectedScale} onValueChange={setSelectedScale}>
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue placeholder="Skala" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="semua">Semua</SelectItem>
+                  <SelectItem value="Jakarta">Jakarta</SelectItem>
+                  <SelectItem value="Bandung">Bandung</SelectItem>
+                  <SelectItem value="Yogyakarta">Yogyakarta</SelectItem>
+                  <SelectItem value="Surabaya">Surabaya</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative w-80">
+              <Search className="absolute left-3 top-2 w-4 h-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Cari event atau nama penyelenggara..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-9 h-8 text-sm"
+              />
             </div>
           </div>
 
           {/* Main Content */}
           <div className="flex gap-6">
-            {/* Sidebar Filters */}
-            <div className="max-w-72">
-              <div className="bg-white rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-6">Filter</h2>
-
-                {/* Categories */}
-                <div className="mb-8">
-                  <h3 className="font-semibold text-sm text-gray-700 mb-4">
-                    KATEGORI
-                  </h3>
-                  <div className="space-y-3">
-                    {["Teknologi", "Musik & Seni", "Bisnis & Startup"].map(
-                      (category) => (
-                        <label
-                          key={category}
-                          className="flex items-center gap-3 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={filters.categories.includes(category)}
-                            onCheckedChange={() =>
-                              handleCategoryChange(category)
-                            }
-                          />
-                          <span className="text-sm text-gray-700">
-                            {category}
-                          </span>
-                        </label>
-                      ),
-                    )}
-                  </div>
-                </div>
-
-                {/* Scales */}
-                <div className="mb-8 pb-8 border-b">
-                  <h3 className="font-semibold text-sm text-gray-700 mb-4">
-                    SKALA
-                  </h3>
-                  <div className="space-y-3">
-                    {["Nasional", "Internasional"].map((scale) => (
-                      <label
-                        key={scale}
-                        className="flex items-center gap-3 cursor-pointer"
-                      >
-                        <Checkbox
-                          checked={filters.scales.includes(scale)}
-                          onCheckedChange={() => handleScaleChange(scale)}
-                        />
-                        <span className="text-sm text-gray-700">{scale}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Budget Range */}
-                <div className="mb-6">
-                  <h3 className="font-semibold text-sm text-gray-700 mb-4">
-                    BUDGET
-                  </h3>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-xs text-gray-600">Min</label>
-                      <Input
-                        type="number"
-                        placeholder="Rp"
-                        value={filters.budgetMin}
-                        onChange={(e) =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            budgetMin: e.target.value,
-                          }))
-                        }
-                        className="text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600">Max</label>
-                      <Input
-                        type="number"
-                        placeholder="Rp"
-                        value={filters.budgetMax}
-                        onChange={(e) =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            budgetMax: e.target.value,
-                          }))
-                        }
-                        className="text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Reset Button */}
-                <Button
-                  onClick={handleResetFilter}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Reset Filter
-                </Button>
-              </div>
-            </div>
-
             {/* Events Grid */}
             <div className="flex-1">
-              {paginatedEvents.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">Memuat event...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <p className="text-red-500 text-lg">
+                    Gagal memuat event: {error}
+                  </p>
+                </div>
+              ) : paginatedEvents.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                     {paginatedEvents.map((event) => (
                       <EventCard
                         key={event.id}

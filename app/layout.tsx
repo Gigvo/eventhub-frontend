@@ -1,0 +1,46 @@
+import type { Metadata } from "next";
+import { Plus_Jakarta_Sans, Geist, Inter } from "next/font/google";
+import "./globals.css";
+import { cn } from "@/lib/utils";
+import { AuthProvider } from "@/providers/auth-provider";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+
+const jakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-jakarta-sans",
+  subsets: ["latin"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "EventHub",
+  description: "Connecting Organizers with Global Sponsors",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={cn(
+        "h-full",
+        "antialiased",
+        jakartaSans.variable,
+        inter.variable,
+        "font-sans",
+        geist.variable,
+      )}
+    >
+      <body className="" suppressHydrationWarning>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
+    </html>
+  );
+}
