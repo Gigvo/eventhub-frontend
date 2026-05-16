@@ -57,7 +57,20 @@ export async function apiCall<T>(
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || `API error: ${response.status}`);
+    // Extract detailed error message from API response
+    let errorMessage = data.message || `API error: ${response.status}`;
+
+    // If there are field-specific errors, include them
+    if (data.errors && typeof data.errors === "object") {
+      const fieldErrors = Object.entries(data.errors)
+        .map(([field, message]) => `${field}: ${message}`)
+        .join(", ");
+      if (fieldErrors) {
+        errorMessage = `${errorMessage} (${fieldErrors})`;
+      }
+    }
+
+    throw new Error(errorMessage);
   }
 
   return data;
