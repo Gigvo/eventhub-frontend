@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   LayoutDashboard,
   CirclePlus,
@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import Image from "next/image";
-import { apiCall } from "@/lib/api-client";
-import { useAuth } from "@/providers/auth-provider";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -26,24 +24,24 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    name: "Buat Event",
-    href: "/buat-event",
+    name: "Proposal Masuk",
+    href: "/proposal-masuk",
     icon: CirclePlus,
     requiredRole: "EO",
   },
   {
-    name: "Katalog Perusahaan",
-    href: "/katalog-perusahaan",
+    name: "Events",
+    href: "/events",
     icon: BriefcaseBusiness,
   },
   {
-    name: "Proposal Smart Review",
-    href: "/proposal-smart-review",
+    name: "Tersimpan",
+    href: "/tersimpan",
     icon: ClipboardCheck,
   },
   {
-    name: "Cari Sponsor",
-    href: "/cari-sponsor",
+    name: "Kerjasama Aktif",
+    href: "/kerjasama-aktif",
     icon: Handshake,
   },
   {
@@ -53,64 +51,19 @@ const menuItems = [
   },
 ];
 
-interface UserData {
-  id: string;
-  name: string;
-  role: string;
-}
-
 export default function Sidebar() {
   const router = useRouter();
 
-  const { isLoading: authLoading, isAuthenticated } = useAuth();
-  const [user, setUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
   const handleLogout = async () => {
     try {
-      // Sign out from Firebase
       await signOut(auth);
-
-      // Clear any stored tokens
       localStorage.removeItem("firebaseToken");
       localStorage.removeItem("buatEventStep3Data");
-
-      // Redirect to home
       router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
-
-  useEffect(() => {
-    // Only fetch user data when Firebase auth is ready and user is authenticated
-    if (authLoading) return;
-
-    const fetchUser = async () => {
-      if (!isAuthenticated) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await apiCall<{ data: UserData }>("/auth/me");
-        setUser(data.data);
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [authLoading, isAuthenticated]);
-
-  const filteredMenuItems = menuItems.filter((item) => {
-    if (item.requiredRole) {
-      return user?.role === item.requiredRole;
-    }
-    return true;
-  });
   return (
     <aside className="bg-[#F3F4F6] flex flex-col justify-between px-4 h-screen w-64 py-4 border-r-1 border-[#E5E7EB] fixed">
       <div>
@@ -132,7 +85,7 @@ export default function Sidebar() {
           </div>
         </div>
         <ul className="flex flex-col items-start text-[#6B7280]">
-          {filteredMenuItems.map((item) => (
+          {menuItems.map((item) => (
             <li key={item.name} className="px-3 py-2.5 text-[14px]">
               <a href={item.href} className="flex items-center gap-2.5">
                 <item.icon className="w-6 text-[#6B7280]" />

@@ -1,4 +1,4 @@
-import Sidebar from "@/components/sidebar";
+import SidebarSwitcher from "@/components/sidebar-switcher";
 import Navbar from "@/components/navbar";
 
 export default function Layout({
@@ -8,7 +8,7 @@ export default function Layout({
 }>) {
   return (
     <div className="h-screen flex">
-      <Sidebar />
+      <SidebarSwitcher />
       <div className="flex flex-col flex-1 ml-64">
         <Navbar />
         {children}

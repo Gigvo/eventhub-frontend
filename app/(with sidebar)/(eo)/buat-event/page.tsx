@@ -84,6 +84,7 @@ export default function BuatEventPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [eventId, setEventId] = useState<string | null>(null);
   const [showAddPackageForm, setShowAddPackageForm] = useState(false);
   const [newPackage, setNewPackage] = useState({
@@ -356,30 +357,63 @@ export default function BuatEventPage() {
     }
   };
 
-  // Handle final save
+  // Handle final save — calls AI proposal builder then navigates to proposal-builder page
   const handleSaveAndContinue = async () => {
+    if (!eventId) {
+      showNotification("error", "Event ID tidak ditemukan. Silakan buat event terlebih dahulu.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
+      setIsGeneratingProposal(true);
 
-      // Save Step 3 data to localStorage
-      const step3Data = {
-        eventId: eventId,
-        totalBudget: formData.totalBudget,
-        packages: formData.packages,
-        contactInfo: formData.contactInfo,
-        savedAt: new Date().toISOString(),
-      };
+      const response = await apiCall<any>("/ai/proposal-builder", {
+        method: "POST",
+        body: JSON.stringify({
+          eventId,
+          tone: "PERSUASIVE",
+          targetSponsorIndustry: formData.targetIndustri,
+          additionalContext: formData.deskripsiEvent,
+        }),
+      });
 
-      localStorage.setItem("buatEventStep3Data", JSON.stringify(step3Data));
-      showNotification("success", "Data berhasil disimpan!");
+      if (response?.data) {
+        // Store the AI-generated proposal so proposal-builder page can read it
+        localStorage.setItem(
+          "generatedProposal",
+          JSON.stringify({
+            proposalId: response.data.proposal.id,
+            eventId,
+            eventName: formData.namaEvent,
+            content: response.data.content,
+            savedAt: new Date().toISOString(),
+          }),
+        );
 
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
+        // Also keep step3 data for other pages that rely on it
+        localStorage.setItem(
+          "buatEventStep3Data",
+          JSON.stringify({
+            eventId,
+            totalBudget: formData.totalBudget,
+            packages: formData.packages,
+            contactInfo: formData.contactInfo,
+            eventName: formData.namaEvent,
+            savedAt: new Date().toISOString(),
+          }),
+        );
+
+        router.push("/proposal-builder");
+      }
     } catch (error) {
-      console.error("Failed to save:", error);
-      showNotification("error", "Gagal menyimpan data. Silakan coba lagi.");
+      console.error("Failed to generate proposal:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Gagal membuat proposal. Silakan coba lagi.";
+      showNotification("error", errorMessage);
+      setIsGeneratingProposal(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -409,7 +443,58 @@ export default function BuatEventPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Notification Toast */}
+      {/* AI Generation Loading Dialog */}
+      {isGeneratingProposal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+            {/* Animated header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 text-sm">AI Sedang Membuat Proposal...</p>
+                <p className="text-xs text-gray-500">Ini mungkin memakan waktu 10–30 detik</p>
+              </div>
+            </div>
+
+            {/* Event summary */}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Event</span>
+                <span className="font-semibold text-gray-900 text-right max-w-[60%] truncate">{formData.namaEvent || "-"}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Target Industri</span>
+                <span className="font-semibold text-gray-900">{formData.targetIndustri || "-"}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Estimasi Peserta</span>
+                <span className="font-semibold text-gray-900">{formData.estimasiPeserta.toLocaleString("id-ID")} orang</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Total Paket</span>
+                <span className="font-semibold text-gray-900">{formData.packages.length} paket</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Kota</span>
+                <span className="font-semibold text-gray-900">{formData.kota || "-"}</span>
+              </div>
+            </div>
+
+            {/* Loading bar */}
+            <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-blue-500 h-1.5 rounded-full animate-[loading_2s_ease-in-out_infinite]"
+                style={{ width: "60%", animation: "pulse 1.5s ease-in-out infinite" }}
+              />
+            </div>
+            <p className="text-center text-xs text-gray-400 mt-3">✨ Menganalisis data event dan menyusun narasi terbaik...</p>
+          </div>
+        </div>
+      )}
       {notification && (
         <div
           className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${

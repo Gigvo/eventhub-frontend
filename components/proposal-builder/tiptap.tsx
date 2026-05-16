@@ -7,9 +7,12 @@ import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import { BulletList } from "@tiptap/extension-list";
 import { OrderedList } from "@tiptap/extension-list";
-import { Editor } from "@tiptap/react";
 
-const Tiptap = () => {
+interface TiptapProps {
+  content?: string;
+}
+
+const Tiptap = ({ content }: TiptapProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -32,7 +35,7 @@ const Tiptap = () => {
         types: ["heading", "paragraph", "bulletList", "orderedList"],
       }),
     ],
-    content: "<p>Hello World! 🌎️</p>",
+    content: content || "<p>Hello World! 🌎️</p>",
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -51,3 +54,4 @@ const Tiptap = () => {
 };
 
 export default Tiptap;
+
