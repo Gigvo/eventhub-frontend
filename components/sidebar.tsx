@@ -15,6 +15,9 @@ import { Button } from "./ui/button";
 import Image from "next/image";
 import { apiCall } from "@/lib/api-client";
 import { useAuth } from "@/providers/auth-provider";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 const menuItems = [
   {
@@ -57,9 +60,27 @@ interface UserData {
 }
 
 export default function Sidebar() {
+  const router = useRouter();
+
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleLogout = async () => {
+    try {
+      // Sign out from Firebase
+      await signOut(auth);
+
+      // Clear any stored tokens
+      localStorage.removeItem("firebaseToken");
+      localStorage.removeItem("buatEventStep3Data");
+
+      // Redirect to home
+      router.push("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   useEffect(() => {
     // Only fetch user data when Firebase auth is ready and user is authenticated
@@ -171,6 +192,12 @@ export default function Sidebar() {
             Upgrade Now
           </Button>
         </div>
+        <Button
+          onClick={handleLogout}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-[8px] w-full mt-2"
+        >
+          Logout
+        </Button>
       </div>
     </aside>
   );

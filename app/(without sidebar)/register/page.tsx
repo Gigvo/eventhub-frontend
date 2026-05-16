@@ -4,31 +4,15 @@ import { BadgeCheck } from "lucide-react";
 import Image from "next/image";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { apiCall } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 
 export default function Register() {
-  const [userRole, setUserRole] = useState<"organizer" | "sponsor" | null>(
-    null,
-  );
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    whatsapp: "",
-    city: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
-    // EO fields
-    organizationName: "",
-    organizationType: "",
-    campus: "",
-    description: "",
-    // Company fields
-    companyName: "",
-    industry: "",
-    website: "",
-    targetAudience: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,54 +44,29 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // 1. Create Firebase account
-      const userCredential = await createUserWithEmailAndPassword(
+      // Create Firebase account only
+      await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password,
       );
 
-      // 2. Prepare profile based on role
-      const profile =
-        userRole === "organizer"
-          ? {
-              organizationName: formData.organizationName,
-              organizationType: formData.organizationType,
-              campus: formData.campus,
-              phoneNumber: formData.whatsapp,
-              city: formData.city,
-              description: formData.description,
-            }
-          : {
-              companyName: formData.companyName,
-              industry: formData.industry,
-              website: formData.website,
-              phoneNumber: formData.whatsapp,
-              city: formData.city,
-              description: formData.description,
-              targetAudience: formData.targetAudience,
-            };
+      // Store name so onboarding can include it in POST /auth/register
+      sessionStorage.setItem("pendingFullName", formData.fullName);
 
-      // 3. Register in backend
-      await apiCall("/auth/register", {
-        method: "POST",
-        body: JSON.stringify({
-          role: userRole === "organizer" ? "EO" : "COMPANY",
-          name: formData.fullName,
-          profile,
-        }),
-        requireAuth: true,
-      });
-
-      // 4. Redirect to dashboard
-      router.push("/dashboard");
+      // Redirect to onboarding for role selection and profile completion
+      router.push("/onboarding");
     } catch (err: any) {
       console.error("Registration error:", err);
-      console.error("Error response:", err.response);
 
-      // Try to get more detailed error info
-      const errorMessage = err.message || "Registrasi gagal";
-      setError(errorMessage);
+      // Handle Firebase-specific errors
+      if (err.code === "auth/email-already-in-use") {
+        setError("Email sudah terdaftar");
+      } else if (err.code === "auth/weak-password") {
+        setError("Password terlalu lemah");
+      } else {
+        setError(err.message || "Registrasi gagal");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +74,7 @@ export default function Register() {
   return (
     <div className="flex h-full">
       <div
-        className="w-[50%] bg-[#003EC7] text-white bg-cover bg-center overflow-y-auto"
+        className="w-[50%] bg-[#003EC7] text-white bg-cover bg-center overflow-y-auto h-full min-h-screen"
         style={{ backgroundImage: "url(/bg-register.png)" }}
       >
         <div className="flex flex-col h-full p-12 justify-between">
@@ -215,55 +174,6 @@ export default function Register() {
             </div>
           )}
 
-          {/* Role Selection */}
-          <div>
-            <p className="text-[12px] font-semibold text-[#737688] mb-3">
-              PILIH PERAN ANDA
-            </p>
-            <div className="flex flex-row items-center gap-4">
-              <button
-                type="button"
-                onClick={() => setUserRole("organizer")}
-                disabled={isLoading}
-                className={`flex-1 rounded-[8px] border-2 flex flex-col items-center justify-center py-4 px-10 gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                  userRole === "organizer"
-                    ? "border-[#003EC7] bg-blue-50"
-                    : "border-[#E5E7EB] hover:border-gray-300"
-                }`}
-              >
-                <Image
-                  src="/icons/calendar.svg"
-                  alt="Organizer"
-                  width={24}
-                  height={28}
-                />
-                <p className="text-xs text-center font-semibold">
-                  Saya Event Organizer
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setUserRole("sponsor")}
-                disabled={isLoading}
-                className={`flex-1 rounded-[8px] border-2 flex flex-col items-center justify-center py-4 px-10 gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                  userRole === "sponsor"
-                    ? "border-[#003EC7] bg-blue-50"
-                    : "border-[#E5E7EB] hover:border-gray-300"
-                }`}
-              >
-                <Image
-                  src="/icons/building.svg"
-                  alt="Perusahaan"
-                  width={24}
-                  height={28}
-                />
-                <p className="text-xs text-center font-semibold">
-                  Saya Perusahaan/Sponsor
-                </p>
-              </button>
-            </div>
-          </div>
-
           {/* Form Fields */}
           <div className="space-y-4">
             {/* Full Name */}
@@ -283,143 +193,6 @@ export default function Register() {
               />
             </div>
 
-            {/* Role-Specific Fields */}
-            {userRole === "organizer" && (
-              <>
-                {/* Organization Name */}
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                    Nama Organisasi
-                  </label>
-                  <input
-                    type="text"
-                    name="organizationName"
-                    value={formData.organizationName}
-                    onChange={handleInputChange}
-                    placeholder="BEM Fakultas Teknik"
-                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-
-                {/* Organization Type */}
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                    Jenis Organisasi
-                  </label>
-                  <select
-                    name="organizationType"
-                    value={formData.organizationType}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        organizationType: e.target.value,
-                      }))
-                    }
-                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm bg-white"
-                    required
-                    disabled={isLoading}
-                  >
-                    <option value="">Pilih jenis organisasi</option>
-                    <option value="BEM">BEM</option>
-                    <option value="HIMA">HIMA</option>
-                    <option value="UKM">UKM</option>
-                    <option value="COMMUNITY">Komunitas</option>
-                    <option value="OTHER">Lainnya</option>
-                  </select>
-                </div>
-
-                {/* Campus */}
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                    Kampus/Universitas
-                  </label>
-                  <input
-                    type="text"
-                    name="campus"
-                    value={formData.campus}
-                    onChange={handleInputChange}
-                    placeholder="Universitas Gadjah Mada"
-                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </>
-            )}
-
-            {userRole === "sponsor" && (
-              <>
-                {/* Company Name */}
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                    Nama Perusahaan
-                  </label>
-                  <input
-                    type="text"
-                    name="companyName"
-                    value={formData.companyName}
-                    onChange={handleInputChange}
-                    placeholder="PT Teknologi Maju"
-                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-
-                {/* Industry */}
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                    Industri
-                  </label>
-                  <input
-                    type="text"
-                    name="industry"
-                    value={formData.industry}
-                    onChange={handleInputChange}
-                    placeholder="Technology"
-                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-
-                {/* Website */}
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleInputChange}
-                    placeholder="https://company.com"
-                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                {/* Target Audience */}
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                    Target Audiens
-                  </label>
-                  <input
-                    type="text"
-                    name="targetAudience"
-                    value={formData.targetAudience}
-                    onChange={handleInputChange}
-                    placeholder="Mahasiswa dan profesional muda"
-                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </>
-            )}
-
             {/* Email */}
             <div>
               <label className="text-[12px] font-semibold text-gray-700 block mb-2">
@@ -433,60 +206,6 @@ export default function Register() {
                 placeholder="budi@email.com"
                 className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
                 required
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* WhatsApp */}
-            <div>
-              <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                Nomor WhatsApp
-              </label>
-              <input
-                type="tel"
-                name="whatsapp"
-                value={formData.whatsapp}
-                onChange={handleInputChange}
-                placeholder="+62 8123456789"
-                className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* City */}
-            <div>
-              <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                Kota
-              </label>
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                placeholder="Jakarta"
-                className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="text-[12px] font-semibold text-gray-700 block mb-2">
-                Deskripsi
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Ceritakan tentang organisasi/perusahaan Anda"
-                className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm h-24 resize-none"
                 disabled={isLoading}
               />
             </div>
@@ -559,7 +278,7 @@ export default function Register() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!userRole || !formData.agreeToTerms || isLoading}
+            disabled={!formData.agreeToTerms || isLoading}
             className="w-full bg-[#003EC7] text-white font-semibold py-3 rounded-[8px] hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           >
             {isLoading ? "Sedang membuat akun..." : "Buat Akun"}

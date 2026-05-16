@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { apiCall } from "@/lib/api-client";
 import { useAuth } from "@/providers/auth-provider";
-
+import Link from "next/link";
 interface UserData {
   id: string;
   name: string;
@@ -66,9 +66,13 @@ export default function Navbar() {
           </div>
           <CircleUserRound className="w-8 h-8" />
         </div>
-        <Button className="rounded-[4px] bg-[#003EC7] ml-6 px-4 py-2">
-          Buat Event Baru
-        </Button>
+        {user?.role === "EO" && (
+          <Link href="/buat-event" className="ml-6">
+            <Button className="rounded-[4px] bg-[#003EC7] px-4 py-2">
+              Buat Event Baru
+            </Button>
+          </Link>
+        )}
       </div>
     </nav>
   );

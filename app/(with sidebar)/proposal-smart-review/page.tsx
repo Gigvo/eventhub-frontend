@@ -27,6 +27,29 @@ import { useRouter } from "next/navigation";
 import { apiCall } from "@/lib/api-client";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
+import { Calendar, MapPin, Users, ImageIcon } from "lucide-react";
+
+interface EventTier {
+  id: string;
+  name: string;
+  price: number;
+  benefits: string[];
+  maxSlots: number;
+}
+
+interface MyEvent {
+  id: string;
+  title: string;
+  bannerUrl: string | null;
+  startDate: string;
+  endDate: string;
+  city: string;
+  venue: string;
+  expectedAttendees: number;
+  status: string;
+  tiers: EventTier[];
+  _count: { offers: number };
+}
 
 export default function ProposalSmartReview() {
   const router = useRouter();
@@ -39,6 +62,10 @@ export default function ProposalSmartReview() {
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [myEvents, setMyEvents] = useState<MyEvent[]>([]);
+  const [eventsFilter, setEventsFilter] = useState<
+    "SEMUA" | "PUBLISHED" | "DRAFT" | "SELESAI"
+  >("SEMUA");
   const [notification, setNotification] = useState<{
     type: "success" | "error";
     message: string;
@@ -63,7 +90,6 @@ export default function ProposalSmartReview() {
   useEffect(() => {
     const loadEventData = async () => {
       try {
-        // First, try to load from localStorage
         const savedStep3Data = localStorage.getItem("buatEventStep3Data");
         if (savedStep3Data) {
           const data = JSON.parse(savedStep3Data);
@@ -73,13 +99,12 @@ export default function ProposalSmartReview() {
           return;
         }
 
-        // If no localStorage data, fetch from API
-        const response = await apiCall("/events/my", {});
+        const response = await apiCall<{ data: MyEvent[] }>("/events/my", {});
 
-        if (response && typeof response === "object" && "data" in response) {
-          const events = (response as any).data;
-          if (Array.isArray(events) && events.length > 0) {
-            const latestEvent = events[0];
+        if (response?.data && Array.isArray(response.data)) {
+          setMyEvents(response.data);
+          const latestEvent = response.data[0];
+          if (latestEvent) {
             setEventId(latestEvent.id);
             setEventName(latestEvent.title || "Event");
           }
@@ -226,14 +251,207 @@ export default function ProposalSmartReview() {
               </div>
 
               {/* Tabs */}
-              <Tabs defaultValue="smart-review" className="mb-8">
-                <TabsList className="grid w-full max-w-md grid-cols-3">
+              <Tabs defaultValue="event-kamu" className="mb-8">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger>
                   <TabsTrigger value="terbaru">Proposal Terbaru</TabsTrigger>
                   <TabsTrigger value="smart-review">
                     Proposal Smart Review
                   </TabsTrigger>
                   <TabsTrigger value="hasil">Hasil Review</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="event-kamu" className="mt-6">
+                  {/* Filter Buttons */}
+                  <div className="flex gap-2 mb-6">
+                    {(["SEMUA", "PUBLISHED", "DRAFT", "SELESAI"] as const).map(
+                      (f) => (
+                        <button
+                          key={f}
+                          onClick={() => setEventsFilter(f)}
+                          className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                            eventsFilter === f
+                              ? "bg-[#003EC7] text-white border-[#003EC7]"
+                              : "bg-white text-gray-600 border-gray-300 hover:border-[#003EC7] hover:text-[#003EC7]"
+                          }`}
+                        >
+                          {f === "SEMUA"
+                            ? "Semua"
+                            : f === "PUBLISHED"
+                              ? "Aktif"
+                              : f === "DRAFT"
+                                ? "Draft"
+                                : "Selesai"}
+                        </button>
+                      ),
+                    )}
+                  </div>
+
+                  {/* Event Grid */}
+                  {isLoadingEvents ? (
+                    <div className="grid grid-cols-3 gap-6">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="bg-gray-100 rounded-xl h-72 animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-6">
+                      {myEvents
+                        .filter(
+                          (e) =>
+                            eventsFilter === "SEMUA" ||
+                            e.status === eventsFilter,
+                        )
+                        .map((event) => {
+                          const statusLabel =
+                            event.status === "PUBLISHED"
+                              ? "AKTIF"
+                              : event.status === "DRAFT"
+                                ? "DRAFT"
+                                : "SELESAI";
+                          const statusColor =
+                            event.status === "PUBLISHED"
+                              ? "bg-green-500"
+                              : event.status === "DRAFT"
+                                ? "bg-yellow-500"
+                                : "bg-gray-500";
+                          const startDate = new Date(event.startDate);
+                          const endDate = new Date(event.endDate);
+                          const formatDate = (d: Date) =>
+                            d.toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            });
+                          const maxTierPrice = event.tiers.length
+                            ? Math.max(...event.tiers.map((t) => t.price))
+                            : null;
+                          const formatPrice = (p: number) => {
+                            if (p >= 1_000_000)
+                              return `IDR ${(p / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+                            if (p >= 1_000)
+                              return `IDR ${(p / 1_000).toFixed(0)}K`;
+                            return `IDR ${p}`;
+                          };
+                          const ctaLabel =
+                            event.status === "PUBLISHED"
+                              ? "Kelola Event"
+                              : event.status === "DRAFT"
+                                ? "Lanjutkan Draft"
+                                : "Lihat Laporan";
+
+                          return (
+                            <div
+                              key={event.id}
+                              className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+                            >
+                              {/* Banner */}
+                              <div className="relative h-44 bg-gray-100">
+                                {event.bannerUrl ? (
+                                  <Image
+                                    src={event.bannerUrl}
+                                    alt={event.title}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <ImageIcon className="w-10 h-10 text-gray-300" />
+                                  </div>
+                                )}
+                                {/* Status badge */}
+                                <span
+                                  className={`absolute top-3 left-3 ${statusColor} text-white text-[10px] font-bold px-2 py-0.5 rounded`}
+                                >
+                                  {statusLabel}
+                                </span>
+                              </div>
+
+                              {/* Info */}
+                              <div className="p-4 flex flex-col flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-2 text-sm leading-snug">
+                                  {event.title}
+                                </h3>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
+                                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                                  <span>
+                                    {formatDate(startDate)} –{" "}
+                                    {formatDate(endDate)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-4">
+                                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                                  <span>
+                                    {event.venue}, {event.city}
+                                  </span>
+                                </div>
+
+                                {/* Stats */}
+                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {maxTierPrice
+                                        ? formatPrice(maxTierPrice)
+                                        : "-"}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                                      Target
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {event.expectedAttendees.toLocaleString(
+                                        "id-ID",
+                                      )}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                                      Pax
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {event._count.offers}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                                      Sponsor
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* CTA */}
+                                <div className="mt-auto pt-3 border-t border-gray-100 text-center">
+                                  <button
+                                    onClick={() =>
+                                      router.push(`/buat-event?id=${event.id}`)
+                                    }
+                                    className="text-sm font-semibold text-[#003EC7] hover:underline"
+                                  >
+                                    {ctaLabel}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                      {/* Empty state */}
+                      {myEvents.filter(
+                        (e) =>
+                          eventsFilter === "SEMUA" || e.status === eventsFilter,
+                      ).length === 0 && (
+                        <div className="col-span-3 py-16 text-center text-gray-400">
+                          <ImageIcon className="w-12 h-12 mx-auto mb-3 text-gray-200" />
+                          <p className="text-sm">
+                            Belum ada event untuk kategori ini.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
 
                 <TabsContent
                   value="smart-review"
@@ -471,6 +689,8 @@ export default function ProposalSmartReview() {
                     </Card>
                   </div>
                 </TabsContent>
+                <TabsContent value="terbaru">Proposal Terbaru</TabsContent>
+                <TabsContent value="hasil">Hasil Review</TabsContent>
               </Tabs>
 
               {/* Upload Dialog */}
