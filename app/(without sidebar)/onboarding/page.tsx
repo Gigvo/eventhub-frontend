@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { apiCall } from "@/lib/api-client";
+import { auth } from "@/lib/firebase";
 import Image from "next/image";
 import { Calendar, Building2, BadgeCheck } from "lucide-react";
 import Footer from "@/components/footer";
 import NavbarOnboarding from "@/components/onboarding/navbar-onboarding";
 import { useAuth } from "@/providers/auth-provider";
+import Link from "next/link";
 
 type Role = "EO" | "COMPANY" | null;
 
@@ -30,15 +32,37 @@ interface SponsorProfile {
   description: string;
   website: string;
   phoneNumber: string;
-  targetAudience: string;
+  targetAudience: string[];
+}
+
+interface SponsorPreferences {
+  preferredCategories: string[];
+  preferredAudienceAgeMin: number | "";
+  preferredAudienceAgeMax: number | "";
+  preferredInterests: string[];
+}
+
+const DRAFT_KEY = "onboardingDraft";
+
+function loadDraft() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 export default function Onboarding() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
+
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [role, setRole] = useState<Role>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [userName] = useState<string>(() =>
     typeof window !== "undefined"
       ? (sessionStorage.getItem("pendingFullName") ?? "")
@@ -61,31 +85,116 @@ export default function Onboarding() {
     description: "",
     website: "",
     phoneNumber: "",
-    targetAudience: "",
+    targetAudience: [],
   });
 
-  // Auth guard: redirect to /login if not authenticated.
-  // If already registered (has role in backend), redirect to /dashboard.
+  const [sponsorPrefs, setSponsorPrefs] = useState<SponsorPreferences>({
+    preferredCategories: [],
+    preferredAudienceAgeMin: "",
+    preferredAudienceAgeMax: "",
+    preferredInterests: [],
+  });
+
+  const [audienceInput, setAudienceInput] = useState("");
+  const [interestInput, setInterestInput] = useState("");
+
+  useEffect(() => {
+    const currentUid = auth.currentUser?.uid ?? null;
+    const draft = loadDraft();
+
+    if (draft) {
+      const isStale = draft.uid && currentUid && draft.uid !== currentUid;
+      if (isStale) {
+        localStorage.removeItem(DRAFT_KEY);
+      } else {
+        // eslint-disable-next-line
+        if (draft.currentStep != null) setCurrentStep(draft.currentStep);
+        if (draft.role != null) setRole(draft.role);
+        if (draft.organizerData)
+          setOrganizerData((prev) => ({ ...prev, ...draft.organizerData }));
+        if (draft.sponsorData)
+          setSponsorData((prev) => ({ ...prev, ...draft.sponsorData }));
+        if (draft.sponsorPrefs)
+          setSponsorPrefs((prev) => ({ ...prev, ...draft.sponsorPrefs }));
+      }
+    }
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      const uid = auth.currentUser?.uid ?? null;
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({
+          uid,
+          currentStep,
+          role,
+          organizerData,
+          sponsorData,
+          sponsorPrefs,
+        }),
+      );
+    } catch {}
+  }, [isHydrated, currentStep, role, organizerData, sponsorData, sponsorPrefs]);
+
+  const addTag = (
+    key: "targetAudience" | "preferredInterests",
+    value: string,
+  ) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    if (key === "targetAudience") {
+      setSponsorData((prev) => ({
+        ...prev,
+        targetAudience: prev.targetAudience.includes(trimmed)
+          ? prev.targetAudience
+          : [...prev.targetAudience, trimmed],
+      }));
+      setAudienceInput("");
+    } else {
+      setSponsorPrefs((prev) => ({
+        ...prev,
+        preferredInterests: prev.preferredInterests.includes(trimmed)
+          ? prev.preferredInterests
+          : [...prev.preferredInterests, trimmed],
+      }));
+      setInterestInput("");
+    }
+  };
+
+  const removeTag = (
+    key: "targetAudience" | "preferredInterests",
+    tag: string,
+  ) => {
+    if (key === "targetAudience") {
+      setSponsorData((prev) => ({
+        ...prev,
+        targetAudience: prev.targetAudience.filter((t) => t !== tag),
+      }));
+    } else {
+      setSponsorPrefs((prev) => ({
+        ...prev,
+        preferredInterests: prev.preferredInterests.filter((t) => t !== tag),
+      }));
+    }
+  };
+
+  const toggleCategory = (cat: string) => {
+    setSponsorPrefs((prev) => ({
+      ...prev,
+      preferredCategories: prev.preferredCategories.includes(cat)
+        ? prev.preferredCategories.filter((c) => c !== cat)
+        : [...prev.preferredCategories, cat],
+    }));
+  };
+
   useEffect(() => {
     if (authLoading) return;
-
     if (!isAuthenticated) {
       router.push("/login");
-      return;
     }
-
-    const checkProfile = async () => {
-      try {
-        const data = await apiCall<{ data: { role: string } }>("/auth/me");
-        if (data?.data?.role) {
-          router.push("/dashboard");
-        }
-      } catch {
-        // Not yet registered in backend — stay on onboarding
-      }
-    };
-
-    checkProfile();
   }, [authLoading, isAuthenticated, router]);
 
   const handleOrganizerChange = (
@@ -106,10 +215,10 @@ export default function Onboarding() {
     setSponsorData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // POST /auth/register is called when the user clicks "Lanjutkan" on Step 2
   const handleSubmitProfile = async () => {
     try {
       setIsSubmitting(true);
+      setSubmitError(null);
 
       if (role === "EO") {
         if (
@@ -117,11 +226,13 @@ export default function Onboarding() {
           !organizerData.organizationType ||
           !organizerData.city
         ) {
+          setSubmitError("Nama organisasi, jenis, dan kota wajib diisi.");
           return;
         }
 
         await apiCall("/auth/register", {
           method: "POST",
+          requireAuth: true,
           body: JSON.stringify({
             role: "EO",
             name: userName,
@@ -135,12 +246,42 @@ export default function Onboarding() {
             },
           }),
         });
+
+        try {
+          await apiCall("/profile/eo", {
+            method: "PATCH",
+            requireAuth: true,
+            body: JSON.stringify({
+              name: userName,
+              description: organizerData.description,
+              phoneNumber: organizerData.phoneNumber,
+            }),
+          });
+        } catch (patchErr) {
+          console.warn("PATCH /profile/eo failed (non-blocking):", patchErr);
+        }
       } else if (role === "COMPANY") {
-        if (
-          !sponsorData.companyName ||
-          !sponsorData.industry ||
-          !sponsorData.city
-        ) {
+        const targetAudienceStr = sponsorData.targetAudience.join(", ");
+        if (!sponsorData.companyName) {
+          setSubmitError("Nama perusahaan wajib diisi.");
+          return;
+        }
+        if (!sponsorData.industry) {
+          setSubmitError("Industri wajib dipilih.");
+          return;
+        }
+        if (!sponsorData.city) {
+          setSubmitError("Kota wajib dipilih.");
+          return;
+        }
+        if (sponsorData.description.length < 10) {
+          setSubmitError("Deskripsi perusahaan minimal 10 karakter.");
+          return;
+        }
+        if (targetAudienceStr.length < 10) {
+          setSubmitError(
+            "Target audiens terlalu singkat. Tambahkan minimal 1-2 tag yang cukup deskriptif.",
+          );
           return;
         }
 
@@ -152,6 +293,7 @@ export default function Onboarding() {
 
         await apiCall("/auth/register", {
           method: "POST",
+          requireAuth: true,
           body: JSON.stringify({
             role: "COMPANY",
             name: userName,
@@ -162,23 +304,59 @@ export default function Onboarding() {
               ...(normalizedWebsite ? { website: normalizedWebsite } : {}),
               phoneNumber: sponsorData.phoneNumber,
               city: sponsorData.city,
-              targetAudience: sponsorData.targetAudience,
+              targetAudience: targetAudienceStr,
             },
           }),
         });
+
+        try {
+          await apiCall("/profile/company", {
+            method: "PATCH",
+            requireAuth: true,
+            body: JSON.stringify({
+              preferences: {
+                preferredCategories: sponsorPrefs.preferredCategories,
+                ...(sponsorPrefs.preferredAudienceAgeMin !== ""
+                  ? {
+                      preferredAudienceAgeMin: Number(
+                        sponsorPrefs.preferredAudienceAgeMin,
+                      ),
+                    }
+                  : {}),
+                ...(sponsorPrefs.preferredAudienceAgeMax !== ""
+                  ? {
+                      preferredAudienceAgeMax: Number(
+                        sponsorPrefs.preferredAudienceAgeMax,
+                      ),
+                    }
+                  : {}),
+                preferredInterests: sponsorPrefs.preferredInterests,
+              },
+            }),
+          });
+        } catch (patchErr) {
+          console.warn(
+            "PATCH /profile/company failed (non-blocking):",
+            patchErr,
+          );
+        }
       }
 
-      // Clear the stored name after successful registration
       sessionStorage.removeItem("pendingFullName");
+      localStorage.removeItem(DRAFT_KEY);
 
       setCurrentStep(3);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to submit profile:", error);
-      alert("Gagal menyimpan profil. Silakan coba lagi.");
+      setSubmitError(
+        error?.message ?? "Gagal menyimpan profil. Silakan coba lagi.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!isHydrated) return null;
 
   // Step 1: Role Selection
   if (currentStep === 1) {
@@ -529,13 +707,146 @@ export default function Onboarding() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Target Audiens Sponsorship
                   </label>
-                  <textarea
-                    name="targetAudience"
-                    placeholder="Contoh: Developer profesional dan calon developer muda yang tertarik dengan AI dan teknologi modern"
-                    value={sponsorData.targetAudience}
-                    onChange={handleSponsorChange}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  {/* Chip display */}
+                  <div className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 flex flex-wrap gap-2 mb-2">
+                    {sponsorData.targetAudience.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-sm px-3 py-0.5 rounded-full"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag("targetAudience", tag)}
+                          className="hover:text-blue-900 font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  {/* Tag input */}
+                  <input
+                    type="text"
+                    value={audienceInput}
+                    onChange={(e) => setAudienceInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag("targetAudience", audienceInput);
+                      }
+                    }}
+                    placeholder="Tambah target audiens (tekan Enter)"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Preferred Categories */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kategori Event yang Diminati
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "TECHNOLOGY",
+                      "BUSINESS",
+                      "COMPETITION",
+                      "FESTIVAL",
+                      "CONFERENCE",
+                      "WORKSHOP",
+                      "MUSIC",
+                      "SPORTS",
+                    ].map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleCategory(cat)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                          sponsorPrefs.preferredCategories.includes(cat)
+                            ? "bg-blue-600 border-blue-600 text-white"
+                            : "bg-white border-gray-300 text-gray-700 hover:border-blue-400"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Audience Age Range */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rentang Usia Audiens Target
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={10}
+                      max={100}
+                      placeholder="Min (cth: 18)"
+                      value={sponsorPrefs.preferredAudienceAgeMin}
+                      onChange={(e) =>
+                        setSponsorPrefs((prev) => ({
+                          ...prev,
+                          preferredAudienceAgeMin:
+                            e.target.value === "" ? "" : Number(e.target.value),
+                        }))
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    />
+                    <span className="text-gray-500 shrink-0">—</span>
+                    <input
+                      type="number"
+                      min={10}
+                      max={100}
+                      placeholder="Max (cth: 35)"
+                      value={sponsorPrefs.preferredAudienceAgeMax}
+                      onChange={(e) =>
+                        setSponsorPrefs((prev) => ({
+                          ...prev,
+                          preferredAudienceAgeMax:
+                            e.target.value === "" ? "" : Number(e.target.value),
+                        }))
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Preferred Interests */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Minat / Topik yang Relevan
+                  </label>
+                  <div className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 flex flex-wrap gap-2 mb-2">
+                    {sponsorPrefs.preferredInterests.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 text-sm px-3 py-0.5 rounded-full"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag("preferredInterests", tag)}
+                          className="hover:text-purple-900 font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={interestInput}
+                    onChange={(e) => setInterestInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag("preferredInterests", interestInput);
+                      }
+                    }}
+                    placeholder="Tambah minat (cth: AI, fintech, startup) — tekan Enter"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -558,32 +869,39 @@ export default function Onboarding() {
                   <p className="text-xs text-gray-600 mb-3">
                     🏙️ {sponsorData.city || "Kota belum diisi"}
                   </p>
-                  {sponsorData.targetAudience && (
+                  {sponsorData.targetAudience.length > 0 && (
                     <div className="text-xs text-gray-600">
                       <p className="font-semibold mb-1">TARGET AUDIENS</p>
                       <p className="text-gray-500">
-                        {sponsorData.targetAudience}
+                        {sponsorData.targetAudience.join(", ")}
                       </p>
                     </div>
                   )}
                 </Card>
               </div>
             </div>
-            <div className="flex gap-4 justify-between w-full mt-10 pt-6 border-t border-[#C3C5D9]">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(1)}
-                className="px-8"
-              >
-                ← Kembali
-              </Button>
-              <Button
-                onClick={handleSubmitProfile}
-                className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-8"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Menyimpan..." : "Lanjutkan →"}
-              </Button>
+            <div className="flex flex-col gap-4 w-full mt-10 pt-6 border-t border-[#C3C5D9]">
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[8px] text-sm">
+                  {submitError}
+                </div>
+              )}
+              <div className="flex gap-4 justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentStep(1)}
+                  className="px-8"
+                >
+                  ← Kembali
+                </Button>
+                <Button
+                  onClick={handleSubmitProfile}
+                  className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-8"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Menyimpan..." : "Lanjutkan →"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -711,9 +1029,11 @@ export default function Onboarding() {
               <Button variant="outline" className="flex-1">
                 Lihat Panduan
               </Button>
-              <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-                Buka Dashboard
-              </Button>
+              <Link href={"/dashboard"} className="flex-1">
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                  Buka Dashboard
+                </Button>
+              </Link>
             </div>
           </div>
           <div className="mb-8 flex items-center max-w-lg gap-3 pt-12 border-t border-gray-300">

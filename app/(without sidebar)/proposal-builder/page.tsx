@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Tiptap from "@/components/proposal-builder/tiptap";
 import {
   AlertCircle,
@@ -11,6 +12,18 @@ import {
   Loader2,
 } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
+import NavbarProposalBuilder from "@/components/proposal-builder/navbar";
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface ProposalContent {
   executiveSummary: string;
@@ -136,6 +149,25 @@ export default function ProposalBuilder() {
   const [review, setReview] = useState<SmartReview | null>(null);
   const [reviewLoading, setReviewLoading] = useState(() => !!proposal?.eventId);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<"success" | "error" | null>(null);
+
+  const router = useRouter();
+
+  const handlePublish = async () => {
+    if (!proposal?.eventId) return;
+    try {
+      setIsPublishing(true);
+      setPublishResult(null);
+      await apiCall(`/events/${proposal.eventId}/publish`, { method: "POST" });
+      setPublishResult("success");
+      setTimeout(() => router.push("/dashboard"), 1500);
+    } catch {
+      setPublishResult("error");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   useEffect(() => {
     if (!proposal?.eventId) return;
@@ -154,162 +186,205 @@ export default function ProposalBuilder() {
     review?.issues.filter((i) => i.severity === "WARNING").length ?? 0;
 
   return (
-    <div className="flex gap-6 p-6">
-      {/* Editor */}
-      <div className="w-full">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Proposal Builder</h1>
-          {proposal && (
-            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              ✨ Dibuat oleh AI — {proposal.eventName}
-            </span>
-          )}
+    <>
+      <NavbarProposalBuilder />
+      <div className="flex items-center justify-between px-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="#">Buat Event</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="#">Sponsorship</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Proposal Smart Review</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div className="flex gap-4">
+          <Button variant={"outline"}>Unduh PDF</Button>
+          <Button
+            className="bg-[#003EC7]"
+            onClick={handlePublish}
+            disabled={isPublishing || !proposal?.eventId}
+          >
+            {isPublishing ? "Mempublish..." : "🚀 Publish Event"}
+          </Button>
         </div>
-        <Tiptap content={editorContent || undefined} />
       </div>
 
-      {/* Sidebar */}
-      <div className="space-y-6 max-w-sm w-full">
-        {/* Header */}
-        <h2 className="text-sm font-semibold text-gray-600 flex items-center gap-2">
-          <span className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
-            ✓
-          </span>
-          AI Smart Review
-        </h2>
+      <div className="flex gap-6 p-6">
+        {/* Editor */}
+        <div className="w-full">
+          <Tiptap content={editorContent || undefined} />
+        </div>
 
-        {/* Loading state */}
-        {reviewLoading && (
-          <div className="flex flex-col items-center justify-center py-10 gap-3 text-gray-400">
-            <Loader2 className="w-6 h-6 animate-spin" />
-            <p className="text-xs">Menganalisis proposal…</p>
-          </div>
-        )}
+        {/* Sidebar */}
+        <div className="space-y-6 max-w-sm w-full">
+          {/* Header */}
+          <h2 className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+            <span className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
+              ✓
+            </span>
+            AI Smart Review
+          </h2>
 
-        {/* Error state */}
-        {reviewError && !reviewLoading && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600">
-            {reviewError}
-          </div>
-        )}
-
-        {/* Loaded state */}
-        {review && !reviewLoading && (
-          <>
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
-              <p className="text-xs font-semibold tracking-wider opacity-90">
-                PROPOSAL READINESS
-              </p>
-              <p className="text-4xl font-bold mt-2">{review.score}/100</p>
-              <p className="text-sm mt-1 opacity-90">
-                {scoreLabel(review.score)}
-              </p>
-
-              <div className="flex gap-2 mt-4">
-                {criticalCount > 0 && (
-                  <span className="bg-red-500/30 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {criticalCount} Kritis
-                  </span>
-                )}
-                {warningCount > 0 && (
-                  <span className="bg-yellow-400/30 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {warningCount} Peringatan
-                  </span>
-                )}
-                {criticalCount === 0 && warningCount === 0 && (
-                  <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    Tidak ada masalah kritis
-                  </span>
-                )}
-              </div>
+          {/* Loading state */}
+          {reviewLoading && (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-gray-400">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <p className="text-xs">Menganalisis proposal…</p>
             </div>
+          )}
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-                Ringkasan
-              </p>
-              <p className="text-xs text-gray-700 leading-relaxed">
-                {review.summary}
-              </p>
+          {/* Error state */}
+          {reviewError && !reviewLoading && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600">
+              {reviewError}
             </div>
+          )}
 
-            {review.issues.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  Masalah ({review.issues.length})
+          {/* Loaded state */}
+          {review && !reviewLoading && (
+            <>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
+                <p className="text-xs font-semibold tracking-wider opacity-90">
+                  PROPOSAL READINESS
                 </p>
-                <div className="space-y-3">
-                  {review.issues.map((issue, i) => {
-                    const cfg = SEVERITY_CONFIG[issue.severity];
-                    return (
+                <p className="text-4xl font-bold mt-2">{review.score}/100</p>
+                <p className="text-sm mt-1 opacity-90">
+                  {scoreLabel(review.score)}
+                </p>
+
+                <div className="flex gap-2 mt-4">
+                  {criticalCount > 0 && (
+                    <span className="bg-red-500/30 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {criticalCount} Kritis
+                    </span>
+                  )}
+                  {warningCount > 0 && (
+                    <span className="bg-yellow-400/30 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {warningCount} Peringatan
+                    </span>
+                  )}
+                  {criticalCount === 0 && warningCount === 0 && (
+                    <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      Tidak ada masalah kritis
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Ringkasan
+                </p>
+                <p className="text-xs text-gray-700 leading-relaxed">
+                  {review.summary}
+                </p>
+              </div>
+
+              {review.issues.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">
+                    Masalah ({review.issues.length})
+                  </p>
+                  <div className="space-y-3">
+                    {review.issues.map((issue, i) => {
+                      const cfg = SEVERITY_CONFIG[issue.severity];
+                      return (
+                        <div
+                          key={i}
+                          className={`border rounded-lg p-4 flex gap-3 ${cfg.bg}`}
+                        >
+                          {cfg.icon}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span
+                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${cfg.badge}`}
+                              >
+                                {cfg.label}
+                              </span>
+                              <span className="text-[9px] text-gray-400 font-medium uppercase">
+                                {issue.category}
+                              </span>
+                            </div>
+                            <p
+                              className={`text-xs font-semibold ${cfg.titleColor} mb-1`}
+                            >
+                              {issue.description}
+                            </p>
+                            <p
+                              className={`text-[11px] leading-relaxed ${cfg.bodyColor}`}
+                            >
+                              💡 {issue.suggestion}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {review.strengths.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">
+                    Keunggulan ({review.strengths.length})
+                  </p>
+                  <div className="space-y-2">
+                    {review.strengths.map((strength, i) => (
                       <div
                         key={i}
-                        className={`border rounded-lg p-4 flex gap-3 ${cfg.bg}`}
+                        className="border border-green-200 bg-green-50 rounded-lg p-3 flex gap-3"
                       >
-                        {cfg.icon}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span
-                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${cfg.badge}`}
-                            >
-                              {cfg.label}
-                            </span>
-                            <span className="text-[9px] text-gray-400 font-medium uppercase">
-                              {issue.category}
-                            </span>
-                          </div>
-                          <p
-                            className={`text-xs font-semibold ${cfg.titleColor} mb-1`}
-                          >
-                            {issue.description}
-                          </p>
-                          <p
-                            className={`text-[11px] leading-relaxed ${cfg.bodyColor}`}
-                          >
-                            💡 {issue.suggestion}
-                          </p>
-                        </div>
+                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-green-800 leading-relaxed">
+                          {strength}
+                        </p>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </>
+          )}
 
-            {review.strengths.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  Keunggulan ({review.strengths.length})
-                </p>
-                <div className="space-y-2">
-                  {review.strengths.map((strength, i) => (
-                    <div
-                      key={i}
-                      className="border border-green-200 bg-green-50 rounded-lg p-3 flex gap-3"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-green-800 leading-relaxed">
-                        {strength}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+          {!proposal && !reviewLoading && (
+            <div className="text-center py-10 text-gray-400 text-xs">
+              Tidak ada proposal yang dimuat.
+            </div>
+          )}
 
-        {!proposal && !reviewLoading && (
-          <div className="text-center py-10 text-gray-400 text-xs">
-            Tidak ada proposal yang dimuat.
-          </div>
-        )}
+          {publishResult === "success" && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm text-center">
+              ✅ Event berhasil dipublish! Mengarahkan ke dashboard…
+            </div>
+          )}
+          {publishResult === "error" && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm text-center">
+              ❌ Gagal mempublish event. Silakan coba lagi.
+            </div>
+          )}
 
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
-          <Sparkles className="w-5 h-5" />
-          Publish Event
-        </button>
+          <button
+            onClick={handlePublish}
+            disabled={isPublishing || !proposal?.eventId}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+          >
+            <Sparkles className="w-5 h-5" />
+            {isPublishing ? "Mempublish..." : "Publish Event"}
+          </button>
+
+        </div>
       </div>
-    </div>
+    </>
   );
 }

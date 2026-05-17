@@ -243,22 +243,16 @@ export default function ProposalSmartReview() {
                 <h1 className="text-3xl font-bold text-gray-900">
                   {eventName}
                 </h1>
-                {eventId && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Event ID: {eventId}
-                  </p>
-                )}
               </div>
 
               {/* Tabs */}
               <Tabs defaultValue="event-kamu" className="mb-8">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="flex items-center gap-8" variant={"line"}>
                   <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger>
                   <TabsTrigger value="terbaru">Proposal Terbaru</TabsTrigger>
                   <TabsTrigger value="smart-review">
                     Proposal Smart Review
                   </TabsTrigger>
-                  <TabsTrigger value="hasil">Hasil Review</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="event-kamu" className="mt-6">
@@ -690,7 +684,6 @@ export default function ProposalSmartReview() {
                   </div>
                 </TabsContent>
                 <TabsContent value="terbaru">Proposal Terbaru</TabsContent>
-                <TabsContent value="hasil">Hasil Review</TabsContent>
               </Tabs>
 
               {/* Upload Dialog */}
@@ -710,9 +703,6 @@ export default function ProposalSmartReview() {
                       <div>
                         <p className="text-sm font-medium text-blue-900 mb-0.5">
                           Akan dikaitkan dengan: {eventName}
-                        </p>
-                        <p className="text-xs text-blue-800">
-                          Event ID: {eventId}
                         </p>
                       </div>
                     </div>

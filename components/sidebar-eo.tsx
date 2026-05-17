@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import Image from "next/image";
+import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const menuItems = [
   {
@@ -53,6 +54,20 @@ const menuItems = [
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
+
+  const linkClass = (href: string) =>
+    `flex items-center gap-2.5 w-full rounded-[6px] px-2 py-1.5 transition-colors ${
+      isActive(href)
+        ? "bg-[#EEF2FF] text-[#003EC7] font-semibold"
+        : "text-[#6B7280] hover:bg-gray-200 hover:text-[#374151]"
+    }`;
+
+  const iconClass = (href: string) =>
+    `w-5 ${isActive(href) ? "text-[#003EC7]" : "text-[#6B7280]"}`;
 
   const handleLogout = async () => {
     try {
@@ -84,55 +99,70 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
-        <ul className="flex flex-col items-start text-[#6B7280]">
+        <ul className="flex flex-col items-start gap-1">
           {menuItems.map((item) => (
-            <li key={item.name} className="px-3 py-2.5 text-[14px]">
-              <a href={item.href} className="flex items-center gap-2.5">
-                <item.icon className="w-6 text-[#6B7280]" />
+            <li key={item.name} className="w-full px-1 text-[14px]">
+              <Link href={item.href} className={linkClass(item.href)}>
+                <item.icon className={iconClass(item.href)} />
                 {item.name}
-              </a>
+              </Link>
             </li>
           ))}
-          <li className="text-[14px] px-3 py-2.5">
-            <a href="/token-billing" className="flex items-center gap-2.5">
+          {/* <li className="w-full px-1 text-[14px]">
+            <Link href="/token-billing" className={linkClass("/token-billing")}>
               <Image
                 src={"/icons/money.svg"}
-                width={25}
-                height={28}
+                width={20}
+                height={20}
                 alt="Token & Billing"
               />
               Token & Billing
-            </a>
-          </li>
-          <li className="text-[14px] px-3 py-2.5">
-            <a href="/token-management" className="flex items-center gap-2.5">
+            </Link>
+          </li> */}
+          <li className="w-full px-1 text-[14px]">
+            <Link
+              href="/token-management"
+              className={linkClass("/token-management")}
+            >
               <Image
                 src={"/icons/token.svg"}
-                width={25}
-                height={28}
+                width={20}
+                height={20}
                 alt="Token Management"
               />
               Token Management
-            </a>
+            </Link>
           </li>
         </ul>
       </div>
       <div className="border-t-1 border-[#E5E7EB] pt-4">
-        <a
+        <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 pb-2.5 text-[14px] text-[#6B7280] hover:text-[#374151] transition-colors"
+          className={`flex items-center gap-3 px-3 pb-2.5 text-[14px] ${
+            isActive("/settings")
+              ? "text-[#003EC7] font-semibold"
+              : "text-[#6B7280] hover:text-[#374151]"
+          } transition-colors`}
         >
-          <Settings className="w-6 h-6" />
+          <Settings
+            className={`w-6 h-6 ${isActive("/settings") ? "text-[#003EC7]" : ""}`}
+          />
           <span>Pengaturan</span>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/help"
-          className="flex items-center gap-3 px-3 py-2.5 text-[14px] text-[#6B7280] hover:text-[#374151] transition-colors"
+          className={`flex items-center gap-3 px-3 py-2.5 text-[14px] ${
+            isActive("/help")
+              ? "text-[#003EC7] font-semibold"
+              : "text-[#6B7280] hover:text-[#374151]"
+          } transition-colors`}
         >
-          <HelpCircle className="w-6 h-6" />
+          <HelpCircle
+            className={`w-6 h-6 ${isActive("/help") ? "text-[#003EC7]" : ""}`}
+          />
           <span>Bantuan</span>
-        </a>
+        </Link>
 
         <div className="px-4 py-4 bg-[#EEF2FF] border border-[#E0E7FF] rounded-lg">
           <h3 className="text-[14px] font-semibold text-[#1E40AF] mb-1">

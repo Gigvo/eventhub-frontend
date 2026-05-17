@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,113 +9,145 @@ import {
   ChevronLeft,
   Share2,
   Bookmark,
-  Clock,
-  CheckCircle,
+  MapPin,
+  Calendar,
+  Users,
+  Building2,
   Sparkles,
   Check,
+  Loader2,
 } from "lucide-react";
+import { apiCall } from "@/lib/api-client";
 import Image from "next/image";
+
+interface Tier {
+  id: string;
+  name: string;
+  price: number;
+  benefits: string[];
+  maxSlots: number | null;
+}
 
 interface EventDetail {
   id: string;
   title: string;
-  banner: string;
+  slug: string;
   category: string;
-  organizer: string;
-  aiScore: number;
+  theme: string;
   description: string;
-  targetAudience: {
-    demographic: Array<{ label: string; value: number }>;
-    industries: string[];
-    tags: string[];
+  city: string;
+  venue: string;
+  isOnline: boolean;
+  startDate: string;
+  endDate: string;
+  expectedAttendees: number;
+  audienceAgeMin: number;
+  audienceAgeMax: number;
+  audienceInterests: string[];
+  bannerUrl: string | null;
+  status: string;
+  publishedAt: string | null;
+  eoProfile: {
+    organizationName: string;
+    organizationType: string;
+    campus: string;
+    city: string;
+    logoUrl: string | null;
+    isVerified: boolean;
   };
-  budget: { min: string; max: string };
-  slotsAvailable: { current: number; total: number };
-  deadlineProposal: string;
-  paymentMethod: string;
-  daysRemaining: number;
-  matchBreakdown: Array<{ label: string; checked: boolean }>;
+  tiers: Tier[];
+  proposal: {
+    source: string;
+    fileUrl: string;
+  } | null;
 }
 
-// Mock event details data
-const eventDetailsMap: Record<string, EventDetail> = {
-  "1": {
-    id: "1",
-    title: "TechForward 2024: Scaling The Future",
-    banner: "/event-1.png",
-    category: "CONFERENCE",
-    organizer: "TechGlobal Indonesia",
-    aiScore: 94,
-    description:
-      "TechForward 2024 adalah sebuah teknologi tahunan yang mempermudahkan para inovator, pemimpin industri untuk mempelajari tantangan terbaru dan ekosistem. Tahun ini, fokus utama kami adalah Scaling Sustainable AI dan ekosistem.\n\nEvent ini dirancang untuk memfasilitasi kolaborasi tingkat tinggi melalui workshop eksklusif, panel diskusi utama, sesi networking VIP. Dengan target 2.500 delegasi dari berbagai industri level C dan manager senior dari sektor finansial, manufaktur, dan e-commerce.",
-    targetAudience: {
-      demographic: [
-        { label: "Usia 25-45", value: 72 },
-        { label: "Jabatan Manajerial+", value: 56 },
-      ],
-      industries: ["FinTech", "SaaS", "Retail Tech", "Logistik"],
-      tags: ["#Innovation", "#B2BNetworking", "#FutureTech", "#ScaleUp"],
-    },
-    budget: { min: "25", max: "150" },
-    slotsAvailable: { current: 4, total: 10 },
-    deadlineProposal: "12 OKT 2024",
-    paymentMethod: "Cicilan 2x",
-    daysRemaining: 5,
-    matchBreakdown: [
-      {
-        label: "Audiences 72% sesuai dengan segment target brand Anda.",
-        checked: true,
-      },
-      {
-        label: "Sebarkan event memainkan ROI tinggi di kategori IT.",
-        checked: true,
-      },
-      {
-        label: "Lokasi event strategis begini HQ pemanggilnya Anda.",
-        checked: true,
-      },
-    ],
-  },
-  // Add more events as needed
-};
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatPrice(price: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(price);
+}
 
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const slug = params.event as string;
+
+  const [event, setEvent] = useState<EventDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
-  const [isInterested, setIsInterested] = useState(false);
 
-  const eventId = params.event as string;
-  const event = eventDetailsMap[eventId];
+  useEffect(() => {
+    if (!slug) return;
+    apiCall<{ data: EventDetail }>(`/catalog/events/${slug}`, {
+      requireAuth: false,
+    })
+      .then((res) => setEvent(res.data))
+      .catch((err) => setError(err?.message ?? "Gagal memuat detail event."))
+      .finally(() => setIsLoading(false));
+  }, [slug]);
 
-  if (!event) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Event tidak ditemukan</h1>
-          <Button onClick={() => router.back()}>Kembali</Button>
+          <h1 className="text-2xl font-bold mb-2">Event tidak ditemukan</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            {error ?? "Event yang kamu cari tidak tersedia."}
+          </p>
+          <Button onClick={() => router.back()}>← Kembali</Button>
         </div>
       </div>
     );
   }
 
+  const minTierPrice =
+    event.tiers.length > 0
+      ? Math.min(...event.tiers.map((t) => t.price))
+      : null;
+  const maxTierPrice =
+    event.tiers.length > 0
+      ? Math.max(...event.tiers.map((t) => t.price))
+      : null;
+
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="border-b">
+      <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
             >
               <ChevronLeft className="h-5 w-5" />
               Kembali
             </button>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Proposal Markup</span>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>Katalog Event</span>
               <span>/</span>
-              <span className="text-gray-900 font-medium">{event.title}</span>
+              <span className="text-gray-900 font-medium truncate max-w-xs">
+                {event.title}
+              </span>
             </div>
           </div>
 
@@ -129,213 +161,257 @@ export default function EventDetailPage() {
               <Bookmark
                 className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`}
               />
-              Simpan
+              {isSaved ? "Tersimpan" : "Simpan"}
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
               <Share2 className="h-4 w-4" />
               Bagikan
-            </Button>
-            <Button
-              onClick={() => setIsInterested(!isInterested)}
-              className={`rounded-[4px] font-semibold ${
-                isInterested
-                  ? "bg-[#22C55E] hover:bg-[#16A34A]"
-                  : "bg-[#22C55E] hover:bg-[#16A34A]"
-              }`}
-            >
-              ✓ Saya Tertarik
             </Button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 ">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Content */}
-          <div className="lg:col-span-2 space-y-8 bg-white">
+          {/* Left — Event Info */}
+          <div className="lg:col-span-2 space-y-6">
             {/* Banner */}
-            <div className="relative w-full h-80 overflow-hidden bg-gray-200 flex items-center justify-center">
-              <Image
-                src={event.banner}
-                alt={event.title}
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-end m-6">
-                <div className="text-white">
-                  <div className="text-sm font-semibold mb-2">
-                    {event.category}
-                  </div>
-                  <h1 className="text-3xl font-bold">{event.title}</h1>
+            <div className="relative w-full h-72 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl overflow-hidden flex items-end">
+              {event.bannerUrl ? (
+                <Image
+                  src={event.bannerUrl}
+                  alt={event.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+              <div className="relative z-10 p-6 text-white">
+                <Badge className="bg-white/20 text-white border-none mb-2">
+                  {event.category}
+                </Badge>
+                <h1 className="text-3xl font-bold">{event.title}</h1>
+                <p className="text-white/80 text-sm mt-1">{event.theme}</p>
+              </div>
+            </div>
+
+            {/* Quick Info Row */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg p-4 border flex items-start gap-3">
+                <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Tanggal</p>
+                  <p className="text-sm font-medium">
+                    {formatDate(event.startDate)}
+                    {event.startDate !== event.endDate && (
+                      <> – {formatDate(event.endDate)}</>
+                    )}
+                  </p>
                 </div>
               </div>
-
-              {/* AI Score */}
-              <div
-                className="absolute bottom-4 right-4 rounded-lg p-3 text-center text-white border border-white/30"
-                style={{
-                  background:
-                    "var(--color-white-10, rgba(255, 255, 255, 0.10))",
-                }}
-              >
-                <div className="text-xs">AI MATCH SCORE</div>
-                <div className="text-[40px] font-bold ">
-                  {event.aiScore}
-                  <span className="text-[18px]">%</span>
+              <div className="bg-white rounded-lg p-4 border flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Lokasi</p>
+                  <p className="text-sm font-medium">
+                    {event.isOnline
+                      ? "Online"
+                      : `${event.venue}, ${event.city}`}
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-4 border flex items-start gap-3">
+                <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Estimasi Peserta</p>
+                  <p className="text-sm font-medium">
+                    {event.expectedAttendees.toLocaleString("id-ID")} orang
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* About Event Section */}
-            <div className="px-16">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <div className="h-6 w-6  bg-gray-200 flex items-center justify-center text-sm">
+            {/* About Event */}
+            <div className="bg-white rounded-xl border p-6">
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <span className="h-6 w-6 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-600">
                   01
-                </div>
+                </span>
                 Tentang Event
               </h2>
-              <p className="text-gray-700 leading-relaxed text-sm">
+              <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-line">
                 {event.description}
               </p>
             </div>
 
-            {/* Target Audiences */}
-            <div className="px-16 pb-6">
+            {/* Target Audience */}
+            <div className="bg-white rounded-xl border p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <div className="h-6 w-6  bg-gray-200 flex items-center justify-center text-sm">
+                <span className="h-6 w-6 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-600">
                   02
-                </div>
+                </span>
                 Target Audiens
               </h2>
 
-              <div className="flex items-stretch gap-6  mb-6">
-                {/* Demographics */}
-                <div className="flex flex-col gap-6 bg-[#F2F4F6] p-4 border border-[#C3C5D9] rounded-[8px] flex-1">
-                  {event.targetAudience.demographic.map((demo, idx) => (
-                    <div key={idx}>
-                      <div className="text-sm font-semibold text-gray-700 mb-2">
-                        {demo.label}
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1">
-                        <div
-                          className="bg-blue-600 h-1 rounded-full"
-                          style={{ width: `${demo.value}%` }}
-                        />
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        {demo.value}%
-                      </div>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-gray-50 border rounded-lg p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                    Rentang Usia
+                  </p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {event.audienceAgeMin} – {event.audienceAgeMax} tahun
+                  </p>
                 </div>
-
-                {/* Industries */}
-                <div className=" bg-[#F2F4F6] p-4 border border-[#C3C5D9] rounded-[8px] flex-1">
-                  <div className="text-sm font-semibold text-gray-700 mb-3">
-                    INDUSTRI DOMINAN
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {event.targetAudience.industries.map((industry, idx) => (
-                      <Badge
-                        key={idx}
-                        variant="outline"
-                        className="bg-gray-50 text-gray-700"
-                      >
-                        {industry}
+                <div className="bg-gray-50 border rounded-lg p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                    Minat
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {event.audienceInterests.map((interest, i) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        {interest}
                       </Badge>
                     ))}
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2">
-                {event.targetAudience.tags.map((tag, idx) => (
-                  <Badge key={idx} className="bg-blue-100 text-blue-800">
-                    {tag}
-                  </Badge>
-                ))}
+            {/* Sponsorship Tiers */}
+            {event.tiers.length > 0 && (
+              <div className="bg-white rounded-xl border p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <span className="h-6 w-6 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-600">
+                    03
+                  </span>
+                  Paket Sponsorship
+                </h2>
+                <div className="space-y-4">
+                  {event.tiers.map((tier) => (
+                    <div
+                      key={tier.id}
+                      className="border rounded-lg p-4 hover:border-blue-300 transition"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-semibold text-gray-900">
+                          {tier.name}
+                        </span>
+                        <span className="text-blue-600 font-bold text-lg">
+                          {formatPrice(tier.price)}
+                        </span>
+                      </div>
+                      {tier.benefits && tier.benefits.length > 0 && (
+                        <ul className="space-y-1.5">
+                          {tier.benefits.map((benefit, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-2 text-sm text-gray-600"
+                            >
+                              <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              {benefit}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {tier.maxSlots && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          Maks. {tier.maxSlots} slot
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Organizer */}
+            <div className="bg-white rounded-xl border p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                Penyelenggara
+              </h2>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg">
+                  {event.eoProfile.organizationName[0]}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {event.eoProfile.organizationName}
+                    {event.eoProfile.isVerified && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                        ✓ Verified
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {event.eoProfile.organizationType}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {event.eoProfile.campus} · {event.eoProfile.city}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Budget Info */}
-            <Card className="p-6">
-              <h3 className="text-xs font-semibold text-gray-600 mb-2">
-                BUDGET RANGE
-              </h3>
-              <div className="text-2xl font-light text-blue-600 mb-4">
-                IDR {event.budget.min} - {event.budget.max}jt
+            <Card className="p-6 sticky top-24">
+              {/* Budget */}
+              {minTierPrice !== null && (
+                <>
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                    Budget Range
+                  </p>
+                  <p className="text-2xl font-light text-blue-600 mb-4">
+                    {minTierPrice === maxTierPrice
+                      ? formatPrice(minTierPrice)
+                      : `${formatPrice(minTierPrice)} – ${formatPrice(maxTierPrice!)}`}
+                  </p>
+                </>
+              )}
+
+              {/* AI Match Box */}
+              <div className="p-4 bg-blue-50 rounded-lg mb-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-blue-900">
+                  <Sparkles className="h-4 w-4 text-blue-600" />
+                  Kenapa Event Ini?
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-700">
+                      Target usia {event.audienceAgeMin}–{event.audienceAgeMax}{" "}
+                      tahun.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-700">
+                      {event.expectedAttendees.toLocaleString("id-ID")} estimasi
+                      peserta.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-700">
+                      Kategori {event.category} · {event.city}.
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between pb-2 border-b border-gray-300">
-                  <div className="text-gray-600 text-xs">
-                    Sisa Slot Tersedia
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {event.slotsAvailable.current} dari{" "}
-                    {event.slotsAvailable.total}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pb-2 border-b border-gray-300">
-                  <div className="text-gray-600 text-xs">Deadline Proposal</div>
-                  <div className="font-semibold text-red-600">
-                    {event.deadlineProposal}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-gray-600 text-xs">Metode Pembayaran</div>
-                  <div className="font-semibold text-gray-900">
-                    {event.paymentMethod}
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 bg-[#003EC70D] rounded-lg">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-[#003EC7]" />
-                  AI Match Breakdown
-                </h3>
-                <div className="space-y-3">
-                  {event.matchBreakdown.map((item, idx) => (
-                    <div key={idx} className="flex gap-3">
-                      <Check className="h-5 w-5 text-[#003EC7] flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-gray-700">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Button
-                onClick={() => setIsInterested(!isInterested)}
-                className={`w-full h-12 font-semibold ${
-                  isInterested
-                    ? "bg-[#22C55E] hover:bg-[#16A34A]"
-                    : "bg-[#22C55E] hover:bg-[#16A34A]"
-                }`}
-              >
+              <Button className="w-full h-11 font-semibold bg-green-500 hover:bg-green-600 text-white mb-3">
                 ✓ Saya Tertarik
               </Button>
-              <Button className="w-full font-semibold bg-white text-black border border-[#C3C5D9]">
-                Lihat Profil
-              </Button>
-            </Card>
-
-            {/* View Profile */}
-            <div className="p-6 bg-[#E0E3E5] rounded-lg">
-              <p className="text-xs text-[#434656] mb-4">
-                Lengkapi data profil Anda untuk meningkatkan akurasi matching
-                proposal hingga 15%.
-              </p>
               <Button
                 variant="outline"
-                className="w-full border-white text-white bg-[#003EC7]"
+                className="w-full font-semibold text-gray-700"
+                onClick={() => router.back()}
               >
-                Upgrade Plan
+                Lihat Katalog Lain
               </Button>
-            </div>
+            </Card>
           </div>
         </div>
       </div>

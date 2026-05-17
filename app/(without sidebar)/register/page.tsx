@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import Image from "next/image";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
@@ -66,6 +66,27 @@ export default function Register() {
         setError("Password terlalu lemah");
       } else {
         setError(err.message || "Registrasi gagal");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      // Store display name so onboarding can use it
+      sessionStorage.setItem(
+        "pendingFullName",
+        result.user.displayName ?? "",
+      );
+      router.push("/onboarding");
+    } catch (err: any) {
+      if (err.code !== "auth/popup-closed-by-user") {
+        setError(err.message || "Daftar dengan Google gagal");
       }
     } finally {
       setIsLoading(false);
@@ -294,6 +315,7 @@ export default function Register() {
           {/* Google Sign Up */}
           <button
             type="button"
+            onClick={handleGoogleRegister}
             disabled={isLoading}
             className="w-full border border-gray-300 py-3 rounded-[8px] flex items-center justify-center gap-3 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >

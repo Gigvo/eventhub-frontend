@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { apiCall } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
@@ -31,22 +31,36 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // 1. Sign in with Firebase
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
-
-      // 2. Sync user to backend (token is auto-attached via apiCall)
       await apiCall("/auth/login", {
         method: "POST",
         body: JSON.stringify({}),
         requireAuth: true,
       });
-
-      // 3. Redirect to dashboard
       router.push("/dashboard");
     } catch (err: any) {
-      const errorMessage = err.message || "Login gagal";
-      setError(errorMessage);
-      console.error("Login error:", err);
+      setError(err.message || "Login gagal");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      await apiCall("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({}),
+        requireAuth: true,
+      });
+      router.push("/dashboard");
+    } catch (err: any) {
+      if (err.code !== "auth/popup-closed-by-user") {
+        setError(err.message || "Login dengan Google gagal");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -188,6 +202,7 @@ export default function Login() {
             {/* Google Login */}
             <button
               type="button"
+              onClick={handleGoogleLogin}
               disabled={isLoading}
               className="w-full border border-gray-300 py-3 rounded-[8px] flex items-center justify-center gap-3 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -197,7 +212,7 @@ export default function Login() {
                 width={20}
                 height={20}
               />
-              <span className="text-sm font-medium">Daftar dengan Google</span>
+              <span className="text-sm font-medium">Masuk dengan Google</span>
             </button>
 
             {/* Register Link */}

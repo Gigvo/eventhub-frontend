@@ -1,8 +1,11 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Bookmark } from "lucide-react";
+import { apiCall } from "@/lib/api-client";
 
 interface EventCardProps {
   id: string;
@@ -15,6 +18,7 @@ interface EventCardProps {
   date: string;
   location: string;
   budget: string;
+  finalScore: number;
   onViewDetails: (slug: string) => void;
 }
 
@@ -29,14 +33,29 @@ export default function EventCard({
   date,
   location,
   budget,
+  finalScore,
   onViewDetails,
 }: EventCardProps) {
+  const [save, setSave] = useState(false);
+
+  const scorePercent = Math.round(finalScore * 100);
+  const scoreBadge =
+    scorePercent >= 70
+      ? "bg-green-100 text-green-700"
+      : scorePercent >= 50
+        ? "bg-yellow-100 text-yellow-700"
+        : "bg-gray-100 text-gray-600";
   return (
     <div className="flex flex-col rounded-lg border border-gray-200 overflow-hidden bg-white hover:shadow-lg transition-shadow">
       {/* Image Container */}
       <div className="relative w-full h-48 bg-gray-200">
         <Image src={image} alt={title} fill className="object-cover" />
         <Badge className="absolute top-3 left-3 bg-blue-500">{category}</Badge>
+        <span
+          className={`absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${scoreBadge}`}
+        >
+          ✦ {scorePercent}% match
+        </span>
       </div>
 
       {/* Content Container */}
@@ -68,20 +87,19 @@ export default function EventCard({
           </div>
         </div>
 
-        {/* Budget */}
-        <div className="mb-4 flex items-center gap-2 justify-between pt-4 border-t border-gray-200">
-          <span className="text-sm text-gray-500">BUDGET</span>
-          <p className="text-sm font-light text-[#003EC7] ">{budget}</p>
-        </div>
-
         {/* Button */}
-        <Button
-          onClick={() => onViewDetails(slug)}
-          variant="outline"
-          className="w-full mt-auto py-2 border border-[#003EC7] bg-white text-[#003EC7] rounded-[4px]"
-        >
-          Lihat Detail
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => onViewDetails(slug)}
+            variant="outline"
+            className="w-full mt-auto py-2 border border-[#003EC7] bg-white text-[#003EC7] rounded-[4px] flex-1"
+          >
+            Lihat Proposal
+          </Button>
+          <Button>
+            <Bookmark />
+          </Button>
+        </div>
       </div>
     </div>
   );

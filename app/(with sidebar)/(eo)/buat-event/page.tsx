@@ -86,6 +86,9 @@ export default function BuatEventPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [eventId, setEventId] = useState<string | null>(null);
+  const [proposalTone, setProposalTone] = useState<
+    "FORMAL" | "CASUAL" | "PERSUASIVE"
+  >("PERSUASIVE");
   const [showAddPackageForm, setShowAddPackageForm] = useState(false);
   const [newPackage, setNewPackage] = useState({
     name: "",
@@ -360,7 +363,10 @@ export default function BuatEventPage() {
   // Handle final save — calls AI proposal builder then navigates to proposal-builder page
   const handleSaveAndContinue = async () => {
     if (!eventId) {
-      showNotification("error", "Event ID tidak ditemukan. Silakan buat event terlebih dahulu.");
+      showNotification(
+        "error",
+        "Event ID tidak ditemukan. Silakan buat event terlebih dahulu.",
+      );
       return;
     }
 
@@ -372,7 +378,7 @@ export default function BuatEventPage() {
         method: "POST",
         body: JSON.stringify({
           eventId,
-          tone: "PERSUASIVE",
+          tone: proposalTone,
           targetSponsorIndustry: formData.targetIndustri,
           additionalContext: formData.deskripsiEvent,
         }),
@@ -450,14 +456,33 @@ export default function BuatEventPage() {
             {/* Animated header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                <svg
+                  className="w-5 h-5 text-blue-600 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  />
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-gray-900 text-sm">AI Sedang Membuat Proposal...</p>
-                <p className="text-xs text-gray-500">Ini mungkin memakan waktu 10–30 detik</p>
+                <p className="font-bold text-gray-900 text-sm">
+                  AI Sedang Membuat Proposal...
+                </p>
+                <p className="text-xs text-gray-500">
+                  Ini mungkin memakan waktu 10–30 detik
+                </p>
               </div>
             </div>
 
@@ -465,33 +490,49 @@ export default function BuatEventPage() {
             <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-6">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Event</span>
-                <span className="font-semibold text-gray-900 text-right max-w-[60%] truncate">{formData.namaEvent || "-"}</span>
+                <span className="font-semibold text-gray-900 text-right max-w-[60%] truncate">
+                  {formData.namaEvent || "-"}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Target Industri</span>
-                <span className="font-semibold text-gray-900">{formData.targetIndustri || "-"}</span>
+                <span className="font-semibold text-gray-900">
+                  {formData.targetIndustri || "-"}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Estimasi Peserta</span>
-                <span className="font-semibold text-gray-900">{formData.estimasiPeserta.toLocaleString("id-ID")} orang</span>
+                <span className="font-semibold text-gray-900">
+                  {formData.estimasiPeserta.toLocaleString("id-ID")} orang
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total Paket</span>
-                <span className="font-semibold text-gray-900">{formData.packages.length} paket</span>
+                <span className="font-semibold text-gray-900">
+                  {formData.packages.length} paket
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Kota</span>
-                <span className="font-semibold text-gray-900">{formData.kota || "-"}</span>
+                <span className="font-semibold text-gray-900">
+                  {formData.kota || "-"}
+                </span>
               </div>
             </div>
 
             {/* Loading bar */}
             <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-blue-500 h-1.5 rounded-full animate-[loading_2s_ease-in-out_infinite]"
-                style={{ width: "60%", animation: "pulse 1.5s ease-in-out infinite" }}
+              <div
+                className="bg-blue-500 h-1.5 rounded-full animate-[loading_2s_ease-in-out_infinite]"
+                style={{
+                  width: "60%",
+                  animation: "pulse 1.5s ease-in-out infinite",
+                }}
               />
             </div>
-            <p className="text-center text-xs text-gray-400 mt-3">✨ Menganalisis data event dan menyusun narasi terbaik...</p>
+            <p className="text-center text-xs text-gray-400 mt-3">
+              ✨ Menganalisis data event dan menyusun narasi terbaik...
+            </p>
           </div>
         </div>
       )}
@@ -1106,9 +1147,6 @@ export default function BuatEventPage() {
                     <p className="font-semibold text-green-900">
                       Event berhasil dibuat!
                     </p>
-                    <p className="text-sm text-green-700">
-                      Event ID: {eventId}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -1389,6 +1427,62 @@ export default function BuatEventPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Tone Proposal */}
+                <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                    Tone Proposal AI
+                  </h2>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Pilih gaya penulisan yang akan digunakan AI untuk membuat
+                    proposal sponsorship.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(
+                      [
+                        {
+                          value: "FORMAL",
+                          label: "Formal",
+                          desc: "Profesional & resmi, cocok untuk perusahaan besar",
+                        },
+                        {
+                          value: "CASUAL",
+                          label: "Kasual",
+                          desc: "Santai & ramah, cocok untuk komunitas & startup",
+                        },
+                        {
+                          value: "PERSUASIVE",
+                          label: "Persuasif",
+                          desc: "Meyakinkan & berdampak, fokus pada ROI sponsor",
+                        },
+                      ] as const
+                    ).map(({ value, label, desc }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setProposalTone(value)}
+                        className={`p-4 rounded-lg border-2 text-left transition ${
+                          proposalTone === value
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300"
+                        }`}
+                      >
+                        <p
+                          className={`font-semibold text-sm mb-1 ${
+                            proposalTone === value
+                              ? "text-blue-700"
+                              : "text-gray-800"
+                          }`}
+                        >
+                          {label}
+                        </p>
+                        <p className="text-xs text-gray-500 leading-snug">
+                          {desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Kontak Person */}

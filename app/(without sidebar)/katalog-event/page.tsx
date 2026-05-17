@@ -30,6 +30,7 @@ import { Search, Filter, Info } from "lucide-react";
 
 interface ApiEvent {
   id: string;
+  slug: string;
   title: string;
   category: string;
   city: string;
@@ -47,6 +48,7 @@ interface ApiEvent {
 
 interface EventCardProps {
   id: string;
+  slug: string;
   title: string;
   image: string;
   category: string;
@@ -55,7 +57,7 @@ interface EventCardProps {
   date: string;
   location: string;
   budget: string;
-  onViewDetails: (id: string) => void;
+  onViewDetails: (slug: string) => void;
 }
 
 interface FilterState {
@@ -142,6 +144,7 @@ export default function KatalogEvent() {
 
             return {
               id: event.id,
+              slug: event.slug,
               title: event.title,
               image: event.bannerUrl || "/event-1.png",
               category: event.category,
@@ -261,8 +264,8 @@ export default function KatalogEvent() {
     return items;
   };
 
-  const handleViewDetails = (id: string) => {
-    router.push(`/katalog-event/${id}`);
+  const handleViewDetails = (slug: string) => {
+    router.push(`/katalog-event/${slug}`);
   };
 
   return (
