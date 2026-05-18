@@ -21,6 +21,7 @@ import {
   FileText,
   CloudUpload,
   Sparkles,
+  Filter,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -28,6 +29,14 @@ import { apiCall } from "@/lib/api-client";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { Calendar, MapPin, Users, ImageIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import ProposalTerbaru from "@/components/proposal-terbaru";
 
 interface EventTier {
   id: string;
@@ -39,7 +48,9 @@ interface EventTier {
 
 interface MyEvent {
   id: string;
+  slug: string;
   title: string;
+  category: string;
   bannerUrl: string | null;
   startDate: string;
   endDate: string;
@@ -48,6 +59,13 @@ interface MyEvent {
   expectedAttendees: number;
   status: string;
   tiers: EventTier[];
+  proposal: {
+    id: string;
+    source: string;
+    aiScore: number | null;
+    aiFeedback: string | null;
+    fileUrl: string | null;
+  } | null;
   _count: { offers: number };
 }
 
@@ -55,6 +73,9 @@ export default function ProposalSmartReview() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+
+  // Controlled tab for programmatic switching from event-kamu CTA
+  const [activeTab, setActiveTab] = useState("event-kamu");
 
   // Lazy initialize eventId and eventName from localStorage or API
   const [eventId, setEventId] = useState<string | null>(null);
@@ -66,6 +87,18 @@ export default function ProposalSmartReview() {
   const [eventsFilter, setEventsFilter] = useState<
     "SEMUA" | "PUBLISHED" | "DRAFT" | "SELESAI"
   >("SEMUA");
+
+  // Proposal analysis fetched directly from /events/{id}/proposal — not from /events/my
+  const [proposalAnalysis, setProposalAnalysis] = useState<{
+    id: string;
+    source: string;
+    aiScore: number | null;
+    aiFeedback: string | null;
+    fileUrl: string | null;
+    content: string | null;
+  } | null>(null);
+  const [isFetchingAnalysis, setIsFetchingAnalysis] = useState(false);
+
   const [notification, setNotification] = useState<{
     type: "success" | "error";
     message: string;
@@ -86,40 +119,88 @@ export default function ProposalSmartReview() {
     setTimeout(() => setNotification(null), duration);
   };
 
-  // Load event data on mount (client-side only)
-  useEffect(() => {
-    const loadEventData = async () => {
-      try {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  async function loadEventData() {
+    try {
+      const response = await apiCall<{ data: MyEvent[] }>("/events/my", {});
+      if (response?.data && Array.isArray(response.data)) {
+        setMyEvents(response.data);
+
         const savedStep3Data = localStorage.getItem("buatEventStep3Data");
         if (savedStep3Data) {
           const data = JSON.parse(savedStep3Data);
-          setEventId(data.eventId);
-          setEventName(data.eventName || "Event");
-          setIsLoadingEvents(false);
-          return;
-        }
-
-        const response = await apiCall<{ data: MyEvent[] }>("/events/my", {});
-
-        if (response?.data && Array.isArray(response.data)) {
-          setMyEvents(response.data);
-          const latestEvent = response.data[0];
-          if (latestEvent) {
-            setEventId(latestEvent.id);
-            setEventName(latestEvent.title || "Event");
+          if (data.eventId) {
+            setEventId(data.eventId);
+            setEventName(data.eventName || "Event");
+            return;
           }
         }
-      } catch (error) {
-        console.error("Failed to load events:", error);
-      } finally {
-        setIsLoadingEvents(false);
-      }
-    };
 
+        const latestEvent = response.data[0];
+        if (latestEvent) {
+          setEventId(latestEvent.id);
+          setEventName(latestEvent.title || "Event");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load events:", error);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  }
+
+  async function fetchProposalAnalysis(id: string) {
+    setIsFetchingAnalysis(true);
+    try {
+      const storageRef = ref(storage, `events/${id}/proposal.pdf`);
+      const fileUrl = await getDownloadURL(storageRef);
+
+      const res = await apiCall<{
+        success: boolean;
+        data: {
+          id: string;
+          source: string;
+          aiScore: number | null;
+          aiFeedback: string | null;
+          fileUrl: string | null;
+          content: string | null;
+        };
+      }>(`/events/${id}/proposal`, {
+        method: "POST",
+        body: JSON.stringify({ source: "UPLOAD", fileUrl }),
+      });
+      console.log(res);
+
+      if (res?.data) setProposalAnalysis(res.data);
+    } catch {
+      // File not in Firebase yet (no proposal uploaded) — clear state
+      setProposalAnalysis(null);
+    } finally {
+      setIsFetchingAnalysis(false);
+    }
+  }
+
+  useEffect(() => {
     loadEventData();
   }, []);
 
-  // Handle file upload
+  useEffect(() => {
+    if (!eventId) {
+      setProposalAnalysis(null);
+      return;
+    }
+    const activeEvent = myEvents.find((e) => e.id === eventId);
+    const proposal = activeEvent?.proposal;
+    if (!proposal) {
+      setProposalAnalysis(null);
+    } else if (proposal.source === "UPLOAD") {
+      fetchProposalAnalysis(eventId);
+    } else {
+      setProposalAnalysis(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, myEvents]);
+
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !eventId) {
       showNotification("error", "File atau Event ID tidak ditemukan.");
@@ -128,20 +209,15 @@ export default function ProposalSmartReview() {
 
     const file = files[0];
 
-    // Validate file type
-    if (
-      ![
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ].includes(file.type)
-    ) {
-      showNotification("error", "File harus berupa PDF atau DOCX.");
+    // Validate file type — PDF only (per UPLOAD_GUIDE.md)
+    if (file.type !== "application/pdf") {
+      showNotification("error", "File harus berupa PDF.");
       return;
     }
 
-    // Validate file size (max 15MB)
-    if (file.size > 15 * 1024 * 1024) {
-      showNotification("error", "Ukuran file maksimal 15MB.");
+    // Validate file size (max 10MB per UPLOAD_GUIDE.md)
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification("error", "Ukuran file maksimal 10MB.");
       return;
     }
 
@@ -149,16 +225,26 @@ export default function ProposalSmartReview() {
       setIsSubmitting(true);
 
       // Step 1: Upload file to Firebase Storage
-      const timestamp = Date.now();
-      const fileName = `proposals/${eventId}/${timestamp}-${file.name}`;
-      const storageRef = ref(storage, fileName);
+      // Path: events/{eventId}/proposal.pdf (per UPLOAD_GUIDE.md)
+      const path = `events/${eventId}/proposal.pdf`;
+      const storageRef = ref(storage, path);
 
       await uploadBytes(storageRef, file);
 
       // Step 2: Get download URL
       const fileUrl = await getDownloadURL(storageRef);
+      console.log("response firebase: ", fileUrl);
 
-      await apiCall(`/events/${eventId}/proposal`, {
+      const responseSet = await apiCall<{
+        success: boolean;
+        data: {
+          id: string;
+          source: string;
+          aiScore: number | null;
+          aiFeedback: string | null;
+          fileUrl: string;
+        };
+      }>(`/events/${eventId}/proposal`, {
         method: "POST",
         body: JSON.stringify({
           source: "UPLOAD",
@@ -166,8 +252,17 @@ export default function ProposalSmartReview() {
         }),
       });
 
-      showNotification("success", "Proposal berhasil diupload dan dianalisis!");
+      // Immediately show what the API returned (aiScore may be null if AI is still processing)
+      if (responseSet?.data) setProposalAnalysis(responseSet.data);
+
+      showNotification(
+        "success",
+        "Proposal berhasil diupload! Analisis AI sedang berjalan...",
+      );
       setIsUploadDialogOpen(false);
+
+      // Re-fetch from Firebase after 5s to pick up completed AI score
+      if (eventId) setTimeout(() => fetchProposalAnalysis(eventId), 5000);
 
       // Reset file input
       if (fileInputRef.current) {
@@ -246,7 +341,11 @@ export default function ProposalSmartReview() {
               </div>
 
               {/* Tabs */}
-              <Tabs defaultValue="event-kamu" className="mb-8">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="mb-8"
+              >
                 <TabsList className="flex items-center gap-8" variant={"line"}>
                   <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger>
                   <TabsTrigger value="terbaru">Proposal Terbaru</TabsTrigger>
@@ -417,14 +516,75 @@ export default function ProposalSmartReview() {
 
                                 {/* CTA */}
                                 <div className="mt-auto pt-3 border-t border-gray-100 text-center">
-                                  <button
-                                    onClick={() =>
-                                      router.push(`/buat-event?id=${event.id}`)
+                                  {(() => {
+                                    // DRAFT + no proposal → go to step 3 of buat-event
+                                    if (
+                                      event.status === "DRAFT" &&
+                                      !event.proposal
+                                    ) {
+                                      return (
+                                        <button
+                                          onClick={() => {
+                                            localStorage.setItem(
+                                              "buatEventStep3Data",
+                                              JSON.stringify({
+                                                eventId: event.id,
+                                                eventName: event.title,
+                                              }),
+                                            );
+                                            router.push(
+                                              `/buat-event?id=${event.id}&step=3`,
+                                            );
+                                          }}
+                                          className="text-sm font-semibold text-[#003EC7] hover:underline"
+                                        >
+                                          Lanjutkan Draft
+                                        </button>
+                                      );
                                     }
-                                    className="text-sm font-semibold text-[#003EC7] hover:underline"
-                                  >
-                                    {ctaLabel}
-                                  </button>
+                                    if (
+                                      event.status === "DRAFT" &&
+                                      event.proposal
+                                    ) {
+                                      return (
+                                        <button
+                                          onClick={() => {
+                                            setEventId(event.id);
+                                            setEventName(event.title);
+                                            setActiveTab("smart-review");
+                                          }}
+                                          className="text-sm font-semibold text-[#003EC7] hover:underline"
+                                        >
+                                          Edit Proposal
+                                        </button>
+                                      );
+                                    }
+                                    if (event.status === "PUBLISHED") {
+                                      return (
+                                        <button
+                                          onClick={() => {
+                                            setEventId(event.id);
+                                            setEventName(event.title);
+                                            setActiveTab("smart-review");
+                                          }}
+                                          className="text-sm font-semibold text-[#003EC7] hover:underline"
+                                        >
+                                          Kelola Event
+                                        </button>
+                                      );
+                                    }
+                                    // SELESAI → go to cari-sponsor
+                                    return (
+                                      <button
+                                        onClick={() =>
+                                          router.push("/cari-sponsor")
+                                        }
+                                        className="text-sm font-semibold text-[#003EC7] hover:underline"
+                                      >
+                                        Lihat Laporan
+                                      </button>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -447,243 +607,333 @@ export default function ProposalSmartReview() {
                   )}
                 </TabsContent>
 
-                <TabsContent
-                  value="smart-review"
-                  className="grid grid-cols-3 gap-6 mt-6"
-                >
-                  {/* Left Column - Proposals */}
-                  <div className="col-span-2 space-y-4">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        Proposal
-                      </h2>
-                      <Button
-                        className="gap-2 px-4 py-2 bg-[#003EC7]"
-                        onClick={() => setIsUploadDialogOpen(true)}
+                <TabsContent value="smart-review" className="mt-6">
+                  {/* Guard: no event selected yet */}
+                  {!eventId ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                      <div className="text-5xl mb-4">📋</div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Belum ada event dipilih
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-6 max-w-sm">
+                        Buka tab <strong>Event Kamu</strong> dan klik tombol
+                        pada salah satu event untuk membuka Smart Review-nya.
+                      </p>
+                      <button
+                        onClick={() => setActiveTab("event-kamu")}
+                        className="px-5 py-2 bg-[#003EC7] text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
                       >
-                        <Upload className="w-4 h-4" />
-                        Upload Proposal
-                      </Button>
+                        Lihat Event Kamu
+                      </button>
                     </div>
+                  ) : (
+                    (() => {
+                      const activeEvent = myEvents.find(
+                        (e) => e.id === eventId,
+                      );
+                      const eventProposal = activeEvent?.proposal ?? null;
+                      const tier = activeEvent?.tiers?.[0] ?? null;
 
-                    {/* Info Banner */}
-                    <div className="bg-[#E5E7EB] border border-[#D0E1FB] rounded-lg p-4 flex items-center gap-3">
-                      <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      <p className="text-sm text-blue-900">
-                        Semua proposal di halaman ini otomatis dikurasi dengan
-                        Jakarta Tech Fest 2026
-                      </p>
-                    </div>
+                      // For UPLOAD: use proposalAnalysis (fetched via Firebase → POST)
+                      // For GENERATED: aiScore is already in /events/my
+                      const proposal = eventProposal;
+                      const aiScore =
+                        eventProposal?.source === "UPLOAD"
+                          ? (proposalAnalysis?.aiScore ?? null)
+                          : (eventProposal?.aiScore ?? null);
 
-                    {/* Proposal Card 1 */}
-                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200 bg-[#DDE1FF4D]">
-                      <div className="flex gap-4 items-center">
-                        <div className="flex-shrink-0">
-                          <div className="w-14 h-14 border-4  rounded-full flex items-center justify-center text-[#003EC7] text-xl font-bold border-[#003EC7]">
-                            82
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-xs font-semibold">
-                              AI POWERED
-                            </Badge>
-                            <h3 className="font-semibold text-gray-900 text-sm">
-                              Template Proposal Utama
-                            </h3>
-                          </div>
-
-                          <p className="text-xs text-blue-600 mb-2 font-medium">
-                            Terakhir diperbaharui: 2 Jam yang lalu oleh Admin
-                          </p>
-                          <div className="flex gap-3 text-xs text-[#4B5563]">
-                            <span className="bg-white rounded-[4px] px-2 py-1">
-                              Tier: Platinum
-                            </span>
-                            <span className="bg-white rounded-[4px] px-2 py-1">
-                              12 Halaman
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-shrink-0 text-[14px] px-4 py-2"
-                        >
-                          Buka & Edit
-                        </Button>
-                      </div>
-                    </Card>
-
-                    {/* Proposal Card 2 */}
-                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-3 flex-1">
-                          <div className="flex-shrink-0  p-4 bg-[#F3F4F6] rounded-[8px] flex items-center justify-center text-[#9CA3AF]">
-                            <FileText className="w-9 h-9" />
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge
-                                variant="outline"
-                                className="text-xs font-semibold bg-gray-50"
+                      return (
+                        <div className="grid grid-cols-3 gap-6">
+                          {/* Left Column - Proposals */}
+                          <div className="col-span-2 space-y-4">
+                            <div className="flex items-center justify-between mb-6">
+                              <h2 className="text-xl font-semibold text-gray-900">
+                                Proposal
+                              </h2>
+                              <Button
+                                className="gap-2 px-4 py-2 bg-[#003EC7]"
+                                onClick={() => setIsUploadDialogOpen(true)}
                               >
-                                MANUAL UPLOAD
-                              </Badge>
-                              <h3 className="font-semibold text-gray-900  text-sm">
-                                Proposal Sponsorship - Vendor Lokal
-                              </h3>
+                                <Upload className="w-4 h-4" />
+                                Upload Proposal
+                              </Button>
                             </div>
 
-                            <div className="text-xs text-[#003EC7] space-y-0.5">
-                              <p className="text-[14px]">
-                                <span>Format:</span> PDF • 4.2 MB • Diupload 30
-                                April 2026
-                              </p>
-                              <p className="bg-[#F9FAFB] rounded-[4px] px-2 py-1 text-[#4B5563] w-fit">
-                                Status: Draft
+                            {/* Info Banner */}
+                            <div className="bg-[#E5E7EB] border border-[#D0E1FB] rounded-lg p-4 flex items-center gap-3">
+                              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                              <p className="text-sm text-blue-900">
+                                Semua proposal di halaman ini dikurasi untuk{" "}
+                                <strong>{eventName}</strong>
                               </p>
                             </div>
-                          </div>
-                        </div>
-                        <div className="flex gap-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
 
-                    {/* Upload Section */}
-                    <div
-                      onClick={() => setIsUploadDialogOpen(true)}
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center text-center hover:border-gray-400 cursor-pointer transition-colors"
-                    >
-                      <Upload className="w-8 h-8 text-gray-400 mb-3" />
-                      <p className="text-gray-600 text-sm">
-                        Upload Proposal Lain
-                      </p>
-                    </div>
-                  </div>
+                            {/* Proposal Card */}
+                            {!proposal ? (
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center text-center">
+                                <FileText className="w-8 h-8 text-gray-300 mb-3" />
+                                <p className="text-sm text-gray-500 mb-1">
+                                  Belum ada proposal
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  Upload proposal PDF untuk mendapatkan analisis
+                                  AI
+                                </p>
+                              </div>
+                            ) : proposal.source === "GENERATED" ? (
+                              <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200 bg-[#DDE1FF4D]">
+                                <div className="flex gap-4 items-center">
+                                  <div className="flex-shrink-0">
+                                    <div className="w-14 h-14 border-4 rounded-full flex items-center justify-center text-[#003EC7] text-xl font-bold border-[#003EC7]">
+                                      {proposal.aiScore ?? "–"}
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-xs font-semibold">
+                                        AI GENERATED
+                                      </Badge>
+                                      <h3 className="font-semibold text-gray-900 text-sm">
+                                        Proposal {eventName}
+                                      </h3>
+                                    </div>
+                                    {tier && (
+                                      <div className="flex gap-3 text-xs text-[#4B5563]">
+                                        <span className="bg-white rounded-[4px] px-2 py-1">
+                                          Tier: {tier.name}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </Card>
+                            ) : (
+                              <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex gap-3 flex-1">
+                                    <div className="flex-shrink-0 p-4 bg-[#F3F4F6] rounded-[8px] flex items-center justify-center text-[#9CA3AF]">
+                                      <FileText className="w-9 h-9" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs font-semibold bg-gray-50"
+                                        >
+                                          MANUAL UPLOAD
+                                        </Badge>
+                                        <h3 className="font-semibold text-gray-900 text-sm">
+                                          Proposal {eventName}
+                                        </h3>
+                                      </div>
+                                      <p className="text-xs text-gray-500">
+                                        Skor AI:{" "}
+                                        <strong>
+                                          {proposal.aiScore ?? "–"}
+                                        </strong>
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsUploadDialogOpen(true)}
+                                    className="flex-shrink-0"
+                                  >
+                                    Ganti PDF
+                                  </Button>
+                                </div>
+                              </Card>
+                            )}
 
-                  {/* Right Column - AI Analysis */}
-                  <div className="col-span-1">
-                    <Card className="p-6 bg-white sticky top-6">
-                      {/* Header */}
-                      <div className="mb-6 pb-4 border-b">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            🤖 AI ANALYSIS
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Review untuk: Template Proposal
-                        </h3>
-                      </div>
-
-                      {/* AI Analysis Metrics */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="bg-[#F9FAFB] rounded-[4px] p-3">
-                          <p className="text-xs font-semibold text-blue-600 mb-1">
-                            STRUKTUR
-                          </p>
-                          <p className="text-3xl font-bold text-gray-900">
-                            90{" "}
-                            <span className="text-xs text-gray-500">/ 100</span>
-                          </p>
-                        </div>
-                        <div className="bg-[#F9FAFB] rounded-[4px] p-3">
-                          <p className="text-xs font-semibold text-blue-600 mb-1">
-                            VISUAL
-                          </p>
-                          <p className="text-3xl font-bold text-gray-900">
-                            74{" "}
-                            <span className="text-xs text-gray-500">/ 100</span>
-                          </p>
-                        </div>
-                        <div className="bg-[#F9FAFB] rounded-[4px] p-3">
-                          <p className="text-xs font-semibold text-blue-600 mb-1">
-                            NARASI
-                          </p>
-                          <p className="text-3xl font-bold text-gray-900">
-                            86{" "}
-                            <span className="text-xs text-gray-500">/ 100</span>
-                          </p>
-                        </div>
-                        <div className="bg-[#F9FAFB] rounded-[4px] p-3">
-                          <p className="text-xs font-semibold text-blue-600 mb-1">
-                            RELEVANSI
-                          </p>
-                          <p className="text-3xl font-bold text-gray-900">
-                            78{" "}
-                            <span className="text-xs text-gray-500">/ 100</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Issues */}
-                      <div className="mb-6">
-                        <h4 className="text-xs font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Image
-                            src="/icons/alert-triangle.svg"
-                            alt="alert"
-                            width={14}
-                            height={16}
-                          />
-                          MASALAH UTAMA (2)
-                        </h4>
-                        <div className="space-y-3">
-                          <div className="flex gap-3 p-3 bg-[#D3E4FE4D] rounded-[8px]">
-                            <div className="flex-shrink-0 mt-0.5">
-                              <AlertCircle className="w-5 h-5 text-red-500" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-red-700 mb-1">
-                                Analisis ROI Kurang Detail
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                Sponsor korporat biasanya membuhukan matrix
-                                konversi yang lebih spesifik di halaman 4.
+                            {/* Upload Section */}
+                            <div
+                              onClick={() => setIsUploadDialogOpen(true)}
+                              className="border-2 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center text-center hover:border-gray-400 cursor-pointer transition-colors"
+                            >
+                              <Upload className="w-8 h-8 text-gray-400 mb-3" />
+                              <p className="text-gray-600 text-sm">
+                                Upload Proposal Lain
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-3 p-3 bg-[#D3E4FE4D] rounded-[8px]">
-                            <div className="flex-shrink-0 mt-0.5">
-                              <AlertCircle className="w-5 h-5 text-gray-400" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-gray-700 mb-1">
-                                Kualitas Gambar Footer
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                Logo partner pada halaman penutup memiliki
-                                resolusi rendah ( 300dpi).
-                              </p>
-                            </div>
+
+                          {/* Right Column - AI Analysis */}
+                          <div className="col-span-1">
+                            <Card className="p-6 bg-white sticky top-6">
+                              <div className="mb-6 pb-4 border-b">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                    🤖 AI ANALYSIS
+                                  </span>
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  Review untuk: {eventName}
+                                </h3>
+                              </div>
+
+                              {isFetchingAnalysis ? (
+                                <div className="text-center py-8">
+                                  <div className="flex items-center justify-center mb-4">
+                                    <div className="w-16 h-16 rounded-full border-4 border-blue-100 border-t-[#003EC7] animate-spin" />
+                                  </div>
+                                  <p className="text-xs text-gray-400">
+                                    Mengambil hasil analisis...
+                                  </p>
+                                </div>
+                              ) : aiScore === null ? (
+                                !proposal ? (
+                                  // No proposal uploaded yet
+                                  <div className="text-center py-8">
+                                    <div className="text-4xl mb-3">📊</div>
+                                    <p className="text-sm font-medium text-gray-700 mb-1">
+                                      Belum ada analisis
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      Upload proposal PDF untuk mendapatkan skor
+                                      AI
+                                    </p>
+                                    <Button
+                                      className="mt-4 bg-[#003EC7] hover:bg-blue-700 text-sm"
+                                      onClick={() =>
+                                        setIsUploadDialogOpen(true)
+                                      }
+                                    >
+                                      Upload Sekarang
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  // Proposal uploaded, AI still processing
+                                  <div className="text-center py-8">
+                                    <div className="flex items-center justify-center mb-4">
+                                      <div className="w-16 h-16 rounded-full border-4 border-blue-200 border-t-[#003EC7] animate-spin" />
+                                    </div>
+                                    <p className="text-sm font-semibold text-gray-800 mb-1">
+                                      Sedang dianalisis...
+                                    </p>
+                                    <p className="text-xs text-gray-400 mb-4">
+                                      AI sedang membaca dan mengevaluasi
+                                      proposal kamu. Ini mungkin memerlukan
+                                      beberapa detik.
+                                    </p>
+                                    <button
+                                      onClick={() => loadEventData()}
+                                      className="text-xs text-blue-600 hover:underline"
+                                    >
+                                      Refresh hasil →
+                                    </button>
+                                  </div>
+                                )
+                              ) : (
+                                <>
+                                  {/* Overall score ring */}
+                                  <div className="flex items-center justify-center mb-6">
+                                    <div className="w-20 h-20 rounded-full border-4 border-[#003EC7] flex items-center justify-center">
+                                      <span className="text-2xl font-bold text-[#003EC7]">
+                                        {aiScore}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Sub-scores (derived from single aiScore) */}
+                                  <div className="grid grid-cols-2 gap-4 mb-4">
+                                    {[
+                                      {
+                                        label: "STRUKTUR",
+                                        value: Math.min(
+                                          100,
+                                          Math.round(aiScore * 1.1),
+                                        ),
+                                      },
+                                      {
+                                        label: "VISUAL",
+                                        value: Math.max(
+                                          0,
+                                          Math.round(aiScore * 0.9),
+                                        ),
+                                      },
+                                      {
+                                        label: "NARASI",
+                                        value: Math.min(
+                                          100,
+                                          Math.round(aiScore * 1.05),
+                                        ),
+                                      },
+                                      {
+                                        label: "RELEVANSI",
+                                        value: Math.max(
+                                          0,
+                                          Math.round(aiScore * 0.95),
+                                        ),
+                                      },
+                                    ].map(({ label, value }) => (
+                                      <div
+                                        key={label}
+                                        className="bg-[#F9FAFB] rounded-[4px] p-3"
+                                      >
+                                        <p className="text-xs font-semibold text-blue-600 mb-1">
+                                          {label}
+                                        </p>
+                                        <p className="text-3xl font-bold text-gray-900">
+                                          {value}{" "}
+                                          <span className="text-xs text-gray-500">
+                                            / 100
+                                          </span>
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  {/* Score bar */}
+                                  <div className="mb-4">
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                      <span>Skor Keseluruhan</span>
+                                      <span
+                                        className={
+                                          aiScore >= 70
+                                            ? "text-green-600"
+                                            : aiScore >= 50
+                                              ? "text-yellow-600"
+                                              : "text-red-600"
+                                        }
+                                      >
+                                        {aiScore >= 70
+                                          ? "Baik"
+                                          : aiScore >= 50
+                                            ? "Cukup"
+                                            : "Perlu Perbaikan"}
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2">
+                                      <div
+                                        className={`h-2 rounded-full transition-all ${
+                                          aiScore >= 70
+                                            ? "bg-green-500"
+                                            : aiScore >= 50
+                                              ? "bg-yellow-500"
+                                              : "bg-red-500"
+                                        }`}
+                                        style={{ width: `${aiScore}%` }}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-2">
+                                    Lihat Analisis Lengkap →
+                                  </Button>
+                                </>
+                              )}
+                            </Card>
                           </div>
                         </div>
-                      </div>
-
-                      {/* CTA Button */}
-                      <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-2">
-                        Lihat Analisis Lengkap →
-                      </Button>
-                    </Card>
-                  </div>
+                      );
+                    })()
+                  )}
                 </TabsContent>
-                <TabsContent value="terbaru">Proposal Terbaru</TabsContent>
+
+                <TabsContent value="terbaru">
+                  <ProposalTerbaru />
+                </TabsContent>
               </Tabs>
 
               {/* Upload Dialog */}

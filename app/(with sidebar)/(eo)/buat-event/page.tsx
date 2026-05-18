@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Upload,
   Info,
@@ -11,10 +11,19 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { apiCall } from "@/lib/api-client";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
 
 interface FormData {
   // Step 1 - Info Dasar
@@ -82,6 +91,7 @@ const availableBenefits = [
 
 export default function BuatEventPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
@@ -98,6 +108,16 @@ export default function BuatEventPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    const idParam = searchParams.get("id");
+    const stepParam = searchParams.get("step");
+    if (idParam && stepParam === "3") {
+      setEventId(idParam);
+      setCurrentStep(3);
+    }
+  }, [searchParams]);
+
   const [errors, setErrors] = useState<{
     kategoriEvent?: string;
     targetIndustri?: string;
@@ -283,7 +303,39 @@ export default function BuatEventPage() {
       });
 
       if (response.success) {
-        setEventId(response.data.id);
+        const newEventId = response.data.id;
+        setEventId(newEventId);
+
+        if (formData.bannerFile) {
+          try {
+            const file = formData.bannerFile;
+            if (file.size > 5 * 1024 * 1024) {
+              throw new Error("Ukuran banner maksimal 5MB");
+            }
+            if (!file.type.startsWith("image/")) {
+              throw new Error("Banner harus berupa gambar");
+            }
+
+            const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+            const path = `events/${newEventId}/banner.${ext}`;
+            const storageRef = ref(storage, path);
+
+            await uploadBytes(storageRef, file);
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            await apiCall(`/events/${newEventId}`, {
+              method: "PATCH",
+              body: JSON.stringify({ bannerUrl: downloadUrl }),
+            });
+          } catch (uploadError) {
+            console.error("Failed to upload banner:", uploadError);
+            showNotification(
+              "error",
+              "Gagal mengupload banner, namun event berhasil dibuat.",
+            );
+          }
+        }
+
         setCurrentStep(3);
         showNotification(
           "success",
@@ -780,72 +832,87 @@ export default function BuatEventPage() {
 
             {/* Right Section - Banner Upload */}
             <div className="space-y-6">
-              <div className="p-8 rounded-[8px] border border-[#E5E7EB] bg-white shadow-sm">
-                <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
+              <div className="p-8 rounded-[8px] border border-[#E5E7EB] bg-white shadow-sm flex flex-col items-center justify-center">
+                <label className="text-[12px] font-semibold text-gray-700 block mb-4 uppercase w-full text-left">
                   Banner Event
                 </label>
-                <div
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${
-                    isDragActive
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-300 hover:border-gray-400"
-                  } ${formData.bannerPreview ? "" : "min-h-60"}`}
-                >
-                  {formData.bannerPreview ? (
-                    <div className="relative">
-                      <Image
-                        src={formData.bannerPreview}
-                        alt="Banner preview"
-                        width={300}
-                        height={200}
-                        className="mx-auto rounded-lg"
-                      />
-                      <button
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            bannerFile: null,
-                            bannerPreview: "",
-                          })
+                
+                {formData.bannerPreview ? (
+                  <div className="relative w-full mb-4 group">
+                    <Image
+                      src={formData.bannerPreview}
+                      alt="Banner preview"
+                      width={400}
+                      height={200}
+                      className="mx-auto rounded-lg w-full h-auto object-cover max-h-48"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({
+                          ...formData,
+                          bannerFile: null,
+                          bannerPreview: "",
+                        });
+                      }}
+                      className="absolute top-2 right-2 bg-white text-red-600 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-gray-200 hover:bg-red-50"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : null}
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full h-auto py-4 border-dashed border-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-all text-gray-500 bg-gray-50"
+                    >
+                      <Upload className="mr-2 h-5 w-5" />
+                      {formData.bannerPreview ? "Ganti Banner Event" : "Upload Banner Event"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="text-center">Upload Banner Event</DialogTitle>
+                    </DialogHeader>
+                    <div
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`mt-4 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${
+                        isDragActive
+                          ? "border-blue-600 bg-blue-50"
+                          : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div>
+                        <Upload
+                          className="mx-auto mb-3 text-blue-600"
+                          size={40}
+                        />
+                        <p className="font-semibold text-gray-900 mb-1">
+                          Klik untuk unggah atau seret file ke sini
+                        </p>
+                        <p className="text-xs text-gray-600 mb-2">
+                          Rekomendasi ukuran: 1200 × 630 px
+                        </p>
+                        <p className="text-xs text-gray-600">Maks. 5MB (JPG, PNG, WEBP)</p>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={(e) =>
+                          e.target.files && handleFileChange(e.target.files)
                         }
-                        className="mt-2 text-sm text-red-600 hover:text-red-800"
-                      >
-                        Hapus
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <Upload
-                        className="mx-auto mb-2 text-blue-600"
-                        size={40}
+                        accept="image/*"
+                        className="hidden"
                       />
-                      <p className="font-semibold text-gray-900 mb-1">
-                        Klik untuk unggah banner
-                      </p>
-                      <p className="text-xs text-gray-600 mb-2">
-                        Rekomendasi ukuran: 1200 × 630 px
-                      </p>
-                      <p className="text-xs text-gray-600">Maks. 5MB</p>
                     </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    onChange={(e) =>
-                      e.target.files && handleFileChange(e.target.files)
-                    }
-                    accept="image/*,.pdf"
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-4 w-full"
-                  />
-                </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </div>

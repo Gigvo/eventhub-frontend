@@ -21,9 +21,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import EventCard from "@/components/katalog-event/event-card";
-import Footer from "@/components/footer";
-import NavbarLanding from "@/components/landing/navbar-landing";
+import EventCard from "@/components/katalog-event/event-card-company";
 import { apiCall } from "@/lib/api-client";
 import { useAuth } from "@/providers/auth-provider";
 import { Search, Filter, Info } from "lucide-react";
@@ -33,17 +31,28 @@ interface ApiEvent {
   slug: string;
   title: string;
   category: string;
+  description: string;
   city: string;
+  isOnline: boolean;
+  expectedAttendees: number;
+  audienceAgeMin: number;
+  audienceAgeMax: number;
+  audienceInterests: string[];
   startDate: string;
   endDate: string;
   bannerUrl: string | null;
-  eoProfile: {
-    organizationName: string;
+  publishedAt: string | null;
+  eoOrganizationName: string;
+  eoLogoUrl: string | null;
+  eoCampus: string;
+  similarity: number;
+  finalScore: number;
+  scoreBreakdown: {
+    semantic: number;
+    category: number;
+    city: number;
+    audience: number;
   };
-  tiers?: Array<{
-    name: string;
-    price: number;
-  }>;
 }
 
 interface EventCardProps {
@@ -57,6 +66,7 @@ interface EventCardProps {
   date: string;
   location: string;
   budget: string;
+  finalScore: number;
   onViewDetails: (slug: string) => void;
 }
 
@@ -73,53 +83,43 @@ export default function KatalogEvent() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState("terbaru");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<FilterState>({
-    categories: [],
-    scales: [],
-    budgetMin: "",
-    budgetMax: "",
-  });
+
   const [selectedCategory, setSelectedCategory] = useState<string>("semua");
   const [selectedScale, setSelectedScale] = useState<string>("semua");
   const [events, setEvents] = useState<EventCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentEvent, setRecentEvent] = useState<string | null>(null);
 
-  // Fetch events from API
   useEffect(() => {
+    apiCall<{ data: ApiEvent[] }>("/events/my", {})
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0)
+          setRecentEvent(res.data[0].id);
+      })
+      .catch((err) => console.error("Failed to load events:", err));
+  }, []);
+
+  // Fetch recommendations from API — wait for recentEvent to be set
+  useEffect(() => {
+    if (!recentEvent) return;
     const fetchEvents = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Build query parameters
-        const queryParams = new URLSearchParams();
-
-        if (selectedCategory !== "semua") {
-          queryParams.append("category", selectedCategory);
-        }
-
-        if (selectedScale !== "semua") {
-          queryParams.append("city", selectedScale);
-        }
-
-        const query = queryParams.toString();
-        const endpoint = `/catalog/events${query ? "?" + query : ""}`;
-
         const response = await apiCall<{
-          data: ApiEvent[];
-          pagination: { total: number };
-        }>(endpoint, { requireAuth: false });
+          recommendations: ApiEvent[];
+          meta: { total: number };
+        }>(`/recommendations/sponsors/${recentEvent}`, { requireAuth: true });
 
         // Transform API response to EventCard format
-        const transformedEvents: EventCardProps[] = response.data.map(
-          (event: ApiEvent) => {
+        const transformedEvents: EventCardProps[] =
+          response.recommendations.map((event: ApiEvent) => {
             const startDate = new Date(event.startDate);
             const endDate = new Date(event.endDate);
 
-            // Format date range
             const dateRange =
               startDate.getTime() === endDate.getTime()
                 ? startDate.toLocaleDateString("id-ID", {
@@ -129,18 +129,8 @@ export default function KatalogEvent() {
                   })
                 : `${startDate.getDate()} - ${endDate.toLocaleDateString(
                     "id-ID",
-                    {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    },
+                    { day: "numeric", month: "short", year: "numeric" },
                   )}`;
-
-            // Get budget from tiers
-            const budget =
-              event.tiers && event.tiers.length > 0
-                ? `Rp ${(event.tiers[0].price / 1000000).toFixed(0)}jt+`
-                : "TBA";
 
             return {
               id: event.id,
@@ -148,19 +138,19 @@ export default function KatalogEvent() {
               title: event.title,
               image: event.bannerUrl || "/event-1.png",
               category: event.category,
-              organizer: event.eoProfile.organizationName,
+              organizer: event.eoOrganizationName,
               organizerAvatar: "/avatar-1.png",
               date: dateRange,
               location: event.city,
-              budget: budget,
+              budget: `${Math.round(event.finalScore * 100)}% match`,
+              finalScore: event.finalScore,
               onViewDetails: () => {},
             };
-          },
-        );
+          });
 
         setEvents(transformedEvents);
       } catch (err) {
-        console.error("Failed to fetch events:", err);
+        console.error("Failed to fetch recommendations:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch events");
       } finally {
         setIsLoading(false);
@@ -168,7 +158,7 @@ export default function KatalogEvent() {
     };
 
     fetchEvents();
-  }, [selectedCategory, selectedScale]);
+  }, [recentEvent]);
 
   // Sort events
   let sortedEvents = [...events];
@@ -183,10 +173,6 @@ export default function KatalogEvent() {
     );
   }
 
-  if (sortBy === "terbaru") {
-    sortedEvents = sortedEvents.reverse();
-  }
-
   // Pagination
   const totalPages = Math.ceil(sortedEvents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -195,7 +181,6 @@ export default function KatalogEvent() {
     startIndex + ITEMS_PER_PAGE,
   );
 
-  // Generate pagination items
   const getPaginationItems = (): (number | string)[] => {
     const items: (number | string)[] = [];
     const maxVisible = 5;
@@ -237,8 +222,6 @@ export default function KatalogEvent() {
 
   return (
     <>
-      <NavbarLanding />
-
       {!authLoading && !isAuthenticated && (
         <div className="bg-blue-100 border-b border-blue-200 px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -418,7 +401,6 @@ export default function KatalogEvent() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

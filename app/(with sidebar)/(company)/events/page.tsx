@@ -110,8 +110,8 @@ export default function KatalogEvent() {
         }>("/recommendations/events", { requireAuth: true });
 
         // Transform API response to EventCard format
-        const transformedEvents: EventCardProps[] = response.recommendations.map(
-          (event: ApiEvent) => {
+        const transformedEvents: EventCardProps[] =
+          response.recommendations.map((event: ApiEvent) => {
             const startDate = new Date(event.startDate);
             const endDate = new Date(event.endDate);
 
@@ -141,8 +141,7 @@ export default function KatalogEvent() {
               finalScore: event.finalScore,
               onViewDetails: () => {},
             };
-          },
-        );
+          });
 
         setEvents(transformedEvents);
       } catch (err) {
@@ -155,39 +154,6 @@ export default function KatalogEvent() {
 
     fetchEvents();
   }, []);
-
-  // Handle category filter
-  const handleCategoryChange = (category: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      categories: prev.categories.includes(category)
-        ? prev.categories.filter((c) => c !== category)
-        : [...prev.categories, category],
-    }));
-    setCurrentPage(1);
-  };
-
-  // Handle scale filter
-  const handleScaleChange = (scale: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      scales: prev.scales.includes(scale)
-        ? prev.scales.filter((s) => s !== scale)
-        : [...prev.scales, scale],
-    }));
-    setCurrentPage(1);
-  };
-
-  // Reset filters
-  const handleResetFilter = () => {
-    setFilters({
-      categories: [],
-      scales: [],
-      budgetMin: "",
-      budgetMax: "",
-    });
-    setCurrentPage(1);
-  };
 
   // Sort events
   let sortedEvents = [...events];
@@ -214,7 +180,6 @@ export default function KatalogEvent() {
     startIndex + ITEMS_PER_PAGE,
   );
 
-  // Generate pagination items
   const getPaginationItems = (): (number | string)[] => {
     const items: (number | string)[] = [];
     const maxVisible = 5;
