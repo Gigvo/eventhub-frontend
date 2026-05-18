@@ -104,14 +104,23 @@ export default function KatalogEvent() {
         setIsLoading(true);
         setError(null);
 
-        const response = await apiCall<{
-          recommendations: ApiEvent[];
-          meta: { total: number };
-        }>("/recommendations/events", { requireAuth: true });
+        const [recommendationsRes, savedEventsRes] = await Promise.all([
+          apiCall<{
+            recommendations: ApiEvent[];
+            meta: { total: number };
+          }>("/recommendations/events", { requireAuth: true }),
+          apiCall<{ data: { id: string }[] }>("/saved-events", {
+            requireAuth: true,
+          }),
+        ]);
+
+        const savedEventIds = new Set(
+          savedEventsRes.data?.map((item) => item.id) || []
+        );
 
         // Transform API response to EventCard format
         const transformedEvents: EventCardProps[] =
-          response.recommendations.map((event: ApiEvent) => {
+          recommendationsRes.recommendations.map((event: ApiEvent) => {
             const startDate = new Date(event.startDate);
             const endDate = new Date(event.endDate);
 
@@ -140,6 +149,7 @@ export default function KatalogEvent() {
               budget: `${Math.round(event.finalScore * 100)}% match`,
               finalScore: event.finalScore,
               onViewDetails: () => {},
+              isSaved: savedEventIds.has(event.id),
             };
           });
 
@@ -165,6 +175,22 @@ export default function KatalogEvent() {
         event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         event.category.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }
+
+  // Filter by category
+  if (selectedCategory !== "semua") {
+    sortedEvents = sortedEvents.filter(
+      (event) =>
+        event.category.toLowerCase() === selectedCategory.toLowerCase(),
+    );
+  }
+
+  // Filter by scale (city)
+  if (selectedScale !== "semua") {
+    sortedEvents = sortedEvents.filter(
+      (event) =>
+        event.location.toLowerCase() === selectedScale.toLowerCase(),
     );
   }
 
@@ -265,7 +291,10 @@ export default function KatalogEvent() {
 
               <Select
                 value={selectedCategory}
-                onValueChange={setSelectedCategory}
+                onValueChange={(value) => {
+                  setSelectedCategory(value);
+                  setCurrentPage(1);
+                }}
               >
                 <SelectTrigger className="w-32 h-8 text-xs">
                   <SelectValue placeholder="Kategori" />
@@ -278,7 +307,13 @@ export default function KatalogEvent() {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedScale} onValueChange={setSelectedScale}>
+              <Select
+                value={selectedScale}
+                onValueChange={(value) => {
+                  setSelectedScale(value);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className="w-32 h-8 text-xs">
                   <SelectValue placeholder="Skala" />
                 </SelectTrigger>

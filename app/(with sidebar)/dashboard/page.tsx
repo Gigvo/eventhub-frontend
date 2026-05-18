@@ -75,45 +75,6 @@ function EODashboard() {
     },
   ];
 
-  const proposals = [
-    {
-      id: 1,
-      company: "Telkom Indonesia",
-      event: "Jakarta Tech Fest",
-      package: "PLATINUM",
-      date: "20 Apr 2026",
-      status: "Menunggu",
-      statusColor: "bg-yellow-100 text-yellow-800",
-    },
-    {
-      id: 2,
-      company: "GoTo Group",
-      event: "Startup Pitch Night",
-      package: "GOLD",
-      date: "28 Apr 2026",
-      status: "Tertarik",
-      statusColor: "bg-blue-100 text-blue-800",
-    },
-    {
-      id: 3,
-      company: "Bank BCA",
-      event: "Jakarta Tech Fest",
-      package: "PLATINUM",
-      date: "27 Apr 2026",
-      status: "Disertujui",
-      statusColor: "bg-green-100 text-green-800",
-    },
-    {
-      id: 4,
-      company: "Shopee",
-      event: "Future of Art",
-      package: "SILVER",
-      date: "26 Apr 2026",
-      status: "Ditolak",
-      statusColor: "bg-red-100 text-red-800",
-    },
-  ];
-
   const [events, setEvents] = useState<EOEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
 

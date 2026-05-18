@@ -19,5 +19,5 @@ export default function SidebarSwitcher() {
   }, [authLoading, isAuthenticated]);
 
   if (role === "COMPANY") return <SidebarCompany />;
-  return <SidebarEO />;
+  if (role === "EO") return <SidebarEO />;
 }

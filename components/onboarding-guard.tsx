@@ -5,11 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { apiCall } from "@/lib/api-client";
 
-/**
- * Guards all (with-sidebar) pages.
- * If the user is authenticated but hasn't completed onboarding
- * (no eoProfile or companyProfile), redirect them to /onboarding.
- */
 export default function OnboardingGuard() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -36,18 +31,13 @@ export default function OnboardingGuard() {
           !!data?.data?.eoProfile?.id || !!data?.data?.companyProfile?.id;
 
         if (!hasProfile) {
-          // Authenticated but onboarding not completed — send them back
           router.replace("/onboarding");
         }
-      } catch {
-        // Can't reach backend or user not registered at all → onboarding
-        router.replace("/onboarding");
-      }
+      } catch {}
     };
 
     check();
   }, [authLoading, isAuthenticated, router]);
 
-  // Renders nothing — pure side-effect component
   return null;
 }
