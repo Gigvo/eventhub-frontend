@@ -75,7 +75,7 @@ export default function ProposalSmartReview() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   // Controlled tab for programmatic switching from event-kamu CTA
-  const [activeTab, setActiveTab] = useState("event-kamu");
+  const [activeTab, setActiveTab] = useState("terbaru");
 
   // Lazy initialize eventId and eventName from localStorage or API
   const [eventId, setEventId] = useState<string | null>(null);
@@ -84,9 +84,6 @@ export default function ProposalSmartReview() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [myEvents, setMyEvents] = useState<MyEvent[]>([]);
-  const [eventsFilter, setEventsFilter] = useState<
-    "SEMUA" | "PUBLISHED" | "DRAFT" | "SELESAI"
-  >("SEMUA");
 
   // Proposal analysis fetched directly from /events/{id}/proposal — not from /events/my
   const [proposalAnalysis, setProposalAnalysis] = useState<{
@@ -119,35 +116,58 @@ export default function ProposalSmartReview() {
     setTimeout(() => setNotification(null), duration);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  async function loadEventData() {
-    try {
-      const response = await apiCall<{ data: MyEvent[] }>("/events/my", {});
-      if (response?.data && Array.isArray(response.data)) {
-        setMyEvents(response.data);
+  useEffect(() => {
+    async function loadEventData() {
+      try {
+        const response = await apiCall<{ data: MyEvent[] }>("/events/my", {});
+        if (response?.data && Array.isArray(response.data)) {
+          setMyEvents(response.data);
 
-        const savedStep3Data = localStorage.getItem("buatEventStep3Data");
-        if (savedStep3Data) {
-          const data = JSON.parse(savedStep3Data);
-          if (data.eventId) {
-            setEventId(data.eventId);
-            setEventName(data.eventName || "Event");
-            return;
+          // 1. Check URL parameters first (passed from katalog-event-eo)
+          if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const urlId = params.get("id");
+            const urlTab = params.get("tab");
+
+            if (urlTab) setActiveTab(urlTab);
+
+            if (urlId) {
+              const eventFromUrl = response.data.find((e) => e.id === urlId);
+              if (eventFromUrl) {
+                setEventId(eventFromUrl.id);
+                setEventName(eventFromUrl.title);
+                return;
+              }
+            }
+          }
+
+          // 2. Fallback to localStorage
+          const savedStep3Data = localStorage.getItem("buatEventStep3Data");
+          if (savedStep3Data) {
+            const data = JSON.parse(savedStep3Data);
+            if (data.eventId) {
+              setEventId(data.eventId);
+              setEventName(data.eventName || "Event");
+              return;
+            }
+          }
+
+          // 3. Fallback to latest event
+          const latestEvent = response.data[0];
+          if (latestEvent) {
+            setEventId(latestEvent.id);
+            setEventName(latestEvent.title || "Event");
           }
         }
-
-        const latestEvent = response.data[0];
-        if (latestEvent) {
-          setEventId(latestEvent.id);
-          setEventName(latestEvent.title || "Event");
-        }
+      } catch (error) {
+        console.error("Failed to load events:", error);
+      } finally {
+        setIsLoadingEvents(false);
       }
-    } catch (error) {
-      console.error("Failed to load events:", error);
-    } finally {
-      setIsLoadingEvents(false);
     }
-  }
+
+    loadEventData();
+  }, []);
 
   async function fetchProposalAnalysis(id: string) {
     setIsFetchingAnalysis(true);
@@ -179,10 +199,6 @@ export default function ProposalSmartReview() {
       setIsFetchingAnalysis(false);
     }
   }
-
-  useEffect(() => {
-    loadEventData();
-  }, []);
 
   useEffect(() => {
     if (!eventId) {
@@ -243,6 +259,7 @@ export default function ProposalSmartReview() {
           aiScore: number | null;
           aiFeedback: string | null;
           fileUrl: string;
+          content: string | null;
         };
       }>(`/events/${eventId}/proposal`, {
         method: "POST",
@@ -347,15 +364,14 @@ export default function ProposalSmartReview() {
                 className="mb-8"
               >
                 <TabsList className="flex items-center gap-8" variant={"line"}>
-                  <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger>
+                  {/* <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger> */}
                   <TabsTrigger value="terbaru">Proposal Terbaru</TabsTrigger>
                   <TabsTrigger value="smart-review">
                     Proposal Smart Review
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="event-kamu" className="mt-6">
-                  {/* Filter Buttons */}
+                {/* <TabsContent value="event-kamu" className="mt-6">
                   <div className="flex gap-2 mb-6">
                     {(["SEMUA", "PUBLISHED", "DRAFT", "SELESAI"] as const).map(
                       (f) => (
@@ -380,7 +396,6 @@ export default function ProposalSmartReview() {
                     )}
                   </div>
 
-                  {/* Event Grid */}
                   {isLoadingEvents ? (
                     <div className="grid grid-cols-3 gap-6">
                       {Array.from({ length: 3 }).map((_, i) => (
@@ -429,19 +444,13 @@ export default function ProposalSmartReview() {
                               return `IDR ${(p / 1_000).toFixed(0)}K`;
                             return `IDR ${p}`;
                           };
-                          const ctaLabel =
-                            event.status === "PUBLISHED"
-                              ? "Kelola Event"
-                              : event.status === "DRAFT"
-                                ? "Lanjutkan Draft"
-                                : "Lihat Laporan";
+                          
 
                           return (
                             <div
                               key={event.id}
                               className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
                             >
-                              {/* Banner */}
                               <div className="relative h-44 bg-gray-100">
                                 {event.bannerUrl ? (
                                   <Image
@@ -455,7 +464,6 @@ export default function ProposalSmartReview() {
                                     <ImageIcon className="w-10 h-10 text-gray-300" />
                                   </div>
                                 )}
-                                {/* Status badge */}
                                 <span
                                   className={`absolute top-3 left-3 ${statusColor} text-white text-[10px] font-bold px-2 py-0.5 rounded`}
                                 >
@@ -463,7 +471,6 @@ export default function ProposalSmartReview() {
                                 </span>
                               </div>
 
-                              {/* Info */}
                               <div className="p-4 flex flex-col flex-1">
                                 <h3 className="font-semibold text-gray-900 mb-2 text-sm leading-snug">
                                   {event.title}
@@ -482,7 +489,6 @@ export default function ProposalSmartReview() {
                                   </span>
                                 </div>
 
-                                {/* Stats */}
                                 <div className="grid grid-cols-3 gap-2 mb-4">
                                   <div>
                                     <p className="text-sm font-semibold text-gray-900">
@@ -514,10 +520,8 @@ export default function ProposalSmartReview() {
                                   </div>
                                 </div>
 
-                                {/* CTA */}
                                 <div className="mt-auto pt-3 border-t border-gray-100 text-center">
                                   {(() => {
-                                    // DRAFT + no proposal → go to step 3 of buat-event
                                     if (
                                       event.status === "DRAFT" &&
                                       !event.proposal
@@ -573,7 +577,6 @@ export default function ProposalSmartReview() {
                                         </button>
                                       );
                                     }
-                                    // SELESAI → go to cari-sponsor
                                     return (
                                       <button
                                         onClick={() =>
@@ -591,7 +594,6 @@ export default function ProposalSmartReview() {
                           );
                         })}
 
-                      {/* Empty state */}
                       {myEvents.filter(
                         (e) =>
                           eventsFilter === "SEMUA" || e.status === eventsFilter,
@@ -605,7 +607,7 @@ export default function ProposalSmartReview() {
                       )}
                     </div>
                   )}
-                </TabsContent>
+                </TabsContent> */}
 
                 <TabsContent value="smart-review" className="mt-6">
                   {/* Guard: no event selected yet */}
@@ -816,12 +818,13 @@ export default function ProposalSmartReview() {
                                       proposal kamu. Ini mungkin memerlukan
                                       beberapa detik.
                                     </p>
-                                    <button
+                                    {/* <Button
                                       onClick={() => loadEventData()}
                                       className="text-xs text-blue-600 hover:underline"
+                                      variant={"ghost"}
                                     >
                                       Refresh hasil →
-                                    </button>
+                                    </Button> */}
                                   </div>
                                 )
                               ) : (

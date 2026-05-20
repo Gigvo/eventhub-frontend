@@ -836,7 +836,7 @@ export default function BuatEventPage() {
                 <label className="text-[12px] font-semibold text-gray-700 block mb-4 uppercase w-full text-left">
                   Banner Event
                 </label>
-                
+
                 {formData.bannerPreview ? (
                   <div className="relative w-full mb-4 group">
                     <Image
@@ -869,12 +869,16 @@ export default function BuatEventPage() {
                       className="w-full h-auto py-4 border-dashed border-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-all text-gray-500 bg-gray-50"
                     >
                       <Upload className="mr-2 h-5 w-5" />
-                      {formData.bannerPreview ? "Ganti Banner Event" : "Upload Banner Event"}
+                      {formData.bannerPreview
+                        ? "Ganti Banner Event"
+                        : "Upload Banner Event"}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle className="text-center">Upload Banner Event</DialogTitle>
+                      <DialogTitle className="text-center">
+                        Upload Banner Event
+                      </DialogTitle>
                     </DialogHeader>
                     <div
                       onDragEnter={handleDrag}
@@ -899,7 +903,9 @@ export default function BuatEventPage() {
                         <p className="text-xs text-gray-600 mb-2">
                           Rekomendasi ukuran: 1200 × 630 px
                         </p>
-                        <p className="text-xs text-gray-600">Maks. 5MB (JPG, PNG, WEBP)</p>
+                        <p className="text-xs text-gray-600">
+                          Maks. 5MB (JPG, PNG, WEBP)
+                        </p>
                       </div>
                       <input
                         ref={fileInputRef}
@@ -1245,6 +1251,30 @@ export default function BuatEventPage() {
                               totalBudget: e.target.value,
                             })
                           }
+                          className="flex-1 px-4 py-3 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Target Sponsor Industri
+                  </h2>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="border border-gray-300 rounded-lg">
+                        <input
+                          type="text"
+                          value={formData.targetIndustri}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              targetIndustri: e.target.value,
+                            })
+                          }
+                          placeholder="Technology"
                           className="flex-1 px-4 py-3 focus:outline-none"
                         />
                       </div>

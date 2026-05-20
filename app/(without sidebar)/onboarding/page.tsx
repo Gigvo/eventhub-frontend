@@ -8,11 +8,12 @@ import { Card } from "@/components/ui/card";
 import { apiCall } from "@/lib/api-client";
 import { auth } from "@/lib/firebase";
 import Image from "next/image";
-import { Calendar, Building2, BadgeCheck } from "lucide-react";
+import { Calendar, Building2, BadgeCheck, Info } from "lucide-react";
 import Footer from "@/components/footer";
 import NavbarOnboarding from "@/components/onboarding/navbar-onboarding";
 import { useAuth } from "@/providers/auth-provider";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 type Role = "EO" | "COMPANY" | null;
 
@@ -475,10 +476,9 @@ export default function Onboarding() {
                     className="w-full border border-gray-300 rounded-lg px-4 py-2"
                   >
                     <option value="">Pilih jenis</option>
-                    <option value="UNIVERSITY">Universitas</option>
-                    <option value="COMMUNITY">Komunitas</option>
-                    <option value="CORPORATE">Korporat</option>
-                    <option value="NGO">NGO</option>
+                    <option value="BEM">BEM</option>
+                    <option value="HIMA">HIMA</option>
+                    <option value="UKM">UKM</option>
                     <option value="OTHER">Lainnya</option>
                   </select>
                 </div>
@@ -551,25 +551,53 @@ export default function Onboarding() {
               </div>
 
               {/* Preview Section */}
-              <div>
-                <Card className="p-6 sticky top-6">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                    PREVIEW PROFIL EO
-                  </h3>
-                  <div className="bg-gray-200 rounded-lg h-32 mb-4 flex items-center justify-center">
-                    <span className="text-gray-500">Banner Preview</span>
+              <div className="max-w-103">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                  PREVIEW PROFIL EO
+                </h3>
+                <div className="p-6 sticky top-6 rounded-[8px]">
+                  <div className="relative">
+                    <Image
+                      src={"/bg-eo.jpg"}
+                      alt="bg-eo"
+                      width={400}
+                      height={120}
+                      className="object-cover rounded-md"
+                    />
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    {organizerData.organizationName || "Nama Organisasi Anda"}
-                  </h4>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <p>📍 {organizerData.city || "Kota belum diisi"}</p>
-                    <p>
-                      🏢{" "}
-                      {organizerData.organizationType || "Tipe belum dipilih"}
+
+                  <div className="bg-white rounded-[8px] px-6 pb-6 pt-12 relative">
+                    <div className="absolute -top-9 w-18 h-18 bg-white rounded-[8px] flex items-center shadow-lg">
+                      <Image
+                        src={"/icons/organization.svg"}
+                        alt="organization"
+                        width={36}
+                        height={18}
+                        className="object-cover rounded-md mx-auto"
+                      />
+                    </div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      {organizerData.organizationName || "Nama Organisasi Anda"}
+                    </h4>
+                    <div className="text-sm text-gray-600 flex items-center gap-2">
+                      <Badge className="rounded-[4px] bg-[#FFDBD2] text-black">
+                        {organizerData.organizationType || "Tipe belum dipilih"}
+                      </Badge>
+                      <Badge className="rounded-[4px] bg-[#ECEEF0] text-black">
+                        📍 {organizerData.city || "Kota belum diisi"}
+                      </Badge>
+                    </div>
+                    <p className="text-[#747688] text-[12px] mt-4">
+                      {organizerData.description ||
+                        "Deskripsi organisasi akan muncul di sini. Jelaskan apa yang membuat organisasi Anda unik bagi calon sponsor."}
                     </p>
                   </div>
-                </Card>
+                </div>
+                <div className="flex bg-[#0052FF1A] text-[#0038B6] m-6 mt-4 rounded-[8px] p-3 text-sm gap-2">
+                  <Info />
+                  Profil yang lengkap meningkatkan peluang Anda mendapatkan
+                  sponsorship hingga 40%.
+                </div>
               </div>
             </div>
             <div className="flex gap-4 justify-between w-full mt-10 pt-6 border-t border-[#C3C5D9]">
@@ -852,32 +880,60 @@ export default function Onboarding() {
               </div>
 
               {/* Preview Section */}
-              <div>
-                <Card className="p-6 sticky top-6">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                    PRATINJAU PROFIL
-                  </h3>
-                  <div className="bg-gray-200 rounded-lg h-32 mb-4 flex items-center justify-center">
-                    <span className="text-gray-500">Banner Preview</span>
+              <div className="max-w-103">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                  PREVIEW PROFIL COMPANY
+                </h3>
+                <div className="p-6 sticky top-6 rounded-[8px]">
+                  <div className="relative">
+                    <Image
+                      src={"/bg-eo.jpg"}
+                      alt="bg-eo"
+                      width={400}
+                      height={120}
+                      className="object-cover rounded-md"
+                    />
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    {sponsorData.companyName || "Nama Perusahaan Anda"}
-                  </h4>
-                  <p className="text-xs text-gray-600 mb-1">
-                    📍 {sponsorData.industry || "Industri belum dipilih"}
-                  </p>
-                  <p className="text-xs text-gray-600 mb-3">
-                    🏙️ {sponsorData.city || "Kota belum diisi"}
-                  </p>
-                  {sponsorData.targetAudience.length > 0 && (
-                    <div className="text-xs text-gray-600">
-                      <p className="font-semibold mb-1">TARGET AUDIENS</p>
-                      <p className="text-gray-500">
-                        {sponsorData.targetAudience.join(", ")}
-                      </p>
+
+                  <div className="bg-white rounded-[8px] px-6 pb-6 pt-12 relative">
+                    <div className="absolute -top-9 w-18 h-18 bg-white rounded-[8px] flex items-center shadow-lg">
+                      <Image
+                        src={"/icons/company.svg"}
+                        alt="organization"
+                        width={36}
+                        height={18}
+                        className="object-cover rounded-md mx-auto"
+                      />
                     </div>
-                  )}
-                </Card>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      {sponsorData.companyName || "Nama Perusahaan Anda"}
+                      <div className="rounded-[4px] text-sm text-[#434656]">
+                        {sponsorData.industry || "Industri belum dipilih"}
+                      </div>
+                    </h4>
+                    <Badge className="rounded-[4px] bg-[#ECEEF0] text-black">
+                      📍 {sponsorData.city || "Kota belum diisi"}
+                    </Badge>
+                    <p className="text-[#747688] text-[12px] mt-4">
+                      {sponsorData.description ||
+                        "Deskripsi perusahaan akan muncul di sini."}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {sponsorData.targetAudience.map((target) => {
+                        return (
+                          <Badge key={target} variant={"outline"}>
+                            {target}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex bg-[#0052FF1A] text-[#0038B6] m-6 mt-4 rounded-[8px] p-3 text-sm gap-2">
+                  <Info />
+                  Profil yang lengkap meningkatkan peluang Anda mendapatkan
+                  sponsorship hingga 40%.
+                </div>
               </div>
             </div>
             <div className="flex flex-col gap-4 w-full mt-10 pt-6 border-t border-[#C3C5D9]">
