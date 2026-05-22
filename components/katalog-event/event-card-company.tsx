@@ -116,9 +116,13 @@ export default function EventCard({
             variant="outline"
             className="w-full mt-auto py-2 border border-[#003EC7] bg-white text-[#003EC7] rounded-[4px] flex-1"
           >
-            Lihat Proposal
+            Lihat Detail
           </Button>
-          <Button onClick={handleSave} variant={"outline"} className={save ? "bg-blue-50 text-blue-600 border-blue-200" : ""}>
+          <Button
+            onClick={handleSave}
+            variant={"outline"}
+            className={save ? "bg-blue-50 text-blue-600 border-blue-200" : ""}
+          >
             <Bookmark className={save ? "fill-current" : ""} />
           </Button>
         </div>

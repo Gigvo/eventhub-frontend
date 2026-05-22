@@ -83,11 +83,6 @@ const availableInterests = [
   "healthcare",
 ];
 
-const availableBenefits = [
-  "Booth 3x3 Utama",
-  "Logo di Backdrop",
-  "Add Mention MC",
-];
 
 export default function BuatEventPage() {
   const router = useRouter();
@@ -100,6 +95,7 @@ export default function BuatEventPage() {
     "FORMAL" | "CASUAL" | "PERSUASIVE"
   >("PERSUASIVE");
   const [showAddPackageForm, setShowAddPackageForm] = useState(false);
+  const [benefitInput, setBenefitInput] = useState("");
   const [newPackage, setNewPackage] = useState({
     name: "",
     price: "",
@@ -1377,43 +1373,33 @@ export default function BuatEventPage() {
                             ))}
                           </div>
 
-                          {/* Add Benefit Dropdown */}
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setOpenDropdown(openDropdown === -2 ? null : -2)
+                          {/* Benefit Tag Input */}
+                          <input
+                            type="text"
+                            value={benefitInput}
+                            onChange={(e) => setBenefitInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const trimmed = benefitInput.trim();
+                                if (
+                                  trimmed &&
+                                  !newPackage.benefits.includes(trimmed)
+                                ) {
+                                  setNewPackage({
+                                    ...newPackage,
+                                    benefits: [
+                                      ...newPackage.benefits,
+                                      trimmed,
+                                    ],
+                                  });
+                                }
+                                setBenefitInput("");
                               }
-                              className="text-blue-600 font-medium text-sm hover:text-blue-700 transition"
-                            >
-                              + Tambah benefit...
-                            </button>
-                            {openDropdown === -2 && (
-                              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-max">
-                                {availableBenefits
-                                  .filter(
-                                    (b) => !newPackage.benefits.includes(b),
-                                  )
-                                  .map((benefit) => (
-                                    <button
-                                      key={benefit}
-                                      onClick={() => {
-                                        setNewPackage({
-                                          ...newPackage,
-                                          benefits: [
-                                            ...newPackage.benefits,
-                                            benefit,
-                                          ],
-                                        });
-                                        setOpenDropdown(null);
-                                      }}
-                                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-sm first:rounded-t-lg last:rounded-b-lg"
-                                    >
-                                      {benefit}
-                                    </button>
-                                  ))}
-                              </div>
-                            )}
-                          </div>
+                            }}
+                            placeholder="Tambah benefit (tekan Enter)"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                          />
                         </div>
 
                         {/* Form Buttons */}
@@ -1517,6 +1503,26 @@ export default function BuatEventPage() {
                                 className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
                               >
                                 {benefit}
+                                <button
+                                  onClick={() =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      packages: prev.packages.map((p) =>
+                                        p.id === pkg.id
+                                          ? {
+                                              ...p,
+                                              benefits: p.benefits.filter(
+                                                (b) => b !== benefit,
+                                              ),
+                                            }
+                                          : p,
+                                      ),
+                                    }))
+                                  }
+                                  className="hover:text-blue-900 transition ml-0.5"
+                                >
+                                  <X size={13} />
+                                </button>
                               </div>
                             ))}
                           </div>

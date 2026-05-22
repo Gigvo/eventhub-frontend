@@ -601,10 +601,9 @@ export default function ProposalSmartReview() {
                     </div>
 
                     {/* Right Pane: Details or Widgets */}
-                    <div className="w-full lg:w-[400px] flex flex-col gap-6">
+                    {/* <div className="w-full lg:w-[400px] flex flex-col gap-6">
                       {selectedOfferId && offerDetail ? (
                         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden sticky top-6 shadow-sm">
-                          {/* Details Header */}
                           <div className="p-6 border-b border-gray-100 text-center bg-gray-50/50">
                             <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center mx-auto mb-4 border border-gray-200 text-3xl font-bold text-gray-300 overflow-hidden shadow-sm">
                               {offerDetail.companyProfile.logoUrl ? (
@@ -671,7 +670,6 @@ export default function ProposalSmartReview() {
                         </div>
                       ) : (
                         <>
-                          {/* Widget 1: Event Performance */}
                           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                             <h3 className="font-bold text-gray-900 mb-5">
                               Event Performance
@@ -709,7 +707,6 @@ export default function ProposalSmartReview() {
                             </div>
                           </div>
 
-                          {/* Widget 2: Smart Review Tips */}
                           <div className="bg-[#2A41C7] rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
                             <div className="flex items-center gap-2 mb-4">
                               <div className="bg-white/20 p-1.5 rounded-full backdrop-blur-sm">
@@ -730,7 +727,6 @@ export default function ProposalSmartReview() {
                             </button>
                           </div>
 
-                          {/* Widget 3: Target Sponsor */}
                           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                             <div className="flex justify-between items-end mb-4">
                               <h3 className="font-bold text-gray-900">
@@ -753,7 +749,7 @@ export default function ProposalSmartReview() {
                           </div>
                         </>
                       )}
-                    </div>
+                    </div> */}
                   </div>
                 </TabsContent>
 

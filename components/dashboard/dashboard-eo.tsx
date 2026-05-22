@@ -6,6 +6,23 @@ import Image from "next/image";
 import { Calendar, MapPin } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
 
+interface userData {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  tokenBalance: string;
+  eoProfile: EOProfile;
+}
+
+export interface EOProfile {
+  id: string;
+  organizationName: string;
+  organizationType: string;
+  campus: string;
+  logoUrl: string | null;
+}
+
 interface EventTier {
   id: string;
   name: string;
@@ -75,21 +92,25 @@ export default function DashboardEO() {
   const [events, setEvents] = useState<EOEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [user, setUser] = useState<userData | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [eventsRes, offersRes] = await Promise.all([
+        const [eventsRes, offersRes, userRes] = await Promise.all([
           apiCall<{ data: EOEvent[] }>("/events/my"),
           apiCall<{ data: Offer[] }>("/offers/incoming"),
+          apiCall<{ data: userData }>("/auth/me"),
         ]);
 
         setEvents(eventsRes.data.slice(0, 3));
         setOffers(offersRes.data);
+        setUser(userRes.data);
       } catch (error) {
         console.error("Gagal mengambil data", error);
         setEvents([]);
         setOffers([]);
+        setUser(null);
       } finally {
         setEventsLoading(false);
       }
@@ -107,6 +128,9 @@ export default function DashboardEO() {
   const waitingOffers = offers.filter(
     (offer) => offer.status === "UNDER_REVIEW",
   ).length;
+
+  const EOName = user?.eoProfile?.organizationName || "EO";
+  const tokenBalance = user?.tokenBalance || "0";
 
   const stats = [
     {
@@ -132,7 +156,7 @@ export default function DashboardEO() {
     },
     {
       label: "SISA TOKEN",
-      value: "45",
+      value: tokenBalance,
       icon: "icons/token2.svg",
       iconType: "svg",
       color: "bg-[#F9FAFB]",
@@ -149,7 +173,7 @@ export default function DashboardEO() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Selamat pagi, Budi!
+          Selamat pagi, {EOName}
         </h1>
         <p className="text-gray-600 mt-1">
           Ini adalah ringkasan performa event dan kemitraan Anda hari ini.

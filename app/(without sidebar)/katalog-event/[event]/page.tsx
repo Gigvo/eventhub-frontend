@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   ChevronLeft,
   Share2,
   Bookmark,
@@ -16,6 +24,7 @@ import {
   Sparkles,
   Check,
   Loader2,
+  Send,
 } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
 import Image from "next/image";
@@ -88,15 +97,70 @@ export default function EventDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
+  // ─── Offer dialog state ───
+  const [offerDialogOpen, setOfferDialogOpen] = useState(false);
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+  const [offerMessage, setOfferMessage] = useState("");
+  const [offerSubmitting, setOfferSubmitting] = useState(false);
+  const [offerSuccess, setOfferSuccess] = useState(false);
+  const [offerError, setOfferError] = useState<string | null>(null);
+  const [hasExistingOffer, setHasExistingOffer] = useState(false);
+
   useEffect(() => {
     if (!slug) return;
+
+    // Fetch event detail
     apiCall<{ data: EventDetail }>(`/catalog/events/${slug}`, {
       requireAuth: false,
     })
-      .then((res) => setEvent(res.data))
+      .then((res) => {
+        const fetchedEvent = res.data;
+        setEvent(fetchedEvent);
+
+        // After we have the eventId, check if user already sent an offer
+        apiCall<{ data: { eventId: string }[] }>("/offers/my")
+          .then((offersRes) => {
+            const alreadySent = offersRes.data.some(
+              (o) => o.eventId === fetchedEvent.id,
+            );
+            setHasExistingOffer(alreadySent);
+          })
+          .catch(() => {}); // silently ignore if not authenticated
+      })
       .catch((err) => setError(err?.message ?? "Gagal memuat detail event."))
       .finally(() => setIsLoading(false));
   }, [slug]);
+
+  function openOfferDialog() {
+    setSelectedTierId(null);
+    setOfferMessage("");
+    setOfferSuccess(false);
+    setOfferError(null);
+    setOfferDialogOpen(true);
+  }
+
+  const handleCreateOffer = async () => {
+    if (!event || !selectedTierId) return;
+    setOfferSubmitting(true);
+    setOfferError(null);
+    try {
+      await apiCall("/offers", {
+        method: "POST",
+        body: JSON.stringify({
+          eventId: event.id,
+          tierId: selectedTierId,
+          message: offerMessage,
+        }),
+      });
+      setOfferSuccess(true);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Gagal mengirim penawaran.";
+      setOfferError(message);
+    } finally {
+      setOfferSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -182,7 +246,8 @@ export default function EventDetailPage() {
                 <Image
                   src={event.bannerUrl}
                   alt={event.title}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
@@ -401,8 +466,18 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              <Button className="w-full h-11 font-semibold bg-green-500 hover:bg-green-600 text-white mb-3">
-                ✓ Saya Tertarik
+              <Button
+                className={`w-full h-11 font-semibold text-white mb-3 ${
+                  hasExistingOffer || offerSuccess
+                    ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
+                    : "bg-green-500 hover:bg-green-600"
+                }`}
+                onClick={openOfferDialog}
+                disabled={offerSuccess || hasExistingOffer}
+              >
+                {hasExistingOffer || offerSuccess
+                  ? "✓ Penawaran Terkirim"
+                  : "✓ Saya Tertarik"}
               </Button>
               <Button
                 variant="outline"
@@ -415,6 +490,178 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── Offer Dialog ─── */}
+      <Dialog open={offerDialogOpen} onOpenChange={setOfferDialogOpen}>
+        <DialogContent className="max-w-lg">
+          {offerSuccess ? (
+            /* ── Success state ── */
+            <div className="py-8 flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <Check className="w-8 h-8 text-green-600" />
+              </div>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                Penawaran Terkirim!
+              </DialogTitle>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Penawaran Anda untuk{" "}
+                <span className="font-semibold text-gray-800">
+                  {event?.title}
+                </span>{" "}
+                telah berhasil dikirim. Tim EO akan segera meninjau dan
+                merespons penawaran Anda.
+              </p>
+              <Button
+                className="mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8"
+                onClick={() => setOfferDialogOpen(false)}
+              >
+                Tutup
+              </Button>
+            </div>
+          ) : (
+            /* ── Form state ── */
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold">
+                  Kirim Penawaran Sponsorship
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-500">
+                  Pilih paket dan tulis pesan Anda untuk{" "}
+                  <span className="font-medium text-gray-700">
+                    {event?.title}
+                  </span>
+                  .
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Tier Selection */}
+              <div className="mt-2">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                  Pilih Paket Sponsor
+                </p>
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                  {event?.tiers.map((tier) => (
+                    <button
+                      key={tier.id}
+                      onClick={() => setSelectedTierId(tier.id)}
+                      className={`w-full text-left rounded-lg border p-3.5 transition-all ${
+                        selectedTierId === tier.id
+                          ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                              selectedTierId === tier.id
+                                ? "border-blue-500 bg-blue-500"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            {selectedTierId === tier.id && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                            )}
+                          </div>
+                          <span className="font-semibold text-gray-900 text-sm capitalize">
+                            {tier.name}
+                          </span>
+                        </div>
+                        <span className="text-blue-600 font-bold text-sm">
+                          {formatPrice(tier.price)}
+                        </span>
+                      </div>
+                      {tier.benefits && tier.benefits.length > 0 && (
+                        <ul className="ml-6 space-y-0.5">
+                          {tier.benefits.slice(0, 3).map((b, i) => (
+                            <li
+                              key={i}
+                              className="flex items-center gap-1.5 text-xs text-gray-500"
+                            >
+                              <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
+                              {b}
+                            </li>
+                          ))}
+                          {tier.benefits.length > 3 && (
+                            <li className="text-xs text-gray-400 ml-4">
+                              +{tier.benefits.length - 3} benefit lainnya
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                      {tier.maxSlots && (
+                        <p className="ml-6 text-[11px] text-gray-400 mt-1">
+                          Maks. {tier.maxSlots} slot
+                        </p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div className="mt-4">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                  Pesan Penawaran
+                </label>
+                <textarea
+                  rows={4}
+                  value={offerMessage}
+                  onChange={(e) => setOfferMessage(e.target.value)}
+                  minLength={10}
+                  required // Optional: add this if the field cannot be left entirely empty
+                  placeholder="Perkenalkan perusahaan Anda dan jelaskan mengapa Anda tertarik mensponsori event ini..."
+                  className={`w-full rounded-lg border px-3.5 py-3 text-sm text-gray-800 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                    offerMessage.length > 0 && offerMessage.length < 10
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-200 focus:ring-blue-500"
+                  }`}
+                />
+
+                {/* Helper text for user feedback */}
+                {offerMessage.length > 0 && offerMessage.length < 10 && (
+                  <p className="mt-1 text-xs text-red-500">
+                    Pesan harus memiliki minimal 10 karakter. (
+                    {offerMessage.length}/10)
+                  </p>
+                )}
+              </div>
+
+              {/* Error */}
+              {offerError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                  {offerError}
+                </p>
+              )}
+
+              <DialogFooter className="mt-2 gap-2 flex-col sm:flex-row">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setOfferDialogOpen(false)}
+                  disabled={offerSubmitting}
+                >
+                  Batal
+                </Button>
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold gap-2"
+                  onClick={handleCreateOffer}
+                  disabled={
+                    !selectedTierId || !offerMessage.trim() || offerSubmitting
+                  }
+                >
+                  {offerSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Kirim Penawaran
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

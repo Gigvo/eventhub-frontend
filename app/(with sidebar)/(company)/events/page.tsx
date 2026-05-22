@@ -115,7 +115,7 @@ export default function KatalogEvent() {
         ]);
 
         const savedEventIds = new Set(
-          savedEventsRes.data?.map((item) => item.id) || []
+          savedEventsRes.data?.map((item) => item.id) || [],
         );
 
         // Transform API response to EventCard format
@@ -189,8 +189,7 @@ export default function KatalogEvent() {
   // Filter by scale (city)
   if (selectedScale !== "semua") {
     sortedEvents = sortedEvents.filter(
-      (event) =>
-        event.location.toLowerCase() === selectedScale.toLowerCase(),
+      (event) => event.location.toLowerCase() === selectedScale.toLowerCase(),
     );
   }
 

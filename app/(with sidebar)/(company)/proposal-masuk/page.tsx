@@ -407,7 +407,13 @@ export default function ProposalMasuk() {
                   <div className="flex gap-3 mb-6">
                     <Button
                       variant="outline"
-                      className="flex-1 text-gray-600"
+                      className={`flex-1 text-gray-600 ${
+                        pitchDetail.status === "ACCEPTED" ||
+                        pitchDetail.status === "REJECTED" ||
+                        pitchDetail.status === "CANCELLED"
+                          ? "hidden"
+                          : ""
+                      }`}
                       onClick={() => setShowRejectDialog(true)}
                     >
                       Tolak Proposal
