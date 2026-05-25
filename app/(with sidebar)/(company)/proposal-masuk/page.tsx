@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Lock,
   Phone,
@@ -66,6 +67,7 @@ interface PitchDetailResponse extends PitchListResponse {
 }
 
 export default function ProposalMasuk() {
+  const router = useRouter();
   const [pitches, setPitches] = useState<PitchListResponse[]>([]);
   const [selectedPitchId, setSelectedPitchId] = useState<string | null>(null);
   const [pitchDetail, setPitchDetail] = useState<PitchDetailResponse | null>(
@@ -278,18 +280,32 @@ export default function ProposalMasuk() {
                       )}
                     </p>
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100 font-normal">
-                        <Lock className="w-3 h-3 mr-1 inline" /> LOCKED
-                      </Badge>
+                      {pitch.status !== "ACCEPTED" && (
+                        <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100 font-normal">
+                          <Lock className="w-3 h-3 mr-1 inline" /> LOCKED
+                        </Badge>
+                      )}
+
                       <span className="text-sm text-gray-600">
                         {formatRupiah(pitch.tier.price)} Target
                       </span>
                     </div>
                   </div>
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex flex-col items-end gap-2">
                     <Badge className="bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium">
                       ✨ AI Match 94%
                     </Badge>
+                    {selectedPitchId === pitch.id && (
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/proposal-masuk/${pitch.id}`);
+                        }}
+                        className="text-xs font-semibold text-blue-600 hover:underline cursor-pointer pt-1"
+                      >
+                        Lihat Detail &rarr;
+                      </span>
+                    )}
                   </div>
                 </div>
               ))
@@ -404,6 +420,13 @@ export default function ProposalMasuk() {
                   </div>
 
                   {/* Actions */}
+                  <Button
+                    onClick={() => router.push(`/proposal-masuk/${pitchDetail.id}`)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 mb-3 shadow-sm rounded-lg"
+                  >
+                    Lihat Detail Proposal
+                  </Button>
+
                   <div className="flex gap-3 mb-6">
                     <Button
                       variant="outline"

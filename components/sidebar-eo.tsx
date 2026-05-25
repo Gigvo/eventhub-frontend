@@ -36,7 +36,7 @@ const menuItems = [
     icon: BriefcaseBusiness,
   },
   {
-    name: "Proposal Smart Review",
+    name: "Proposal",
     href: "/proposal-smart-review",
     icon: ClipboardCheck,
   },

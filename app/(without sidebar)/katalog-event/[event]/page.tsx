@@ -25,6 +25,7 @@ import {
   Check,
   Loader2,
   Send,
+  FileText,
 } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
 import Image from "next/image";
@@ -67,7 +68,8 @@ interface EventDetail {
   tiers: Tier[];
   proposal: {
     source: string;
-    fileUrl: string;
+    fileUrl: string | null;
+    content?: string | null;
   } | null;
 }
 
@@ -97,6 +99,109 @@ export default function EventDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!event) return;
+    const proposal = event.proposal;
+
+    if (proposal?.source === "GENERATED" && proposal.content) {
+      setIsDownloading(true);
+      
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
+      
+      let htmlContent = proposal.content;
+      try {
+        if (htmlContent.startsWith("{")) {
+          const parsed = JSON.parse(htmlContent);
+          const listItems = (items: string[]) => items.map(i => `<li>${i}</li>`).join("");
+          htmlContent = `
+            <h2>Executive Summary</h2><p>${parsed.executiveSummary}</p>
+            <h2>Latar Belakang Event</h2><p>${parsed.eventBackground}</p>
+            <h2>Tujuan</h2><ul>${listItems(parsed.objectives)}</ul>
+            <h2>Target Audiens</h2><p>${parsed.targetAudience}</p>
+            <h2>Mengapa Event Ini?</h2><p>${parsed.whyThisEvent}</p>
+            <h2>Manfaat Sponsorship</h2><ul>${listItems(parsed.sponsorshipBenefits)}</ul>
+            <h2>Call to Action</h2><p>${parsed.callToAction}</p>
+          `;
+        }
+      } catch (e) {}
+
+      const cleanTitle = event.title.replace(/[^a-zA-Z0-9]/g, "_");
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(`
+          <html>
+            <head>
+              <title>Proposal_${cleanTitle}</title>
+              <style>
+                body { 
+                  font-family: 'Segoe UI', system-ui, sans-serif; 
+                  line-height: 1.6; 
+                  padding: 40px; 
+                  color: #1a1a1a; 
+                  max-width: 800px;
+                  margin: 0 auto;
+                }
+                h1 { color: #003EC7; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 30px; }
+                h2 { color: #111827; margin-top: 32px; margin-bottom: 16px; font-size: 1.5rem; }
+                p { margin-bottom: 16px; text-align: justify; }
+                ul, ol { margin-bottom: 24px; padding-left: 24px; }
+                li { margin-bottom: 8px; }
+                @media print {
+                  body { padding: 0; }
+                }
+              </style>
+            </head>
+            <body>
+              <h1>Proposal: ${event.title}</h1>
+              ${htmlContent}
+            </body>
+          </html>
+        `);
+        doc.close();
+        
+        iframe.contentWindow?.focus();
+        setTimeout(() => {
+          iframe.contentWindow?.print();
+          setTimeout(() => document.body.removeChild(iframe), 1000);
+          setIsDownloading(false);
+        }, 500);
+      }
+      return;
+    }
+
+    if (!proposal?.fileUrl) {
+      alert("Proposal tidak tersedia untuk event ini.");
+      return;
+    }
+
+    setIsDownloading(true);
+    const fileUrl = proposal.fileUrl;
+
+    try {
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error("Network response was not ok");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cleanTitle = event!.title.replace(/[^a-zA-Z0-9]/g, "_");
+      a.download = `Proposal_${cleanTitle}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.warn("Direct download failed, falling back to window.open with GCS URL", error);
+      window.open(fileUrl, "_blank");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
   // ─── Offer dialog state ───
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
@@ -227,9 +332,20 @@ export default function EventDetailPage() {
               />
               {isSaved ? "Tersimpan" : "Simpan"}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Share2 className="h-4 w-4" />
-              Bagikan
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleDownloadPDF}
+              disabled={!event?.proposal?.fileUrl || isDownloading}
+              title={!event?.proposal?.fileUrl ? "Proposal PDF belum tersedia untuk event ini" : undefined}
+            >
+              {isDownloading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+              {isDownloading ? "Mengunduh..." : "Unduh PDF"}
             </Button>
           </div>
         </div>

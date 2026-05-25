@@ -83,7 +83,7 @@ export default function KatalogEvent() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState("terbaru");
+  const [sortBy, setSortBy] = useState("ai-match");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
@@ -193,7 +193,9 @@ export default function KatalogEvent() {
     );
   }
 
-  if (sortBy === "terbaru") {
+  if (sortBy === "ai-match") {
+    sortedEvents = sortedEvents.sort((a, b) => b.finalScore - a.finalScore);
+  } else if (sortBy === "terbaru") {
     sortedEvents = sortedEvents.reverse();
   }
 

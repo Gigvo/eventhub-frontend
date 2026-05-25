@@ -5,6 +5,8 @@ import ProposalTerbaru from "../proposal-terbaru";
 import Image from "next/image";
 import { Calendar, MapPin } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
+import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 interface userData {
   id: string;
@@ -83,6 +85,7 @@ interface OfferTier {
 }
 
 export default function DashboardEO() {
+  const router = useRouter();
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("id-ID", {
       day: "numeric",
@@ -217,9 +220,13 @@ export default function DashboardEO() {
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Event Kamu</h2>
-          <a href="#" className="text-blue-600 font-semibold hover:underline">
+          <Button
+            onClick={() => router.push("/katalog-event-eo")}
+            className="text-blue-600 font-semibold hover:underline"
+            variant={"ghost"}
+          >
             Lihat Semua
-          </a>
+          </Button>
         </div>
         <div className="flex flex-row items-stretch gap-6">
           {eventsLoading ? (

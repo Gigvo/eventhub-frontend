@@ -487,19 +487,14 @@ export default function Onboarding() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Kota Domisili
                   </label>
-                  <select
+                  <Input
+                    type="text"
                     name="city"
+                    placeholder="Contoh: Yogyakarta"
                     value={organizerData.city}
                     onChange={handleOrganizerChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  >
-                    <option value="">Pilih kota</option>
-                    <option value="Jakarta">Jakarta</option>
-                    <option value="Surabaya">Surabaya</option>
-                    <option value="Bandung">Bandung</option>
-                    <option value="Yogyakarta">Yogyakarta</option>
-                    <option value="Medan">Medan</option>
-                  </select>
+                    className="w-full"
+                  />
                 </div>
 
                 <div>
@@ -674,19 +669,14 @@ export default function Onboarding() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Kota Domisili
                   </label>
-                  <select
+                  <Input
+                    type="text"
                     name="city"
+                    placeholder="Contoh: Jakarta"
                     value={sponsorData.city}
                     onChange={handleSponsorChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  >
-                    <option value="">Pilih kota</option>
-                    <option value="Jakarta">Jakarta</option>
-                    <option value="Surabaya">Surabaya</option>
-                    <option value="Bandung">Bandung</option>
-                    <option value="Yogyakarta">Yogyakarta</option>
-                    <option value="Medan">Medan</option>
-                  </select>
+                    className="w-full"
+                  />
                 </div>
 
                 <div>
@@ -1082,34 +1072,14 @@ export default function Onboarding() {
             </p>
 
             <div className="flex gap-4">
-              <Button variant="outline" className="flex-1">
+              {/* <Button variant="outline" className="flex-1">
                 Lihat Panduan
-              </Button>
+              </Button> */}
               <Link href={"/dashboard"} className="flex-1">
                 <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
                   Buka Dashboard
                 </Button>
               </Link>
-            </div>
-          </div>
-          <div className="mb-8 flex items-center max-w-lg gap-3 pt-12 border-t border-gray-300">
-            <div className="bg-white p-4 rounded-lg text-left text-sm">
-              <p className="font-semibold text-blue-900 mb-1">
-                🤖 AI DISCOVERY
-              </p>
-              <p className="text-blue-700 text-xs">
-                Temukan partner event yang paling relevan dengan algoritma
-                cerdas kami
-              </p>
-            </div>
-            <div className="bg-white p-4 rounded-lg text-left text-sm">
-              <p className="font-semibold text-blue-900 mb-1">
-                📊 REAL-TIME TRACKING
-              </p>
-              <p className="text-blue-700 text-xs">
-                Pantau progres sponsorship dan metrik performance event secara
-                real-time
-              </p>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import NavbarLanding from "@/components/landing/navbar-landing";
 import { Badge } from "@/components/ui/badge";
@@ -5,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, FileUp, Handshake } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Marquee from "@/components/landing/marquee/marquee";
+import { useRouter } from "next/navigation";
 
 const BRANDS = ["SAMSUNG", "TOKOPEDIA", "TELKOMSEL", "TRAVELOKA", "GRAB"];
 
 export default function Home() {
+  const router = useRouter();
   return (
     <>
       <NavbarLanding />
@@ -38,14 +41,9 @@ export default function Home() {
                 boxShadow:
                   "0px 4px 6px -4px #2563EB33, 0px 10px 15px -3px #2563EB33",
               }}
+              onClick={() => router.push("/register")}
             >
-              Daftar sebagai EO
-            </Button>
-            <Button
-              variant="outline"
-              className="px-8 py-4 text-[16px] rounded-[12px] font-semibold border-[#E5E7EB] text-[#111827] hover:bg-gray-50 h-auto bg-white"
-            >
-              Daftar sebagai Perusahaan
+              Daftar
             </Button>
           </div>
 

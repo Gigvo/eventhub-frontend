@@ -11,11 +11,23 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Sparkles } from "lucide-react";
+import {
+  Sparkles,
+  Calendar,
+  MapPin,
+  Users,
+  ImageIcon,
+  Download,
+  Building2,
+  CheckCircle2,
+  TrendingUp,
+  DollarSign,
+  Award,
+  ArrowRight,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { apiCall } from "@/lib/api-client";
-import { Calendar, MapPin, Users, ImageIcon } from "lucide-react";
 
 interface EventTier {
   id: string;
@@ -106,6 +118,8 @@ export default function ProposalSmartReview() {
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [offerDetail, setOfferDetail] = useState<any | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [laporanDetail, setLaporanDetail] = useState<any | null>(null);
+  const [isLoadingLaporan, setIsLoadingLaporan] = useState(false);
 
   // Proposal analysis fetched directly from /events/{id}/proposal — not from /events/my
 
@@ -179,6 +193,25 @@ export default function ProposalSmartReview() {
     }
   }, [selectedOfferId]);
 
+  useEffect(() => {
+    if (activeTab === "laporan" && eventId) {
+      const fetchLaporan = async () => {
+        setIsLoadingLaporan(true);
+        try {
+          const res = await apiCall<any>(`/events/${eventId}`);
+          if (res?.success && res?.data) {
+            setLaporanDetail(res.data);
+          }
+        } catch (e) {
+          console.error("Failed to fetch laporan event detail", e);
+        } finally {
+          setIsLoadingLaporan(false);
+        }
+      };
+      fetchLaporan();
+    }
+  }, [activeTab, eventId]);
+
   const filteredOffers = sponsorOffer.filter((offer) => {
     if (proposalFilter === "Semua") return true;
     if (proposalFilter === "Menunggu")
@@ -242,7 +275,7 @@ export default function ProposalSmartReview() {
                 <TabsList className="flex items-center gap-8" variant={"line"}>
                   <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger>
                   <TabsTrigger value="proposal&sponsor">
-                    Proposal & Sponsor
+                    Sponsor Masuk
                   </TabsTrigger>
                   <TabsTrigger value="laporan">Laporan</TabsTrigger>
                 </TabsList>
@@ -446,6 +479,22 @@ export default function ProposalSmartReview() {
                                       );
                                     }
                                     if (event.status === "PUBLISHED") {
+                                      const isEventEnded =
+                                        new Date() > new Date(event.endDate);
+                                      if (isEventEnded) {
+                                        return (
+                                          <button
+                                            onClick={() => {
+                                              setEventId(event.id);
+                                              setEventName(event.title);
+                                              setActiveTab("laporan");
+                                            }}
+                                            className="text-sm font-semibold text-[#003EC7] hover:underline"
+                                          >
+                                            Lihat Laporan
+                                          </button>
+                                        );
+                                      }
                                       return (
                                         <button
                                           onClick={() => {
@@ -459,12 +508,14 @@ export default function ProposalSmartReview() {
                                         </button>
                                       );
                                     }
-                                    // SELESAI → go to cari-sponsor
+                                    // SELESAI → go to Laporan tab
                                     return (
                                       <button
-                                        onClick={() =>
-                                          router.push("/cari-sponsor")
-                                        }
+                                        onClick={() => {
+                                          setEventId(event.id);
+                                          setEventName(event.title);
+                                          setActiveTab("laporan");
+                                        }}
                                         className="text-sm font-semibold text-[#003EC7] hover:underline"
                                       >
                                         Lihat Laporan
@@ -753,7 +804,424 @@ export default function ProposalSmartReview() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="laporan"></TabsContent>
+                <TabsContent value="laporan">
+                  {isLoadingLaporan ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                      <p className="text-gray-500 font-medium">
+                        Memuat Laporan Event...
+                      </p>
+                    </div>
+                  ) : !laporanDetail ||
+                    laporanDetail.status !== "PUBLISHED" ||
+                    !laporanDetail.endDate ||
+                    new Date() <= new Date(laporanDetail.endDate) ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-200 shadow-sm text-center px-6">
+                      <div className="bg-gray-100 p-4 rounded-full mb-4">
+                        <Users className="w-10 h-10 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">
+                        Silakan Klik &quot;Lihat Laporan&quot; Terlebih Dahulu
+                      </h3>
+                      <p className="text-gray-500 text-sm max-w-sm mb-6">
+                        Anda belum memuat data event apa pun. Silakan kembali ke
+                        tab &quot;Event Kamu&quot; dan klik tombol &quot;Lihat
+                        Laporan&quot; pada salah satu event yang telah selesai
+                        untuk melihat laporan pasca-event.
+                      </p>
+                      <Button
+                        onClick={() => setActiveTab("event-kamu")}
+                        className="bg-[#003EC7] hover:bg-[#002FB0]"
+                      >
+                        Kembali ke Event Kamu
+                      </Button>
+                    </div>
+                  ) : (
+                    (() => {
+                      // Process stats & details
+                      const acceptedOffers =
+                        laporanDetail.offers?.filter(
+                          (o: any) =>
+                            o.status === "APPROVED" || o.status === "ACCEPTED",
+                        ) || [];
+                      const displayFund = acceptedOffers.reduce(
+                        (acc: number, o: any) => acc + (o.tier?.price || 0),
+                        0,
+                      );
+                      const targetFund = (laporanDetail.tiers || []).reduce(
+                        (acc: number, t: any) =>
+                          acc + t.price * (t.maxSlots || 0),
+                        0,
+                      );
+
+                      // Default fallback values if no accepted offers to make UI premium and realistic (like mockup)
+                      const displaySponsorsCount =
+                        acceptedOffers.length > 0 ? acceptedOffers.length : 0;
+                      const displayMitraAktif =
+                        acceptedOffers.length > 0 ? acceptedOffers.length : 0;
+                      const displayAttendees =
+                        laporanDetail.expectedAttendees || 0;
+
+                      // ROI calculation: dynamic from aiScore or default 4.8
+                      const roiScore = laporanDetail.proposal?.aiScore
+                        ? (laporanDetail.proposal.aiScore / 20).toFixed(1)
+                        : "0";
+
+                      // Progress percentage
+                      const progressPercent =
+                        targetFund > 0
+                          ? Math.round((displayFund / targetFund) * 100)
+                          : 0;
+
+                      // Format currency helpers
+                      const formatCurrency = (val: number) => {
+                        return new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                          maximumFractionDigits: 0,
+                        }).format(val);
+                      };
+
+                      const handlePrintLaporan = () => {
+                        window.print();
+                      };
+
+                      return (
+                        <div className="space-y-8 animate-fadeIn mt-6">
+                          {/* Header Section */}
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <div>
+                              <div className="flex items-center gap-3 mb-2">
+                                <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                                  {laporanDetail.title}
+                                </h1>
+                                <span className="bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-bold rounded-full border border-emerald-200 tracking-wider">
+                                  SELESAI
+                                </span>
+                              </div>
+                              <p className="text-gray-500 text-sm">
+                                Laporan komprehensif pasca-event dan
+                                rekonsiliasi dana sponsor.
+                              </p>
+                            </div>
+                            <Button
+                              onClick={handlePrintLaporan}
+                              className="bg-[#003EC7] hover:bg-[#002FB0] text-white px-5 py-2.5 rounded-xl font-semibold inline-flex items-center gap-2 shadow-sm transition-all"
+                            >
+                              <Download className="w-4 h-4" />
+                              Unduh Laporan PDF
+                            </Button>
+                          </div>
+
+                          {/* Metrics Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {/* Card 1 */}
+                            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/50 rounded-full translate-x-8 -translate-y-8 transition-transform group-hover:scale-110" />
+                              <div className="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4 border border-blue-100">
+                                <DollarSign className="w-6 h-6 text-[#003EC7]" />
+                              </div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                TOTAL DANA TERKUMPUL
+                              </p>
+                              <p className="text-2xl font-black text-gray-900">
+                                {formatCurrency(displayFund)}
+                              </p>
+                            </div>
+
+                            {/* Card 2 */}
+                            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-full translate-x-8 -translate-y-8 transition-transform group-hover:scale-110" />
+                              <div className="bg-indigo-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4 border border-indigo-100">
+                                <Building2 className="w-6 h-6 text-indigo-600" />
+                              </div>
+                              <p className="text-xs font-bold text-indigo-500 absolute top-6 right-6 tracking-wide">
+                                {displayMitraAktif} Mitra Aktif
+                              </p>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                SPONSOR TERAKUISISI
+                              </p>
+                              <p className="text-2xl font-black text-gray-900">
+                                {displaySponsorsCount} Perusahaan
+                              </p>
+                            </div>
+
+                            {/* Card 3 */}
+                            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50/50 rounded-full translate-x-8 -translate-y-8 transition-transform group-hover:scale-110" />
+                              <div className="bg-amber-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4 border border-amber-100">
+                                <Users className="w-6 h-6 text-amber-600" />
+                              </div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                TOTAL AUDIENS
+                              </p>
+                              <p className="text-2xl font-black text-gray-900">
+                                {displayAttendees.toLocaleString("id-ID")} Orang
+                              </p>
+                            </div>
+
+                            {/* Card 4 */}
+                            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50/50 rounded-full translate-x-8 -translate-y-8 transition-transform group-hover:scale-110" />
+                              <div className="bg-purple-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4 border border-purple-100">
+                                <Award className="w-6 h-6 text-purple-600" />
+                              </div>
+                              <p className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 absolute top-6 right-6 tracking-wide text-[10px]">
+                                AI Verified
+                              </p>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                ROI EFEKTIVITAS
+                              </p>
+                              <p className="text-2xl font-black text-gray-900">
+                                {roiScore} / 5.0
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Content Layout Grid */}
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Main Left Columns */}
+                            <div className="lg:col-span-2 space-y-8">
+                              {/* Sponsor Agreements Table */}
+                              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                  <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
+                                    Detail Kesepakatan Sponsor Utama
+                                  </h3>
+                                  <span className="text-xs font-bold text-[#003EC7] hover:underline cursor-pointer">
+                                    Lihat Semua
+                                  </span>
+                                </div>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-left border-collapse">
+                                    <thead>
+                                      <tr className="bg-gray-50/75 border-b border-gray-100">
+                                        <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                          Mitra
+                                        </th>
+                                        <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                          Paket
+                                        </th>
+                                        <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                          Nilai Kontrak
+                                        </th>
+                                        <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                          Status
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {laporanDetail.offers &&
+                                      laporanDetail.offers.length > 0 ? (
+                                        laporanDetail.offers.map(
+                                          (offer: any) => (
+                                            <tr
+                                              key={offer.id}
+                                              className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                                            >
+                                              <td className="p-4 flex items-center gap-3">
+                                                <div className="bg-gray-100 p-2 rounded-xl">
+                                                  <Building2 className="w-4 h-4 text-gray-500" />
+                                                </div>
+                                                <span className="font-bold text-gray-900">
+                                                  {offer.companyProfile
+                                                    ?.companyName ||
+                                                    "PT Kolaborasi"}
+                                                </span>
+                                              </td>
+                                              <td className="p-4 text-sm font-semibold text-gray-600">
+                                                {offer.tier?.name ||
+                                                  "Tier Sponsor"}
+                                              </td>
+                                              <td className="p-4 text-sm font-bold text-gray-900">
+                                                {formatCurrency(
+                                                  offer.tier?.price || 0,
+                                                )}
+                                              </td>
+                                              <td className="p-4">
+                                                <span
+                                                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold tracking-wider ${
+                                                    offer.status ===
+                                                      "APPROVED" ||
+                                                    offer.status === "ACCEPTED"
+                                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                      : "bg-amber-50 text-amber-700 border border-amber-200"
+                                                  }`}
+                                                >
+                                                  {offer.status ===
+                                                    "APPROVED" ||
+                                                  offer.status === "ACCEPTED"
+                                                    ? "Lunas"
+                                                    : offer.status === "PENDING"
+                                                      ? "Tidak ada respon"
+                                                      : offer.status ===
+                                                          "REJECTED"
+                                                        ? "Ditolak"
+                                                        : ""}
+                                                </span>
+                                              </td>
+                                            </tr>
+                                          ),
+                                        )
+                                      ) : (
+                                        <tr>
+                                          <td
+                                            colSpan={4}
+                                            className="p-8 text-center text-gray-400 text-sm"
+                                          >
+                                            Belum ada sponsor terdaftar untuk
+                                            event ini.
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+
+                              {/* Cooperation Log Activity */}
+                              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
+                                <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
+                                  Log Aktivitas Kerjasama
+                                </h3>
+                                <div className="relative pl-8 border-l-2 border-gray-100 space-y-8">
+                                  {/* Timeline Item 1 */}
+                                  <div className="relative">
+                                    <div className="absolute -left-[41px] top-0.5 bg-emerald-500 text-white rounded-full p-1.5 border-4 border-white shadow-sm">
+                                      <CheckCircle2 className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                        {new Date(
+                                          laporanDetail.endDate,
+                                        ).toLocaleDateString("id-ID", {
+                                          day: "numeric",
+                                          month: "long",
+                                          year: "numeric",
+                                        })}{" "}
+                                        — 14:30
+                                      </span>
+                                      <h4 className="font-bold text-gray-955 text-sm">
+                                        Laporan Laporan Akhir Diverifikasi AI
+                                      </h4>
+                                      <p className="text-gray-500 text-xs mt-1 leading-relaxed">
+                                        Semua bukti fisik dan digital telah
+                                        divalidasi oleh sistem SponsorMatch.
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Timeline Item 2 */}
+                                  <div className="relative">
+                                    <div className="absolute -left-[41px] top-0.5 bg-[#003EC7] text-white rounded-full p-1.5 border-4 border-white shadow-sm">
+                                      <TrendingUp className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                        {new Date(
+                                          laporanDetail.startDate,
+                                        ).toLocaleDateString("id-ID", {
+                                          day: "numeric",
+                                          month: "long",
+                                          year: "numeric",
+                                        })}{" "}
+                                        — 22:00
+                                      </span>
+                                      <h4 className="font-bold text-gray-955 text-sm">
+                                        Event Selesai Dilaksanakan
+                                      </h4>
+                                      <p className="text-gray-500 text-xs mt-1 leading-relaxed">
+                                        Event &quot;{laporanDetail.title}&quot;
+                                        sukses mendatangkan{" "}
+                                        {displayAttendees.toLocaleString(
+                                          "id-ID",
+                                        )}
+                                        + pengunjung unik.
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Sidebar Area */}
+                            <div className="space-y-6">
+                              {/* Fundraising Progress Card */}
+                              <div className="bg-gradient-to-br from-[#003EC7] to-[#6366F1] rounded-2xl p-6 text-white shadow-md relative overflow-hidden group">
+                                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform" />
+
+                                <div className="flex justify-between items-center mb-6">
+                                  <span className="text-[10px] font-black tracking-widest uppercase text-blue-100">
+                                    FUNDRAISING PROGRESS
+                                  </span>
+                                  <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                                    <TrendingUp className="w-4 h-4 text-white" />
+                                  </div>
+                                </div>
+
+                                <p className="text-4xl font-black mb-6 tracking-tight">
+                                  {progressPercent}%
+                                </p>
+
+                                <div className="w-full bg-white/20 rounded-full h-3 mb-6 overflow-hidden">
+                                  <div
+                                    className="bg-amber-400 h-full rounded-full"
+                                    style={{
+                                      width: `${Math.min(progressPercent, 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex justify-between text-xs font-bold text-blue-100 mb-6">
+                                  <span>
+                                    Target: {formatCurrency(targetFund)}
+                                  </span>
+                                  <span>
+                                    Capai: {formatCurrency(displayFund)}
+                                  </span>
+                                </div>
+
+                                <div className="border-t border-white/10 pt-4 flex justify-between items-center text-xs">
+                                  <div>
+                                    <p className="text-blue-200 text-[10px] uppercase font-bold tracking-wider">
+                                      Total Biaya
+                                    </p>
+                                    <p className="font-extrabold text-sm mt-0.5">
+                                      {formatCurrency(0)}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-blue-200 text-[10px] uppercase font-bold tracking-wider">
+                                      Profit Bersih
+                                    </p>
+                                    <p className="font-extrabold text-sm mt-0.5 text-amber-400">
+                                      {formatCurrency(displayFund)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Account Manager Box */}
+                              <div className="bg-slate-50 rounded-2xl border border-slate-100 p-6 text-center space-y-4">
+                                <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                                  Butuh bantuan rekonsiliasi data atau audit
+                                  eksternal?
+                                </p>
+                                <button
+                                  onClick={() =>
+                                    alert("Menghubungi Account Manager...")
+                                  }
+                                  className="w-full bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 py-3 rounded-xl text-sm font-extrabold text-slate-700 shadow-sm transition-all"
+                                >
+                                  Hubungi Account Manager
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  )}
+                </TabsContent>
               </Tabs>
             </>
           )}

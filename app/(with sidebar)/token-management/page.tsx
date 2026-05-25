@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +15,11 @@ import {
   QrCode,
   Wallet,
   Banknote,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
+import Script from "next/script";
+import { apiCall } from "@/lib/api-client";
 
 interface TokenPackage {
   id: string;
@@ -49,71 +52,159 @@ const TokenManagement = () => {
   );
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
 
-  const tokenPackages: TokenPackage[] = [
-    {
-      id: "starter",
-      name: "Starter",
-      tokens: 10,
-      price: 150000,
-    },
-    {
-      id: "growth",
-      name: "Growth",
-      tokens: 30,
-      price: 400000,
-      popular: true,
-    },
-    {
-      id: "business",
-      name: "Business",
-      tokens: 100,
-      price: 1200000,
-    },
-  ];
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
+  const [tokenPackages, setTokenPackages] = useState<TokenPackage[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTopUpLoading, setIsTopUpLoading] = useState<boolean>(false);
 
-  const transactions: Transaction[] = [
-    {
-      id: "1",
-      date: "24 Oct 2025",
-      description: "Top Up Package M (30 Tokens)",
-      amount: "Rp 400.000",
-      method: "VIRTUAL ACCOUNT",
-      status: "success",
-    },
-    {
-      id: "2",
-      date: "22 Oct 2025",
-      description: "Proposal: Tech Summit 2024",
-      amount: "- 2 Tokens",
-      method: "SYSTEM WALLET",
-      status: "completed",
-    },
-    {
-      id: "3",
-      date: "19 Oct 2025",
-      description: "Top Up Package S (10 Tokens)",
-      amount: "Rp 150.000",
-      method: "QRIS",
-      status: "pending",
-    },
-  ];
+  const [proposalsCount, setProposalsCount] = useState<number>(12);
+  const [contactsCount, setContactsCount] = useState<number>(8);
+  const [boostsCount, setBoostsCount] = useState<number>(2);
 
-  const boostEvents: BoostEvent[] = [
-    {
-      id: "1",
-      name: "JAJA JAZZ FESTIVAL 2024",
-      startDate: "23 Oct",
-      endDate: "25 Oct",
-      status: "AKTIF",
-    },
-    {
-      id: "2",
-      name: "STARTUP WORLD CUP JAKARTA",
-      startDate: "24 Oct",
-      endDate: "27 Oct",
-      status: "AKTIF",
-    },
-  ];
+  const loadBillingData = async () => {
+    setIsLoading(true);
+    try {
+      const [packagesRes, balanceRes, transactionsRes, usageRes] =
+        await Promise.all([
+          apiCall<{ success: boolean; data: any[] }>("/billing/packages"),
+          apiCall<{ success: boolean; data: { tokenBalance: number } }>(
+            "/billing/balance",
+          ),
+          apiCall<{ success: boolean; data: any[] | { data: any[] } }>(
+            "/billing/transactions",
+          ),
+          apiCall<{ success: boolean; data: any[] }>("/billing/usage"),
+        ]);
+
+      if (packagesRes?.success && packagesRes?.data) {
+        const mapped = packagesRes.data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          tokens: p.tokenAmount,
+          price: p.priceIdr,
+          popular: p.id === "PRO",
+        }));
+        setTokenPackages(mapped);
+      }
+
+      if (balanceRes?.success && balanceRes?.data) {
+        setTokenBalance(balanceRes.data.tokenBalance);
+      }
+
+      const txData = transactionsRes?.data;
+      const rawTxList = Array.isArray(txData)
+        ? txData
+        : txData &&
+            typeof txData === "object" &&
+            "data" in txData &&
+            Array.isArray((txData as any).data)
+          ? (txData as any).data
+          : [];
+      const rawUsageList = usageRes?.data || [];
+
+      // Calculate dynamic counts from live usage history
+      const liveProposals = rawUsageList.filter(
+        (u: any) =>
+          u.feature === "PROPOSAL_BUILDER" || u.feature === "SMART_REVIEW",
+      ).length;
+      const liveContacts = rawUsageList.filter(
+        (u: any) => u.feature === "UNLOCK_CONTACT",
+      ).length;
+      if (rawUsageList.length > 0) {
+        setProposalsCount(liveProposals > 0 ? liveProposals : 12);
+        setContactsCount(liveContacts > 0 ? liveContacts : 8);
+      }
+
+      const combined = [
+        ...rawTxList.map((tx: any) => ({
+          id: tx.id,
+          date: new Date(tx.createdAt).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          rawDate: new Date(tx.createdAt),
+          description: `Top Up ${tx.packageName || "Package"} (${tx.tokenAmount} Tokens)`,
+          amount: `Rp ${tx.priceIdr.toLocaleString("id-ID")}`,
+          method: tx.paymentMethod || "MIDTRANS",
+          status: tx.status.toLowerCase(),
+        })),
+        ...rawUsageList.map((us: any) => ({
+          id: us.id,
+          date: new Date(us.createdAt).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          rawDate: new Date(us.createdAt),
+          description:
+            us.feature === "PROPOSAL_BUILDER"
+              ? "AI Proposal Builder"
+              : us.feature === "SMART_REVIEW"
+                ? "AI Smart Review"
+                : "Buka Kontak Sponsor",
+          amount: `- ${us.cost} Tokens`,
+          method: "SYSTEM WALLET",
+          status: "completed",
+        })),
+      ].sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
+
+      setTransactions(combined);
+    } catch (e) {
+      console.error("Failed to load billing data:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBillingData();
+  }, []);
+
+  const handleTopup = async (packageId: string) => {
+    setSelectedPackage(packageId);
+    setIsTopUpLoading(true);
+    try {
+      const res = await apiCall<{
+        success: boolean;
+        data: {
+          transaction: any;
+          snapToken: string;
+          redirectUrl: string;
+        };
+      }>("/billing/topup", {
+        method: "POST",
+        body: JSON.stringify({ packageId }),
+      });
+      if (res?.success && res?.data?.snapToken) {
+        const snap = (window as any).snap;
+        if (snap) {
+          snap.pay(res.data.snapToken, {
+            onSuccess: (result: any) => {
+              loadBillingData();
+            },
+            onPending: (result: any) => {
+              loadBillingData();
+            },
+            onError: (err: any) => {
+              alert("Pembayaran gagal!");
+            },
+            onClose: () => {
+              loadBillingData();
+            },
+          });
+        } else {
+          window.open(res.data.redirectUrl, "_blank");
+        }
+      }
+    } catch (error) {
+      console.error("Topup failed:", error);
+      alert("Gagal melakukan top-up token.");
+    } finally {
+      setIsTopUpLoading(false);
+    }
+  };
 
   const paymentMethods = [
     { icon: Landmark, label: "Transfer Bank" },
@@ -125,18 +216,20 @@ const TokenManagement = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "success":
+      case "completed":
         return <Badge className="bg-green-100 text-green-800">SUCCESS</Badge>;
       case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800">PENDING</Badge>;
-      case "completed":
-        return <Badge className="bg-blue-100 text-blue-800">COMPLETED</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800">
+            {status.toUpperCase()}
+          </Badge>
+        );
     }
   };
 
   const calculateEventProgress = (startDate: string, endDate: string) => {
-    // Parse dates - assuming format like "23 Oct"
     const months: { [key: string]: number } = {
       Jan: 0,
       Feb: 1,
@@ -177,15 +270,41 @@ const TokenManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6 animate-fadeIn">
+      {/* Midtrans Snap Script dynamically loaded */}
+      <Script
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="afterInteractive"
+      />
+
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header with Token Count and Stats */}
-          <div className="flex items-center gap-6 bg-white p-6 rounded-[8px] shadow-sm">
-            {/* Token Count Circle */}
-            <div className="flex flex-col items-center justify-center p-6">
-              <div className="relative h-32 w-32">
+          <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800 p-8 rounded-[12px] shadow-lg text-white flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Background design elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none"></div>
+
+            {/* Left side: Token Balance text */}
+            <div className="space-y-3 z-10 text-center md:text-left">
+              <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold tracking-wider text-indigo-100 uppercase">
+                Dompet Token Anda
+              </span>
+              <h2 className="text-3xl font-extrabold tracking-tight">
+                Sisa Saldo Token
+              </h2>
+              <p className="text-indigo-200 text-sm max-w-md">
+                Gunakan token Anda untuk mengakses AI Proposal Builder,
+                melakukan AI Smart Review, atau membuka kontak sponsor
+                potensial.
+              </p>
+            </div>
+
+            {/* Right side: Beautiful filled Token circle */}
+            <div className="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-inner z-10 min-w-[200px] w-full md:w-auto">
+              <div className="relative h-28 w-28">
                 <svg
                   className="h-full w-full transform -rotate-90"
                   viewBox="0 0 100 100"
@@ -195,7 +314,7 @@ const TokenManagement = () => {
                     cy="50"
                     r="45"
                     fill="none"
-                    stroke="#e5e7eb"
+                    stroke="rgba(255, 255, 255, 0.15)"
                     strokeWidth="8"
                   />
                   <circle
@@ -203,42 +322,25 @@ const TokenManagement = () => {
                     cy="50"
                     r="45"
                     fill="none"
-                    stroke="#4f46e5"
+                    stroke="#ffffff"
                     strokeWidth="8"
                     strokeDasharray="282.74"
-                    strokeDashoffset="282.74"
+                    strokeDashoffset={
+                      282.74 * (1 - Math.min(tokenBalance, 500) / 500)
+                    }
+                    strokeLinecap="round"
+                    className="drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]"
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-2xl font-bold text-gray-900">45</div>
-                  <div className="text-xs text-gray-500">TOKENS</div>
+                  <div className="text-3xl font-black text-white tracking-tight">
+                    {isLoading ? "..." : tokenBalance}
+                  </div>
+                  <div className="text-[10px] font-bold text-indigo-200 tracking-widest">
+                    TOKENS
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="flex items-center gap-4 w-full">
-              <Card className="flex flex-col items-start justify-center p-4 flex-1 bg-[#F3F4F6] rounded-[4px]">
-                <div className="text-xs text-gray-500 text-center">
-                  PROPOSALS SENT
-                </div>
-                <div className="text-2xl font-bold text-gray-900">12</div>
-                <Progress value={75} className="w-full mt-2" />
-              </Card>
-              <Card className="flex flex-col items-start justify-center p-4 flex-1 bg-[#F3F4F6] rounded-[4px]">
-                <div className="text-xs text-gray-500 text-center">
-                  CONTACTS OPENED
-                </div>
-                <div className="text-2xl font-bold text-gray-900">08</div>
-                <Progress value={75} className="w-full mt-2" />
-              </Card>
-              <Card className="flex flex-col items-start justify-center p-4 flex-1 bg-[#F3F4F6] rounded-[4px]">
-                <div className="text-xs text-gray-500 text-center">
-                  BOOSTS ACTIVE
-                </div>
-                <div className="text-2xl font-bold text-gray-900">02</div>
-                <Progress value={75} className="w-full mt-2" />
-              </Card>
             </div>
           </div>
 
@@ -248,72 +350,66 @@ const TokenManagement = () => {
               Top Up Tokens
             </h2>
             <div className="flex gap-6 items-stretch">
-              {tokenPackages.map((pkg) => (
-                <div
-                  key={pkg.id}
-                  className={`relative p-6 transition-all flex-1 rounded-[8px] border border-[#E5E7EB] ${
-                    pkg.popular
-                      ? "border-2 border-indigo-600 bg-indigo-50"
-                      : "hover:shadow-lg"
-                  } ${selectedPackage === pkg.id ? "ring-2 ring-indigo-600" : ""}`}
-                >
-                  {pkg.popular && (
-                    <div className="absolute right-0 top-0">
-                      <p className="bg-[#505F76] px-3 py-1 text-white text-[10px]">
-                        POPULER
-                      </p>
-                    </div>
-                  )}
-                  <Image
-                    src={"/icons/token.svg"}
-                    alt="token"
-                    width={24}
-                    height={28}
-                    className=""
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 h-48 bg-gray-100 rounded-xl animate-pulse"
                   />
-                  <h3 className="mb-2 text-lg font-semibold text-gray-900">
-                    {pkg.name}
-                  </h3>
-                  <div className="mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {pkg.tokens} Tokens
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Rp {pkg.price.toLocaleString("id-ID")}
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => setSelectedPackage(pkg.id)}
-                    variant={pkg.popular ? "default" : "outline"}
-                    className="w-full"
-                  >
-                    Pilih
-                  </Button>
+                ))
+              ) : tokenPackages.length === 0 ? (
+                <div className="w-full text-center py-8 text-gray-500">
+                  Tidak ada paket tersedia
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Payment Method Section */}
-          <div>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
-              Pilih Metode Pembayaran
-            </h2>
-            <Card className="p-6">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {paymentMethods.map((method, idx) => (
-                  <button
-                    key={idx}
-                    className="flex items-center gap-2 rounded-lg border-2 border-gray-200 p-4 transition-all hover:border-indigo-600 hover:bg-indigo-50"
+              ) : (
+                tokenPackages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className={`relative p-6 transition-all flex-1 rounded-[8px] border border-[#E5E7EB] ${
+                      pkg.popular
+                        ? "border-2 border-indigo-600 bg-indigo-50"
+                        : "hover:shadow-lg"
+                    } ${selectedPackage === pkg.id ? "ring-2 ring-indigo-600" : ""}`}
                   >
-                    <method.icon className="h-6 w-6 text-gray-700" />
-                    <span className="text-xs text-center font-medium text-gray-700">
-                      {method.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </Card>
+                    {pkg.popular && (
+                      <div className="absolute right-0 top-0">
+                        <p className="bg-[#505F76] px-3 py-1 text-white text-[10px]">
+                          POPULER
+                        </p>
+                      </div>
+                    )}
+                    <Image
+                      src={"/icons/token.svg"}
+                      alt="token"
+                      width={24}
+                      height={28}
+                      className="mb-3"
+                    />
+                    <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                      {pkg.name}
+                    </h3>
+                    <div className="mb-4">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {pkg.tokens} Tokens
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Rp {pkg.price.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleTopup(pkg.id)}
+                      disabled={isTopUpLoading}
+                      variant={pkg.popular ? "default" : "outline"}
+                      className="w-full"
+                    >
+                      {isTopUpLoading && selectedPackage === pkg.id
+                        ? "Memproses..."
+                        : "Pilih"}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Transaction History */}
@@ -350,25 +446,36 @@ const TokenManagement = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {transactions.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {tx.date}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {tx.description}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {tx.amount}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {tx.method}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          {getStatusBadge(tx.status)}
+                    {transactions.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-6 py-8 text-center text-sm text-gray-500"
+                        >
+                          Belum ada riwayat transaksi token.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      transactions.map((tx) => (
+                        <tr key={tx.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {tx.date}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {tx.description}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                            {tx.amount}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {tx.method}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            {getStatusBadge(tx.status)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -389,11 +496,11 @@ const TokenManagement = () => {
                 <SendHorizonal className="mb-2 h-5 w-5 text-indigo-600" />
                 <div>
                   <div className="font-semibold text-gray-900">
-                    Proposal Sponsorship
+                    AI Proposal Builder
                   </div>
                   <div className="text-sm text-gray-600">
-                    Memerlukan <span className="font-bold">2-5 Tokens</span> per
-                    proposal tergantung skala sponsor.
+                    Memerlukan <span className="font-bold">5 Token</span> per
+                    proposal.
                   </div>
                 </div>
               </div>
@@ -401,64 +508,26 @@ const TokenManagement = () => {
                 <UserSearch className="mb-2 h-5 w-5 text-purple-600" />
                 <div>
                   <div className="font-semibold text-gray-900">
-                    Buka Kontak Sponsor
+                    Buat Penawaran
                   </div>
                   <div className="text-sm text-gray-600">
-                    Dapatkan akses langsung WhatsApp/Email dengan{" "}
-                    <span className="font-bold">1 Token</span> per kontak.
+                    Buat Penawaran dengan{" "}
+                    <span className="font-bold">2 Token</span>.
                   </div>
                 </div>
               </div>
               <div className=" flex items-start gap-3">
                 <Zap className="mb-2 h-5 w-5 text-blue-600" />
                 <div>
-                  <div className="font-semibold text-gray-900">Boost Event</div>
+                  <div className="font-semibold text-gray-900">
+                    AI Smart Review
+                  </div>
                   <div className="text-sm text-gray-600">
-                    Tingkatkan visibilitas event di halaman utama dengan{" "}
-                    <span className="font-bold">10 Tokens</span> per 24 jam.
+                    Dapatkan proposal terbaik dengan review otomatis dengan
+                    <span className="font-bold"> 3 Token</span>.
                   </div>
                 </div>
               </div>
-            </div>
-          </Card>
-
-          {/* Boost Aktif */}
-          <Card className="p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <Zap className="h-5 w-5 text-yellow-500" />
-              Boost Aktif
-            </h3>
-            <div className="space-y-4">
-              {boostEvents.map((event) => (
-                <div key={event.id} className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="font-semibold text-gray-900">
-                        {event.name}
-                      </div>
-                    </div>
-                    <p className="font-bold text-[#505F76] text-xs">
-                      {event.status}
-                    </p>
-                  </div>
-                  <Progress
-                    value={calculateEventProgress(
-                      event.startDate,
-                      event.endDate,
-                    )}
-                    className="h-2"
-                  />
-                  <div className="text-xs text-gray-600 flex items-center justify-between">
-                    <p>
-                      Mulai: {event.startDate} <span className="mx-1">•</span>
-                    </p>
-                    <p>Selesai: {event.endDate}</p>
-                  </div>
-                </div>
-              ))}
-              <Button variant="outline" className="w-full text-sm mt-2">
-                + Boost Event Lainnya
-              </Button>
             </div>
           </Card>
 

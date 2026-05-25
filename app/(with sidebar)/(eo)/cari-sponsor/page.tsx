@@ -27,6 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ interface MyPitch {
 
 export default function CariSponsor() {
   // Temukan Sponsor state
+  const router = useRouter();
   const [recommendations, setRecommendations] = useState<
     SponsorRecommendation[]
   >([]);
@@ -225,8 +227,13 @@ export default function CariSponsor() {
       // from the event list if the dialog is reopened for the same company
       setMyPitches((prev) => [
         ...prev,
-        { id: "pending", eventId: pitchEventId, companyProfileId: pitchCompanyId },
+        {
+          id: "pending",
+          eventId: pitchEventId,
+          companyProfileId: pitchCompanyId,
+        },
       ]);
+      router.refresh();
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal mengirim penawaran.";
@@ -243,7 +250,9 @@ export default function CariSponsor() {
       try {
         const [eventsRes, pitchesRes] = await Promise.all([
           apiCall<{ data: MyEvent[] }>("/events/my"),
-          apiCall<{ data: MyPitch[] }>("/pitches/my").catch(() => ({ data: [] as MyPitch[] })),
+          apiCall<{ data: MyPitch[] }>("/pitches/my").catch(() => ({
+            data: [] as MyPitch[],
+          })),
         ]);
 
         // Store pitches for event filtering in dialog
@@ -584,7 +593,11 @@ export default function CariSponsor() {
                           onClick={() =>
                             !hasNoPublishedEvents && openPitchDialog(sponsor.id)
                           }
-                          disabled={hasNoPublishedEvents || pitchSuccess || hasExistingPitch}
+                          disabled={
+                            hasNoPublishedEvents ||
+                            pitchSuccess ||
+                            hasExistingPitch
+                          }
                           title={
                             hasNoPublishedEvents
                               ? "Publikasikan event Anda terlebih dahulu untuk mengirim proposal"
@@ -594,8 +607,8 @@ export default function CariSponsor() {
                           {hasNoPublishedEvents
                             ? "⚠ Belum Ada Event Aktif"
                             : hasExistingPitch || pitchSuccess
-                              ? "Proposal Terkirim"
-                              : "Kirim Proposal"}
+                              ? "Pitch Terkirim"
+                              : "Kirim Pitch"}
                         </Button>
                       </div>
                     );
@@ -898,7 +911,7 @@ export default function CariSponsor() {
 
       {/* ─── Pitch Dialog ─── */}
       <Dialog open={pitchDialogOpen} onOpenChange={setPitchDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="lg:min-w-200">
           {pitchSuccess ? (
             /* ── Success state ── */
             <div className="py-8 flex flex-col items-center text-center gap-4">
@@ -936,157 +949,159 @@ export default function CariSponsor() {
                 </DialogDescription>
               </DialogHeader>
 
-              {/* Step 1: Event Selection */}
-              <div className="mt-2">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  Pilih Event Anda
-                </p>
-                {myEventsLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                    <span className="ml-2 text-sm text-gray-500">
-                      Memuat event...
-                    </span>
-                  </div>
-                ) : myEvents.length === 0 ? (
-                  <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-4 text-center">
-                    Tidak ada event yang sudah dipublikasikan dan memiliki paket
-                    sponsorship.
+              <div className="lg:flex items-center gap-4">
+                {/* Step 1: Event Selection */}
+                <div className="mt-2 flex-1">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                    Pilih Event Anda
                   </p>
-                ) : (
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                    {(() => {
-                      // Filter out events already pitched to this company
-                      const available = myEvents.filter(
-                        (ev) =>
-                          !myPitches.some(
-                            (p) =>
-                              p.eventId === ev.id &&
-                              p.companyProfileId === pitchCompanyId,
-                          ),
-                      );
-                      if (available.length === 0) {
-                        return (
-                          <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-4 text-center">
-                            Semua event Anda sudah pernah mengirim proposal ke
-                            sponsor ini.
-                          </p>
+                  {myEventsLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                      <span className="ml-2 text-sm text-gray-500">
+                        Memuat event...
+                      </span>
+                    </div>
+                  ) : myEvents.length === 0 ? (
+                    <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-4 text-center">
+                      Tidak ada event yang sudah dipublikasikan dan memiliki
+                      paket sponsorship.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                      {(() => {
+                        // Filter out events already pitched to this company
+                        const available = myEvents.filter(
+                          (ev) =>
+                            !myPitches.some(
+                              (p) =>
+                                p.eventId === ev.id &&
+                                p.companyProfileId === pitchCompanyId,
+                            ),
                         );
-                      }
-                      return available.map((ev) => (
-                      <button
-                        key={ev.id}
-                        onClick={() => {
-                          setPitchEventId(ev.id);
-                          setSelectedTierId(null); // reset tier when event changes
-                        }}
-                        className={`w-full text-left rounded-lg border px-4 py-3 transition-all ${
-                          pitchEventId === ev.id
-                            ? "border-[#3446C1] bg-blue-50 ring-1 ring-[#3446C1]"
-                            : "border-gray-200 hover:border-gray-300 bg-white"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        if (available.length === 0) {
+                          return (
+                            <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-4 text-center">
+                              Semua event Anda sudah pernah mengirim proposal ke
+                              sponsor ini.
+                            </p>
+                          );
+                        }
+                        return available.map((ev) => (
+                          <button
+                            key={ev.id}
+                            onClick={() => {
+                              setPitchEventId(ev.id);
+                              setSelectedTierId(null); // reset tier when event changes
+                            }}
+                            className={`w-full text-left rounded-lg border px-4 py-3 transition-all ${
                               pitchEventId === ev.id
-                                ? "border-[#3446C1] bg-[#3446C1]"
-                                : "border-gray-300"
+                                ? "border-[#3446C1] bg-blue-50 ring-1 ring-[#3446C1]"
+                                : "border-gray-200 hover:border-gray-300 bg-white"
                             }`}
                           >
-                            {pitchEventId === ev.id && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  pitchEventId === ev.id
+                                    ? "border-[#3446C1] bg-[#3446C1]"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {pitchEventId === ev.id && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {ev.title}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {ev.tiers.length} paket tersedia
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ));
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Step 2: Tier Selection (only when event chosen) */}
+                {pitchEventId && (
+                  <div className="mt-4 flex-1">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                      Pilih Paket Sponsor
+                    </p>
+                    <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                      {myEvents
+                        .find((e) => e.id === pitchEventId)
+                        ?.tiers.map((tier) => (
+                          <button
+                            key={tier.id}
+                            onClick={() => setSelectedTierId(tier.id)}
+                            className={`w-full text-left rounded-lg border p-3.5 transition-all ${
+                              selectedTierId === tier.id
+                                ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                                : "border-gray-200 hover:border-gray-300 bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                    selectedTierId === tier.id
+                                      ? "border-blue-500 bg-blue-500"
+                                      : "border-gray-300"
+                                  }`}
+                                >
+                                  {selectedTierId === tier.id && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                  )}
+                                </div>
+                                <span className="font-semibold text-gray-900 text-sm capitalize">
+                                  {tier.name}
+                                </span>
+                              </div>
+                              <span className="text-blue-600 font-bold text-sm">
+                                {formatRupiah(tier.price)}
+                              </span>
+                            </div>
+                            {tier.benefits && tier.benefits.length > 0 && (
+                              <ul className="ml-6 space-y-0.5">
+                                {tier.benefits.slice(0, 3).map((b, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex items-center gap-1.5 text-xs text-gray-500"
+                                  >
+                                    <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                    {b}
+                                  </li>
+                                ))}
+                                {tier.benefits.length > 3 && (
+                                  <li className="text-xs text-gray-400 ml-4">
+                                    +{tier.benefits.length - 3} benefit lainnya
+                                  </li>
+                                )}
+                              </ul>
                             )}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {ev.title}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {ev.tiers.length} paket tersedia
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                      ));
-                    })()}
+                            {tier.maxSlots && (
+                              <p className="ml-6 text-[11px] text-gray-400 mt-1">
+                                Maks. {tier.maxSlots} slot
+                              </p>
+                            )}
+                          </button>
+                        ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Step 2: Tier Selection (only when event chosen) */}
-              {pitchEventId && (
-                <div className="mt-4">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                    Pilih Paket Sponsor
-                  </p>
-                  <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-                    {myEvents
-                      .find((e) => e.id === pitchEventId)
-                      ?.tiers.map((tier) => (
-                        <button
-                          key={tier.id}
-                          onClick={() => setSelectedTierId(tier.id)}
-                          className={`w-full text-left rounded-lg border p-3.5 transition-all ${
-                            selectedTierId === tier.id
-                              ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1.5">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                  selectedTierId === tier.id
-                                    ? "border-blue-500 bg-blue-500"
-                                    : "border-gray-300"
-                                }`}
-                              >
-                                {selectedTierId === tier.id && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                )}
-                              </div>
-                              <span className="font-semibold text-gray-900 text-sm capitalize">
-                                {tier.name}
-                              </span>
-                            </div>
-                            <span className="text-blue-600 font-bold text-sm">
-                              {formatRupiah(tier.price)}
-                            </span>
-                          </div>
-                          {tier.benefits && tier.benefits.length > 0 && (
-                            <ul className="ml-6 space-y-0.5">
-                              {tier.benefits.slice(0, 3).map((b, i) => (
-                                <li
-                                  key={i}
-                                  className="flex items-center gap-1.5 text-xs text-gray-500"
-                                >
-                                  <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
-                                  {b}
-                                </li>
-                              ))}
-                              {tier.benefits.length > 3 && (
-                                <li className="text-xs text-gray-400 ml-4">
-                                  +{tier.benefits.length - 3} benefit lainnya
-                                </li>
-                              )}
-                            </ul>
-                          )}
-                          {tier.maxSlots && (
-                            <p className="ml-6 text-[11px] text-gray-400 mt-1">
-                              Maks. {tier.maxSlots} slot
-                            </p>
-                          )}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-
               {/* Step 3: Message Input */}
               <div className="mt-4">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                  Pesan Proposal
+                  Pesan Pitch
                 </label>
                 <textarea
                   rows={4}
@@ -1139,7 +1154,7 @@ export default function CariSponsor() {
                   ) : (
                     <Send className="w-4 h-4" />
                   )}
-                  Kirim Proposal
+                  Kirim Pitch
                 </Button>
               </DialogFooter>
             </>

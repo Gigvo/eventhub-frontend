@@ -10,9 +10,10 @@ import { OrderedList } from "@tiptap/extension-list";
 
 interface TiptapProps {
   content?: string;
+  onChange?: (html: string) => void;
 }
 
-const Tiptap = ({ content }: TiptapProps) => {
+const Tiptap = ({ content, onChange }: TiptapProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -40,8 +41,13 @@ const Tiptap = ({ content }: TiptapProps) => {
     editorProps: {
       attributes: {
         class:
-          "min-h-screen w-180 shadow-sm p-16 mx-auto rounded-lg focus:outline-none",
+          "min-h-screen w-180 shadow-sm p-16 mx-auto rounded-lg focus:outline-none bg-white border border-gray-100 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-8 [&_h1]:text-gray-900 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:text-gray-900 [&_p]:text-gray-700 [&_p]:leading-relaxed [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-6 [&_li]:mb-2 [&_li]:text-gray-700",
       },
+    },
+    onUpdate: ({ editor }) => {
+      if (onChange) {
+        onChange(editor.getHTML());
+      }
     },
   });
 

@@ -94,6 +94,74 @@ function scoreLabel(score: number): string {
   return "Perlu Perbaikan";
 }
 
+function parseHtmlToProposalContent(html: string): ProposalContent {
+  const defaultContent: ProposalContent = {
+    executiveSummary: "",
+    eventBackground: "",
+    objectives: [],
+    targetAudience: "",
+    whyThisEvent: "",
+    sponsorshipBenefits: [],
+    callToAction: "",
+  };
+
+  if (typeof window === "undefined") return defaultContent;
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  // Helper to extract content after a specific heading text
+  const getSectionContent = (headingText: string): string => {
+    const headings = Array.from(doc.querySelectorAll("h2"));
+    const heading = headings.find((h) => 
+      h.textContent?.toLowerCase().includes(headingText.toLowerCase())
+    );
+    if (!heading) return "";
+    
+    let content = "";
+    let next = heading.nextElementSibling;
+    while (next && next.tagName !== "H2" && next.tagName !== "H1") {
+      if (next.tagName === "P") {
+        content += (content ? "\n" : "") + (next.textContent || "");
+      }
+      next = next.nextElementSibling;
+    }
+    return content;
+  };
+
+  // Helper to extract list items after a specific heading text
+  const getSectionList = (headingText: string): string[] => {
+    const headings = Array.from(doc.querySelectorAll("h2"));
+    const heading = headings.find((h) => 
+      h.textContent?.toLowerCase().includes(headingText.toLowerCase())
+    );
+    if (!heading) return [];
+
+    const items: string[] = [];
+    let next = heading.nextElementSibling;
+    while (next && next.tagName !== "H2" && next.tagName !== "H1") {
+      if (next.tagName === "UL" || next.tagName === "OL") {
+        const lis = next.querySelectorAll("li");
+        lis.forEach((li) => {
+          if (li.textContent) items.push(li.textContent);
+        });
+      }
+      next = next.nextElementSibling;
+    }
+    return items;
+  };
+
+  return {
+    executiveSummary: getSectionContent("Executive Summary") || getSectionContent("Ringkasan Eksekutif"),
+    eventBackground: getSectionContent("Latar Belakang Event") || getSectionContent("Background"),
+    objectives: getSectionList("Tujuan") || getSectionList("Objectives"),
+    targetAudience: getSectionContent("Target Audiens") || getSectionContent("Audience"),
+    whyThisEvent: getSectionContent("Mengapa Event Ini") || getSectionContent("Why This Event"),
+    sponsorshipBenefits: getSectionList("Manfaat Sponsorship") || getSectionList("Benefits"),
+    callToAction: getSectionContent("Call to Action") || getSectionContent("CTA"),
+  };
+}
+
 const SEVERITY_CONFIG = {
   CRITICAL: {
     bg: "bg-red-50 border-red-200",
@@ -151,6 +219,13 @@ export default function ProposalBuilder() {
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<"success" | "error" | null>(null);
+  const [editedHtml, setEditedHtml] = useState<string>("");
+
+  useEffect(() => {
+    if (editorContent) {
+      setEditedHtml(editorContent);
+    }
+  }, [editorContent]);
 
   const router = useRouter();
 
@@ -159,13 +234,75 @@ export default function ProposalBuilder() {
     try {
       setIsPublishing(true);
       setPublishResult(null);
+
+      // PATCH the edited proposal content to the backend before publishing!
+      if (editedHtml) {
+        const parsedContent = parseHtmlToProposalContent(editedHtml);
+        console.log("Saving edited proposal content:", parsedContent);
+        await apiCall(`/events/${proposal.eventId}/proposal/content`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            content: JSON.stringify(parsedContent),
+          }),
+        });
+      }
+
       await apiCall(`/events/${proposal.eventId}/publish`, { method: "POST" });
       setPublishResult("success");
       setTimeout(() => router.push("/dashboard"), 1500);
-    } catch {
+    } catch (error) {
+      console.error("Failed to publish event:", error);
       setPublishResult("error");
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!editedHtml) return;
+    
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`
+        <html>
+          <head>
+            <title>Proposal_Event</title>
+            <style>
+              body { 
+                font-family: 'Segoe UI', system-ui, sans-serif; 
+                line-height: 1.6; 
+                padding: 40px; 
+                color: #1a1a1a; 
+                max-width: 800px;
+                margin: 0 auto;
+              }
+              h1 { color: #003EC7; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 30px; }
+              h2 { color: #111827; margin-top: 32px; margin-bottom: 16px; font-size: 1.5rem; }
+              p { margin-bottom: 16px; text-align: justify; }
+              ul, ol { margin-bottom: 24px; padding-left: 24px; }
+              li { margin-bottom: 8px; }
+              @media print {
+                body { padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${editedHtml}
+          </body>
+        </html>
+      `);
+      doc.close();
+      
+      iframe.contentWindow?.focus();
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 500);
     }
   };
 
@@ -179,6 +316,43 @@ export default function ProposalBuilder() {
       .catch(() => setReviewError("Gagal memuat Smart Review."))
       .finally(() => setReviewLoading(false));
   }, [proposal?.eventId]);
+
+  const [isRerunningReview, setIsRerunningReview] = useState(false);
+
+  const handleRerunReview = async () => {
+    if (!proposal?.eventId) return;
+    try {
+      setIsRerunningReview(true);
+      setReviewError(null);
+      setReviewLoading(true);
+
+      // Step 1: Save current editor content to backend first so AI reviews the updated content
+      if (editedHtml) {
+        const parsedContent = parseHtmlToProposalContent(editedHtml);
+        await apiCall(`/events/${proposal.eventId}/proposal/content`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            content: JSON.stringify(parsedContent),
+          }),
+        });
+      }
+
+      // Step 2: Request fresh AI Smart Review
+      const res = await apiCall<{ data: { review: SmartReview } }>("/ai/smart-review", {
+        method: "POST",
+        body: JSON.stringify({ eventId: proposal.eventId }),
+      });
+      if (res?.data?.review) {
+        setReview(res.data.review);
+      }
+    } catch (err) {
+      console.error("Failed to rerun smart review:", err);
+      setReviewError("Gagal memperbarui analisis Smart Review.");
+    } finally {
+      setReviewLoading(false);
+      setIsRerunningReview(false);
+    }
+  };
 
   const criticalCount =
     review?.issues.filter((i) => i.severity === "CRITICAL").length ?? 0;
@@ -209,7 +383,7 @@ export default function ProposalBuilder() {
           </BreadcrumbList>
         </Breadcrumb>
         <div className="flex gap-4">
-          <Button variant={"outline"}>Unduh PDF</Button>
+          <Button variant={"outline"} onClick={handleDownloadPDF}>Unduh PDF</Button>
           <Button
             className="bg-[#003EC7]"
             onClick={handlePublish}
@@ -223,18 +397,39 @@ export default function ProposalBuilder() {
       <div className="flex gap-6 p-6">
         {/* Editor */}
         <div className="w-full">
-          <Tiptap content={editorContent || undefined} />
+          <Tiptap content={editorContent || undefined} onChange={setEditedHtml} />
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6 max-w-sm w-full">
           {/* Header */}
-          <h2 className="text-sm font-semibold text-gray-600 flex items-center gap-2">
-            <span className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
-              ✓
-            </span>
-            AI Smart Review
-          </h2>
+          <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
+            <h2 className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+              <span className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
+                ✓
+              </span>
+              AI Smart Review
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRerunReview}
+              disabled={reviewLoading || isRerunningReview}
+              className="text-xs h-8 gap-1 border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-200 transition-colors"
+            >
+              {isRerunningReview ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Menganalisis...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  Perbarui Analisis
+                </>
+              )}
+            </Button>
+          </div>
 
           {/* Loading state */}
           {reviewLoading && (

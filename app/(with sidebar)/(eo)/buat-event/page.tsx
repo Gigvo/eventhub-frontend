@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import {
   Upload,
   Info,
@@ -9,6 +9,10 @@ import {
   Plus,
   Lock,
   ArrowLeft,
+  Sparkles,
+  Search,
+  FileText,
+  CheckCircle2,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -57,6 +61,7 @@ interface FormData {
     name: string;
     price: string;
     benefits: string[];
+    maxSlots: string;
   }>;
   contactInfo: {
     nama: string;
@@ -68,6 +73,7 @@ const STEPS = [
   { number: 1, title: "Informasi Dasar" },
   { number: 2, title: "Detail & Audiens" },
   { number: 3, title: "Paket Sponsorship" },
+  { number: 4, title: "Layanan AI" },
 ];
 
 const availableInterests = [
@@ -83,11 +89,13 @@ const availableInterests = [
   "healthcare",
 ];
 
-
-export default function BuatEventPage() {
+function BuatEventForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
+  const [confirmDeskripsi, setConfirmDeskripsi] = useState(false);
+  const [confirmEstimasi, setConfirmEstimasi] = useState(false);
+  const [confirmDemografi, setConfirmDemografi] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [eventId, setEventId] = useState<string | null>(null);
@@ -100,17 +108,116 @@ export default function BuatEventPage() {
     name: "",
     price: "",
     benefits: [] as string[],
+    maxSlots: "",
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
+  const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [pdfDragActive, setPdfDragActive] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState<number>(45);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const res = await apiCall<{
+          success: boolean;
+          data: { tokenBalance: number };
+        }>("/billing/balance");
+        if (res?.success && res?.data) {
+          setTokenBalance(res.data.tokenBalance);
+        }
+      } catch (e) {
+        console.error("Failed to fetch balance:", e);
+      }
+    };
+    if (currentStep === 4) {
+      fetchBalance();
+    }
+  }, [currentStep]);
+
   useEffect(() => {
     const idParam = searchParams.get("id");
     const stepParam = searchParams.get("step");
-    if (idParam && stepParam === "3") {
+
+    if (idParam) {
       setEventId(idParam);
-      setCurrentStep(3);
+      if (stepParam) {
+        setCurrentStep(parseInt(stepParam, 10) || 1);
+      }
+
+      // Fetch existing event details from backend to load draft and tiers
+      const fetchEventData = async () => {
+        try {
+          const res = await apiCall<any>(`/events/${idParam}`);
+          if (res.success && res.data) {
+            const event = res.data;
+
+            // Format dates
+            let formattedStart = "";
+            let formattedEnd = "";
+            if (event.startDate) {
+              const startDate = new Date(event.startDate);
+              const year = startDate.getFullYear();
+              const month = String(startDate.getMonth() + 1).padStart(2, "0");
+              const day = String(startDate.getDate()).padStart(2, "0");
+              formattedStart = `${year}-${month}-${day}`;
+            }
+            if (event.endDate) {
+              const endDate = new Date(event.endDate);
+              const year = endDate.getFullYear();
+              const month = String(endDate.getMonth() + 1).padStart(2, "0");
+              const day = String(endDate.getDate()).padStart(2, "0");
+              formattedEnd = `${year}-${month}-${day}`;
+            }
+
+            // Map tiers/packages
+            const mappedPackages = Array.isArray(event.tiers)
+              ? event.tiers.map((tier: any, idx: number) => ({
+                  id: idx + 1,
+                  name: tier.name,
+                  price: new Intl.NumberFormat("id-ID").format(tier.price),
+                  benefits: tier.benefits || [],
+                  maxSlots: tier.maxSlots ? String(tier.maxSlots) : "",
+                }))
+              : [];
+
+            setFormData((prev) => ({
+              ...prev,
+              namaEvent: event.title || prev.namaEvent,
+              tanggalMulai: formattedStart || prev.tanggalMulai,
+              tanggalSelesai: formattedEnd || prev.tanggalSelesai,
+              formatEvent: event.isOnline ? "online" : "offline",
+              kota: event.city || prev.kota,
+              kategoriEvent: event.category || prev.kategoriEvent,
+              alamatEvent: event.venue || prev.alamatEvent,
+              bannerPreview: event.bannerUrl || prev.bannerPreview,
+              deskripsiEvent: event.description || prev.deskripsiEvent,
+              estimasiPeserta: event.expectedAttendees || prev.estimasiPeserta,
+              targetIndustri: event.theme || prev.targetIndustri,
+              audienceAgeMin: event.audienceAgeMin || prev.audienceAgeMin,
+              audienceAgeMax: event.audienceAgeMax || prev.audienceAgeMax,
+              audienceInterests:
+                event.audienceInterests || prev.audienceInterests,
+              packages: mappedPackages,
+            }));
+
+            // If they are returning to step 3, we auto-confirm the checklist since they already created the event!
+            if (stepParam === "3") {
+              setConfirmDeskripsi(true);
+              setConfirmEstimasi(true);
+              setConfirmDemografi(true);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch event draft data:", error);
+        }
+      };
+
+      fetchEventData();
     }
   }, [searchParams]);
 
@@ -140,7 +247,7 @@ export default function BuatEventPage() {
     targetIndustri: "",
     audienceAgeMin: 18,
     audienceAgeMax: 45,
-    audienceInterests: ["technology", "startup"],
+    audienceInterests: [],
     channelData: {
       instagram: "@username",
       tiktok: "@username",
@@ -153,6 +260,70 @@ export default function BuatEventPage() {
       whatsapp: "0812XXXXXXXX",
     },
   });
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("buatEventFormProgress");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.formData) {
+          // Restore form data (bannerFile is always null initially)
+          setFormData((prev) => ({
+            ...prev,
+            ...parsed.formData,
+            bannerFile: null,
+          }));
+        }
+        if (parsed.eventId) {
+          setEventId(parsed.eventId);
+        }
+        if (typeof parsed.confirmDeskripsi === "boolean") {
+          setConfirmDeskripsi(parsed.confirmDeskripsi);
+        }
+        if (typeof parsed.confirmEstimasi === "boolean") {
+          setConfirmEstimasi(parsed.confirmEstimasi);
+        }
+        if (typeof parsed.confirmDemografi === "boolean") {
+          setConfirmDemografi(parsed.confirmDemografi);
+        }
+
+        // Only restore step if URL doesn't specify one
+        const stepParam = searchParams.get("step");
+        if (!stepParam && parsed.currentStep) {
+          setCurrentStep(parsed.currentStep);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load form progress:", e);
+    }
+  }, [searchParams]);
+
+  // Save progress to localStorage
+  useEffect(() => {
+    try {
+      // Exclude bannerFile from JSON stringify since File objects are not serializable
+      const { bannerFile, ...serializableFormData } = formData;
+      const progress = {
+        formData: serializableFormData,
+        currentStep,
+        eventId,
+        confirmDeskripsi,
+        confirmEstimasi,
+        confirmDemografi,
+      };
+      localStorage.setItem("buatEventFormProgress", JSON.stringify(progress));
+    } catch (e) {
+      console.error("Failed to save form progress:", e);
+    }
+  }, [
+    formData,
+    currentStep,
+    eventId,
+    confirmDeskripsi,
+    confirmEstimasi,
+    confirmDemografi,
+  ]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -355,6 +526,7 @@ export default function BuatEventPage() {
     packageName: string,
     price: string,
     benefits: string[],
+    maxSlots: string,
   ) => {
     if (!eventId) {
       showNotification("error", "Event ID tidak ditemukan. Silakan coba lagi.");
@@ -373,6 +545,7 @@ export default function BuatEventPage() {
         name: packageName,
         price: parseInt(price.replace(/\D/g, "")),
         benefits: benefits,
+        ...(maxSlots ? { maxSlots: parseInt(maxSlots, 10) } : {}),
       };
 
       console.log(`Creating tier for event ${eventId}:`, tierPayload);
@@ -389,6 +562,7 @@ export default function BuatEventPage() {
           name: packageName,
           price: price,
           benefits: benefits,
+          maxSlots: maxSlots,
         };
         setFormData((prev) => ({
           ...prev,
@@ -433,6 +607,101 @@ export default function BuatEventPage() {
       });
 
       if (response?.data) {
+        // Save dummy PDF proposal to firebase storage
+        try {
+          let pdfContent = "";
+          try {
+            const rawContent = response.data.content;
+            const parsed =
+              typeof rawContent === "string"
+                ? JSON.parse(rawContent)
+                : rawContent;
+
+            let bodyText = `Proposal Event: ${formData.namaEvent || "Event"}\n\n`;
+            if (parsed) {
+              bodyText += `1. EXECUTIVE SUMMARY\n${parsed.executiveSummary || ""}\n\n`;
+              bodyText += `2. LATAR BELAKANG EVENT\n${parsed.eventBackground || ""}\n\n`;
+              if (parsed.objectives && Array.isArray(parsed.objectives)) {
+                bodyText += `3. TUJUAN\n${parsed.objectives.map((o: any, idx: number) => `${idx + 1}. ${o}`).join("\n")}\n\n`;
+              }
+              bodyText += `4. TARGET AUDIENS\n${parsed.targetAudience || ""}\n\n`;
+              bodyText += `5. MENGAPA EVENT INI\n${parsed.whyThisEvent || ""}\n\n`;
+              if (
+                parsed.sponsorshipBenefits &&
+                Array.isArray(parsed.sponsorshipBenefits)
+              ) {
+                bodyText += `6. MANFAAT SPONSORSHIP\n${parsed.sponsorshipBenefits.map((b: any, idx: number) => `${idx + 1}. ${b}`).join("\n")}\n\n`;
+              }
+              bodyText += `7. CALL TO ACTION\n${parsed.callToAction || ""}\n`;
+            }
+
+            // Simple text wrap helper to prevent lines from spilling off the PDF page
+            const wrapText = (text: string, maxChars: number = 80) => {
+              const lines: string[] = [];
+              const paragraphs = text.split("\n");
+              for (const p of paragraphs) {
+                const words = p.split(" ");
+                let currentLine = "";
+                for (const w of words) {
+                  if ((currentLine + " " + w).length <= maxChars) {
+                    currentLine = currentLine ? currentLine + " " + w : w;
+                  } else {
+                    lines.push(currentLine);
+                    currentLine = w;
+                  }
+                }
+                if (currentLine) lines.push(currentLine);
+                lines.push(""); // spacer between paragraphs
+              }
+              return lines;
+            };
+
+            const wrappedLines = wrapText(bodyText);
+            const escapedLines = wrappedLines
+              .map((line) => {
+                const escaped = line
+                  .replace(/\\/g, "\\\\")
+                  .replace(/\(/g, "\\(")
+                  .replace(/\)/g, "\\)");
+                return `(${escaped}) Tj T*`;
+              })
+              .join("\n");
+
+            const streamContent = `BT\n/F1 10 Tf\n12 TL\n50 750 Td\n${escapedLines}\nET`;
+            const streamLength = streamContent.length;
+
+            pdfContent = `%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /MediaBox [0 0 612 792] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length ${streamLength} >>\nstream\n${streamContent}\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000056 00000 n\n0000000111 00000 n\n0000000262 00000 n\ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n${262 + streamLength + 25}\n%%EOF`;
+          } catch (e) {
+            console.error("Failed to parse and generate real PDF:", e);
+            pdfContent =
+              "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 20 >>\nstream\nBT /F1 12 Tf ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000056 00000 n\n0000000111 00000 n\n0000000212 00000 n\ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n281\n%%EOF";
+          }
+
+          const file = new Blob([pdfContent], { type: "application/pdf" });
+          const path = `events/${eventId}/proposal.pdf`;
+          const storageRef = ref(storage, path);
+
+          await uploadBytes(storageRef, file);
+
+          // Get public download URL
+          const fileUrl = await getDownloadURL(storageRef);
+          console.log("Firebase generated proposal file URL: ", fileUrl);
+
+          // POST generated proposal URL to backend
+          await apiCall<any>(`/events/${eventId}/proposal`, {
+            method: "POST",
+            body: JSON.stringify({
+              source: "GENERATED",
+              fileUrl: fileUrl,
+            }),
+          });
+        } catch (uploadError) {
+          console.error(
+            "Failed to upload generated proposal to firebase:",
+            uploadError,
+          );
+        }
+
         // Store the AI-generated proposal so proposal-builder page can read it
         localStorage.setItem(
           "generatedProposal",
@@ -457,6 +726,9 @@ export default function BuatEventPage() {
             savedAt: new Date().toISOString(),
           }),
         );
+
+        // Clear local storage progress draft
+        localStorage.removeItem("buatEventFormProgress");
 
         router.push("/proposal-builder");
       }
@@ -489,7 +761,10 @@ export default function BuatEventPage() {
       return (
         formData.deskripsiEvent.length >= 20 &&
         formData.targetIndustri &&
-        formData.audienceInterests.length > 0
+        formData.audienceInterests.length > 0 &&
+        confirmDeskripsi &&
+        confirmEstimasi &&
+        confirmDemografi
       );
     }
     return true;
@@ -617,10 +892,7 @@ export default function BuatEventPage() {
           <div className="flex items-center gap-4">
             {STEPS.map((step, idx) => (
               <div key={step.number} className="flex items-center">
-                <button
-                  onClick={() =>
-                    currentStep !== step.number && setCurrentStep(step.number)
-                  }
+                <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition ${
                     currentStep === step.number
                       ? "bg-blue-600 text-white"
@@ -630,7 +902,7 @@ export default function BuatEventPage() {
                   }`}
                 >
                   {currentStep > step.number ? "✓" : step.number}
-                </button>
+                </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900">
                     {step.title}
@@ -759,18 +1031,14 @@ export default function BuatEventPage() {
                   <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
                     Kota
                   </label>
-                  <select
+                  <input
+                    type="text"
                     name="kota"
                     value={formData.kota}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm bg-white"
-                  >
-                    <option value="">Pilih Kota</option>
-                    <option value="Jakarta">Jakarta</option>
-                    <option value="Bandung">Bandung</option>
-                    <option value="Surabaya">Surabaya</option>
-                    <option value="Yogyakarta">Yogyakarta</option>
-                  </select>
+                    placeholder="Contoh: Yogyakarta"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm"
+                  />
                 </div>
                 <div>
                   <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
@@ -1201,6 +1469,67 @@ export default function BuatEventPage() {
                 </div>
               </div>
             </div>
+
+            {/* Confirmation Section */}
+            <div className="mt-8 p-6 bg-[#FFF7ED] border border-[#FED7AA] rounded-xl text-[#92400E]">
+              <div className="flex gap-3.5 mb-4">
+                <Image
+                  src={"/icons/caution.svg"}
+                  alt={"caution"}
+                  width={18}
+                  height={15}
+                ></Image>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-[#78350F]">
+                    Perhatian — Analisis Audiens Tidak Dapat Diubah
+                  </h3>
+                  <p className="text-sm text-[#92400E]/90 leading-relaxed font-medium">
+                    Data audiens dan deskripsi event tidak dapat diubah setelah
+                    Anda melanjutkan ke Paket Sponsorship. Harap pastikan data
+                    berikut sudah benar:
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3.5 pl-8 pt-1">
+                {[
+                  {
+                    id: "confirmDeskripsi",
+                    label: "Deskripsi Lengkap Event",
+                    checked: confirmDeskripsi,
+                    onChange: setConfirmDeskripsi,
+                  },
+                  {
+                    id: "confirmEstimasi",
+                    label: "Estimasi Jumlah Peserta & Tier",
+                    checked: confirmEstimasi,
+                    onChange: setConfirmEstimasi,
+                  },
+                  {
+                    id: "confirmDemografi",
+                    label: "Target Demografi & Industri",
+                    checked: confirmDemografi,
+                    onChange: setConfirmDemografi,
+                  },
+                ].map((item) => (
+                  <label
+                    key={item.id}
+                    className="flex items-center gap-3 cursor-pointer group select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      id={item.id}
+                      checked={item.checked}
+                      onChange={(e) => item.onChange(e.target.checked)}
+                      className="w-[18px] h-[18px] border-2 border-[#D97706] text-[#D97706] rounded focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#D97706]"
+                    />
+                    <span className="text-sm font-semibold text-[#78350F] group-hover:text-[#92400E] transition">
+                      {item.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1225,7 +1554,7 @@ export default function BuatEventPage() {
               {/* Main Content */}
               <div className="flex-1">
                 {/* Target Pendanaan */}
-                <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                {/* <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">
                     Target Pendanaan
                   </h2>
@@ -1252,8 +1581,8 @@ export default function BuatEventPage() {
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                </div> */}
+                {/* <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">
                     Target Sponsor Industri
                   </h2>
@@ -1276,7 +1605,7 @@ export default function BuatEventPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Paket Sponsorship */}
                 <div className="mb-8">
@@ -1344,6 +1673,29 @@ export default function BuatEventPage() {
                           </div>
                         </div>
 
+                        {/* Max Slots */}
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">
+                            Jumlah Slot
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="Contoh: 1"
+                            value={newPackage.maxSlots}
+                            onChange={(e) =>
+                              setNewPackage({
+                                ...newPackage,
+                                maxSlots: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">
+                            Kosongkan jika tidak ada batas slot
+                          </p>
+                        </div>
+
                         {/* Benefits */}
                         <div>
                           <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">
@@ -1388,10 +1740,7 @@ export default function BuatEventPage() {
                                 ) {
                                   setNewPackage({
                                     ...newPackage,
-                                    benefits: [
-                                      ...newPackage.benefits,
-                                      trimmed,
-                                    ],
+                                    benefits: [...newPackage.benefits, trimmed],
                                   });
                                 }
                                 setBenefitInput("");
@@ -1410,11 +1759,13 @@ export default function BuatEventPage() {
                                 newPackage.name,
                                 newPackage.price,
                                 newPackage.benefits,
+                                newPackage.maxSlots,
                               );
                               setNewPackage({
                                 name: "",
                                 price: "",
                                 benefits: [],
+                                maxSlots: "",
                               });
                               setShowAddPackageForm(false);
                             }}
@@ -1434,6 +1785,7 @@ export default function BuatEventPage() {
                                 name: "",
                                 price: "",
                                 benefits: [],
+                                maxSlots: "",
                               });
                             }}
                             className="flex-1 bg-gray-200 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-300 font-medium text-sm transition"
@@ -1491,8 +1843,22 @@ export default function BuatEventPage() {
                           </div>
                         </div>
 
-                        {/* Benefit */}
+                        {/* Max Slots */}
                         <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">
+                            Jumlah Slot
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-700">
+                              {pkg.maxSlots
+                                ? `${pkg.maxSlots} slot`
+                                : "Tidak terbatas"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Benefit */}
+                        <div className="col-span-2">
                           <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">
                             Benefit
                           </label>
@@ -1589,7 +1955,7 @@ export default function BuatEventPage() {
                 </div>
 
                 {/* Kontak Person */}
-                <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                {/* <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">
                     Kontak Person EO
                   </h2>
@@ -1650,7 +2016,164 @@ export default function BuatEventPage() {
                       </p>
                     </div>
                   </div>
+                </div> */}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 4 && (
+          <div className="max-w-5xl mx-auto space-y-12 animate-fadeIn pb-12">
+            {/* Header */}
+            <div className="text-center space-y-3">
+              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                Pilih Layanan AI EventHub
+              </h2>
+              <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+                Optimalkan proposal Anda dengan teknologi AI kami untuk menarik
+                mitra strategis lebih cepat.
+              </p>
+            </div>
+
+            {/* Grid options */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+              {/* Option 1: AI Proposal Builder */}
+              <div className="bg-white rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:shadow-xl transition-all duration-300 p-8 flex flex-col justify-between relative overflow-hidden group">
+                <div className="absolute right-0 top-0 bg-blue-500/10 text-blue-600 px-4 py-1.5 rounded-bl-2xl font-bold text-sm flex items-center gap-1">
+                  <Sparkles size={14} className="animate-pulse" />5 Token
                 </div>
+
+                <div className="space-y-6">
+                  {/* Icon */}
+                  <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                    <FileText size={28} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-gray-900">
+                      AI Proposal Builder
+                    </h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                      Generate a professional, high-converting sponsorship
+                      proposal document automatically based on your event data.
+                      Hemat waktu hingga 5 jam penulisan.
+                    </p>
+                  </div>
+
+                  {/* Bullet points */}
+                  <ul className="space-y-3 text-sm text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      <span>Optimasi copywriting profesional</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      <span>Struktur proposal standar B2B</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      <span>Format PDF siap kirim</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-8">
+                  <Button
+                    onClick={handleSaveAndContinue}
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-md flex items-center justify-center gap-2"
+                  >
+                    <Sparkles size={16} />
+                    {isSubmitting ? "Memproses..." : "Gunakan AI Builder"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Option 2: AI Smart Review */}
+              <div className="bg-white rounded-2xl border-2 border-gray-100 hover:border-indigo-500 hover:shadow-xl transition-all duration-300 p-8 flex flex-col justify-between relative overflow-hidden group">
+                <div className="absolute right-0 top-0 bg-indigo-500/10 text-indigo-600 px-4 py-1.5 rounded-bl-2xl font-bold text-sm flex items-center gap-1">
+                  <Search size={14} />3 Token
+                </div>
+
+                <div className="space-y-6">
+                  {/* Icon */}
+                  <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                    <Search size={28} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-gray-900">
+                      AI Smart Review
+                    </h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                      Analyze your existing proposal and get actionable insights
+                      to improve your match score and attract more sponsors.
+                      Dapatkan feedback instan.
+                    </p>
+                  </div>
+
+                  {/* Bullet points */}
+                  <ul className="space-y-3 text-sm text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      <span>Prediksi tingkat keberhasilan match</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      <span>Rekomendasi perbaikan penawaran</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      <span>Analisis perbandingan kompetitor</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-8">
+                  <Button
+                    onClick={() => setIsUploadDialogOpen(true)}
+                    variant="outline"
+                    className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 font-semibold py-3 rounded-xl transition duration-300 flex items-center justify-center gap-2"
+                  >
+                    <Search size={16} />
+                    Gunakan Smart Review
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom elements */}
+            <div className="flex flex-col items-center space-y-4 pt-4 border-t border-gray-100">
+              <Button
+                variant="ghost"
+                onClick={() => setIsUploadDialogOpen(true)}
+                className="text-gray-600 hover:text-gray-900 font-medium bg-gray-100 hover:bg-gray-200 px-6 py-2 rounded-full transition duration-300"
+              >
+                Saya punya proposal sendiri
+              </Button>
+
+              {/* Token Info Widget */}
+              <div className="flex items-center justify-between gap-6 bg-blue-50/50 border border-blue-100 rounded-2xl px-6 py-4 max-w-md w-full">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                    🪙
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                      Sisa Token Anda
+                    </p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {tokenBalance} Tokens
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="link"
+                  onClick={() => window.open("/token-management", "_blank")}
+                  className="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 text-sm p-0"
+                >
+                  + Beli Token
+                </Button>
               </div>
             </div>
           </div>
@@ -1691,16 +2214,211 @@ export default function BuatEventPage() {
 
             {currentStep === 3 && (
               <Button
-                onClick={handleSaveAndContinue}
-                disabled={isSubmitting || formData.packages.length === 0}
-                className="bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  localStorage.setItem(
+                    "buatEventStep3Data",
+                    JSON.stringify({
+                      eventId,
+                      totalBudget: formData.totalBudget,
+                      packages: formData.packages,
+                      contactInfo: formData.contactInfo,
+                      eventName: formData.namaEvent,
+                      savedAt: new Date().toISOString(),
+                    }),
+                  );
+                  setCurrentStep(4);
+                }}
+                disabled={formData.packages.length === 0}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                {isSubmitting ? "Menyimpan..." : "Simpan & Lanjutkan"}
+                Lanjut ke Layanan AI
               </Button>
             )}
           </div>
         </div>
+
+        {/* Dialog for Uploading Proposal PDF */}
+        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+          <DialogContent className="sm:max-w-lg p-6 rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-955 flex items-center gap-2">
+                <Upload className="text-indigo-600" size={24} />
+                Upload Proposal PDF
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 pt-4">
+              <p className="text-sm text-gray-500">
+                Unggah file proposal sponsorship Anda dalam format PDF (maks.
+                10MB) untuk dianalisis oleh AI Smart Review.
+              </p>
+
+              <div
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  setPdfDragActive(true);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setPdfDragActive(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setPdfDragActive(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setPdfDragActive(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type === "application/pdf") {
+                      setUploadedPdf(file);
+                    } else {
+                      showNotification("error", "File harus berupa PDF.");
+                    }
+                  }
+                }}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "application/pdf";
+                  input.onchange = (e) => {
+                    const files = (e.target as HTMLInputElement).files;
+                    if (files && files.length > 0) {
+                      const file = files[0];
+                      if (file.type === "application/pdf") {
+                        setUploadedPdf(file);
+                      } else {
+                        showNotification("error", "File harus berupa PDF.");
+                      }
+                    }
+                  };
+                  input.click();
+                }}
+                className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-3 ${
+                  pdfDragActive
+                    ? "border-indigo-600 bg-indigo-50/50"
+                    : uploadedPdf
+                      ? "border-green-300 bg-green-50/30"
+                      : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50/50"
+                }`}
+              >
+                {uploadedPdf ? (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                      ✓
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-800 text-sm">
+                        {uploadedPdf.name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {(uploadedPdf.size / (1024 * 1024)).toFixed(2)} MB •
+                        Klik untuk ganti
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                      <Upload size={24} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-800 text-sm">
+                        Klik untuk unggah atau seret file PDF ke sini
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Maksimal 10MB (PDF saja)
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsUploadDialogOpen(false);
+                    setUploadedPdf(null);
+                  }}
+                  disabled={isUploadingPdf}
+                  className="flex-1 rounded-xl"
+                >
+                  Batal
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!uploadedPdf || !eventId) return;
+                    try {
+                      setIsUploadingPdf(true);
+                      showNotification("success", "Mengunggah proposal PDF...");
+
+                      // 1. Upload to Firebase
+                      const path = `events/${eventId}/proposal.pdf`;
+                      const storageRef = ref(storage, path);
+                      await uploadBytes(storageRef, uploadedPdf);
+                      const fileUrl = await getDownloadURL(storageRef);
+
+                      // 2. POST proposal
+                      await apiCall<any>(`/events/${eventId}/proposal`, {
+                        method: "POST",
+                        body: JSON.stringify({
+                          source: "UPLOAD",
+                          fileUrl: fileUrl,
+                        }),
+                      });
+
+                      // 3. POST smart review
+                      await apiCall<any>("/ai/smart-review", {
+                        method: "POST",
+                        body: JSON.stringify({ eventId }),
+                      });
+
+                      showNotification(
+                        "success",
+                        "Smart Review berhasil dimulai!",
+                      );
+                      setIsUploadDialogOpen(false);
+                      setUploadedPdf(null);
+
+                      // 4. Redirect
+                      router.push(
+                        `/proposal-smart-review?id=${eventId}&tab=smart-review`,
+                      );
+                    } catch (err: any) {
+                      console.error("Smart review trigger failed:", err);
+                      showNotification(
+                        "error",
+                        err?.message || "Gagal menjalankan smart review.",
+                      );
+                    } finally {
+                      setIsUploadingPdf(false);
+                    }
+                  }}
+                  disabled={!uploadedPdf || isUploadingPdf}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl"
+                >
+                  {isUploadingPdf ? "Memproses..." : "Mulai Smart Review"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
+  );
+}
+
+export default function BuatEventPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-gray-500">Memuat halaman...</div>
+      }
+    >
+      <BuatEventForm />
+    </Suspense>
   );
 }
