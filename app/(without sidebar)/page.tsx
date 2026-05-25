@@ -4,9 +4,9 @@ import NavbarLanding from "@/components/landing/navbar-landing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, FileUp, Handshake } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Marquee from "@/components/landing/marquee/marquee";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const BRANDS = ["SAMSUNG", "TOKOPEDIA", "TELKOMSEL", "TRAVELOKA", "GRAB"];
 
@@ -85,149 +85,62 @@ export default function Home() {
             yang salah sasaran.
           </p>
         </div>
-        <Tabs
-          defaultValue="eo"
-          className="mt-4 flex flex-col items-center gap-16"
-        >
-          <TabsList className="p-1">
-            <TabsTrigger
-              value="eo"
-              className="px-6 py-2 font-inter font-semibold text-[14px]"
-            >
-              UNTUK EO
-            </TabsTrigger>
-            <TabsTrigger
-              value="perusahaan"
-              className="px-6 py-2 font-inter font-semibold text-[14px]"
-            >
-              UNTUK PERUSAHAAN
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="eo">
-            <div className="flex flex-row items-center gap-8 py-8">
-              <div className="flex-1 p-6 rounded-lg bg-gray-50">
-                <div className="flex items-start justify-between mb-4">
-                  <FileUp className="w-8 h-8 text-[#4A72FF]" />
-                  <span className="text-[40px] font-[900] text-gray-200">
-                    01
-                  </span>
-                </div>
-                <h3 className="text-[18px] font-bold text-[#111827] mb-2">
-                  Buat Event dalam 5 Menit
-                </h3>
-                <p className="text-[14px] text-[#6B7280]">
-                  Isi nama event, target audiens, kebutuhan budget, dan paket
-                  sponsor. Tidak perlu desain atau template.
-                </p>
+        <div className="mt-4 flex flex-col items-center gap-16 w-full">
+          <div className="flex flex-row items-center gap-8 py-8 w-full">
+            <div className="flex-1 p-6 rounded-lg bg-gray-50">
+              <div className="flex items-start justify-between mb-4">
+                <FileUp className="w-8 h-8 text-[#4A72FF]" />
+                <span className="text-[40px] font-[900] text-gray-200">01</span>
               </div>
-
-              <div className="flex-1 p-6 rounded-[20px] bg-white border-2 border-[#4A72FF]">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#4A72FF] flex items-center justify-center">
-                    <Image
-                      src={"/icons/net.svg"}
-                      alt="net"
-                      width={6}
-                      height={6}
-                      className="w-6 h-6 text-white"
-                    />
-                  </div>
-                  <span className="text-[40px] font-[900] text-gray-200">
-                    02
-                  </span>
-                </div>
-                <h3 className="text-[18px] font-bold text-[#111827] mb-2">
-                  Smart Matching
-                </h3>
-                <p className="text-[14px] text-[#4A72FF] font-semibold mb-1">
-                  Langgkai ini otomatis dilakukan AI
-                </p>
-                <p className="text-[14px] text-[#6B7280]">
-                  Algoritma kami mencocokkan eventmu dengan perusahaan yang
-                  memiliki target audiens serupa. Akurasi hingga 94%.
-                </p>
-              </div>
-
-              <div className="flex-1 p-6 rounded-lg bg-gray-50">
-                <div className="flex items-start justify-between mb-4">
-                  <Handshake className="w-8 h-8 text-[#4A72FF]" />
-                  <span className="text-[40px] font-[900] text-gray-200">
-                    03
-                  </span>
-                </div>{" "}
-                <h3 className="text-[18px] font-bold text-[#111827] mb-2">
-                  Terima & Negosiasi
-                </h3>
-                <p className="text-[14px] text-[#6B7280]">
-                  Hubungi decision-maker perusahaan langsung dari platform.
-                  Tanpa antara, tanpa menunggu.
-                </p>
-              </div>
+              <h3 className="text-[18px] font-bold text-[#111827] mb-2">
+                Buat Event dalam 5 Menit
+              </h3>
+              <p className="text-[14px] text-[#6B7280]">
+                Isi nama event, target audiens, kebutuhan budget, dan paket
+                sponsor. Tidak perlu desain atau template.
+              </p>
             </div>
-          </TabsContent>
-          <TabsContent value="perusahaan">
-            <div className="flex flex-row items-center gap-8 py-8">
-              <div className="flex-1 p-6 rounded-lg bg-gray-50">
-                <div className="flex items-start justify-between mb-4">
-                  <FileUp className="w-8 h-8 text-[#4A72FF]" />
-                  <span className="text-[40px] font-[900] text-gray-200">
-                    01
-                  </span>
-                </div>
-                <h3 className="text-[18px] font-bold text-[#111827] mb-2">
-                  Buat Event dalam 5 Menit
-                </h3>
-                <p className="text-[14px] text-[#6B7280]">
-                  Isi nama event, target audiens, kebutuhan budget, dan paket
-                  sponsor. Tidak perlu desain atau template.
-                </p>
-              </div>
 
-              <div className="flex-1 p-6 rounded-[20px] bg-white border-2 border-[#4A72FF]">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#4A72FF] flex items-center justify-center">
-                    <Image
-                      src={"/icons/net.svg"}
-                      alt="net"
-                      width={6}
-                      height={6}
-                      className="w-6 h-6 text-white"
-                    />
-                  </div>
-                  <span className="text-[40px] font-[900] text-gray-200">
-                    02
-                  </span>
+            <div className="flex-1 p-6 rounded-[20px] bg-white border-2 border-[#4A72FF]">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 rounded-lg bg-[#4A72FF] flex items-center justify-center">
+                  <Image
+                    src={"/icons/net.svg"}
+                    alt="net"
+                    width={6}
+                    height={6}
+                    className="w-6 h-6 text-white"
+                  />
                 </div>
-                <h3 className="text-[18px] font-bold text-[#111827] mb-2">
-                  Smart Matching
-                </h3>
-                <p className="text-[14px] text-[#4A72FF] font-semibold mb-1">
-                  Langgkai ini otomatis dilakukan AI
-                </p>
-                <p className="text-[14px] text-[#6B7280]">
-                  Algoritma kami mencocokkan eventmu dengan perusahaan yang
-                  memiliki target audiens serupa. Akurasi hingga 94%.
-                </p>
+                <span className="text-[40px] font-[900] text-gray-200">02</span>
               </div>
-
-              <div className="flex-1 p-6 rounded-lg bg-gray-50">
-                <div className="flex items-start justify-between mb-4">
-                  <Handshake className="w-8 h-8 text-[#4A72FF]" />
-                  <span className="text-[40px] font-[900] text-gray-200">
-                    03
-                  </span>
-                </div>
-                <h3 className="text-[18px] font-bold text-[#111827] mb-2">
-                  Terima & Negosiasi
-                </h3>
-                <p className="text-[14px] text-[#6B7280]">
-                  Hubungi decision-maker perusahaan langsung dari platform.
-                  Tanpa antara, tanpa menunggu.
-                </p>
-              </div>
+              <h3 className="text-[18px] font-bold text-[#111827] mb-2">
+                Smart Matching
+              </h3>
+              <p className="text-[14px] text-[#4A72FF] font-semibold mb-1">
+                Langgkai ini otomatis dilakukan AI
+              </p>
+              <p className="text-[14px] text-[#6B7280]">
+                Algoritma kami mencocokkan eventmu dengan perusahaan yang
+                memiliki target audiens serupa. Akurasi hingga 94%.
+              </p>
             </div>
-          </TabsContent>
-        </Tabs>
+
+            <div className="flex-1 p-6 rounded-lg bg-gray-50">
+              <div className="flex items-start justify-between mb-4">
+                <Handshake className="w-8 h-8 text-[#4A72FF]" />
+                <span className="text-[40px] font-[900] text-gray-200">03</span>
+              </div>{" "}
+              <h3 className="text-[18px] font-bold text-[#111827] mb-2">
+                Terima & Negosiasi
+              </h3>
+              <p className="text-[14px] text-[#6B7280]">
+                Hubungi decision-maker perusahaan langsung dari platform. Tanpa
+                antara, tanpa menunggu.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
       <section className="py-20 w-full">
         <div className="max-w-7xl mx-auto flex gap-16 items-start">
@@ -477,9 +390,12 @@ export default function Home() {
           </p>
 
           <div className="flex items-center gap-4 mb-12">
-            <Button className="bg-white text-[#4A72FF] hover:bg-gray-50 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto">
-              Daftar Sekarang
-            </Button>
+            <Link href={"/register"}>
+              <Button className="bg-white text-[#4A72FF] hover:bg-gray-50 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto">
+                Daftar Sekarang
+              </Button>
+            </Link>
+
             <Button
               variant="outline"
               className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto bg-transparent"

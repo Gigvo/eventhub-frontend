@@ -134,6 +134,11 @@ export default function Sidebar() {
             </Link>
           </li>
         </ul>
+        <Link href={"./katalog-event"}>
+          <Button className="rounded-[4px] bg-[#003EC7] text-white w-full mt-4">
+            Eksplor Katalog Event
+          </Button>
+        </Link>
       </div>
       <div className="border-t-1 border-[#E5E7EB] pt-4">
         <Link

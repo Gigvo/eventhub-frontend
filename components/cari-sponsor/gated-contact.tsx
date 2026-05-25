@@ -64,6 +64,35 @@ interface OfferDetail {
   };
 }
 
+// ─── Helpers for Masking Contact Information ───────────────────────────────────
+
+const maskPhone = (phone: string | null) => {
+  if (!phone) return "+62 812-XXXX-XXXX";
+  // Clean phone number from non-digits except +
+  const cleaned = phone.replace(/[^\d+]/g, "");
+  if (cleaned.startsWith("+62")) {
+    const prefix = cleaned.slice(0, 6); // e.g. +62812
+    return `${prefix.slice(0, 3)} ${prefix.slice(3)}-XXXX-XXXX`;
+  } else if (cleaned.startsWith("0")) {
+    const prefix = cleaned.slice(0, 4); // e.g. 0812
+    return `${prefix}-XXXX-XXXX`;
+  }
+  return "+62 812-XXXX-XXXX";
+};
+
+const maskEmail = (email: string | null) => {
+  if (!email) return "p*********@ui.ac.id";
+  const parts = email.split("@");
+  if (parts.length !== 2) return "p*********@ui.ac.id";
+  const [username, domain] = parts;
+  if (username.length <= 1) {
+    return `${username}*@${domain}`;
+  }
+  const firstChar = username.charAt(0);
+  const asterisks = "*".repeat(Math.max(8, username.length - 1));
+  return `${firstChar}${asterisks}@${domain}`;
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 interface Props {
@@ -136,6 +165,26 @@ export default function GatedContactDetail({ offerId }: Props) {
       minute: "2-digit",
     });
 
+  const handleWhatsApp = () => {
+    const rawPhone = offer?.companyProfile.phoneNumber;
+    if (!rawPhone) return;
+    let cleaned = rawPhone.replace(/\D/g, "");
+    if (cleaned.startsWith("0")) {
+      cleaned = "62" + cleaned.slice(1);
+    }
+    window.open(`https://wa.me/${cleaned}`, "_blank");
+  };
+
+  const handleEmail = () => {
+    const email = offer?.companyProfile.user.email;
+    if (!email) return;
+    const subject = encodeURIComponent(`Kolaborasi Event: ${offer.event.title}`);
+    const body = encodeURIComponent(
+      `Halo ${offer.companyProfile.companyName},\n\nTerima kasih atas penawaran sponsorship yang Anda kirimkan untuk event "${offer.event.title}". Kami sangat tertarik untuk berkolaborasi dengan Anda.\n\nMari kita jadwalkan sesi diskusi lebih lanjut.\n\nSalam,\n[Nama Event Organizer]`
+    );
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_self");
+  };
+
   // ─── Loading ───
   if (loading) {
     return (
@@ -182,7 +231,9 @@ export default function GatedContactDetail({ offerId }: Props) {
   const isAccepted = offer.status === "ACCEPTED" || offer.status === "APPROVED";
   const isRejected = offer.status === "REJECTED";
   const isPending =
-    offer.status === "PENDING" || offer.status === "UNDER_REVIEW";
+    offer.status === "PENDING" ||
+    offer.status === "UNDER_REVIEW" ||
+    offer.status === "NEGOTIATING";
   const contactVisible = isAccepted;
 
   const statusConfig: Record<string, { label: string; className: string }> = {
@@ -193,6 +244,10 @@ export default function GatedContactDetail({ offerId }: Props) {
     UNDER_REVIEW: {
       label: "Menunggu",
       className: "bg-orange-100 text-orange-700 border border-orange-200",
+    },
+    NEGOTIATING: {
+      label: "Negosiasi",
+      className: "bg-purple-100 text-purple-700 border border-purple-200",
     },
     ACCEPTED: {
       label: "Disetujui",
@@ -222,7 +277,7 @@ export default function GatedContactDetail({ offerId }: Props) {
           className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Kembali ke Gated Contact
+          Kembali ke Sponsor Masuk
         </button>
 
         {/* Header Card */}
@@ -313,46 +368,62 @@ export default function GatedContactDetail({ offerId }: Props) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Phone */}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                    Nomor Telepon
-                  </p>
-                  {contactVisible ? (
+              {contactVisible ? (
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                      Nomor Telepon
+                    </p>
                     <p className="text-sm font-semibold text-gray-900">
                       {offer.companyProfile.phoneNumber || "-"}
                     </p>
-                  ) : (
-                    <p className="text-sm font-mono text-gray-300 blur-sm select-none">
-                      {offer.companyProfile.phoneNumber || "+62 8xx xxxx xxxx"}
-                    </p>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3 p-4 bg-gray-50/60 border border-gray-100 rounded-xl">
+                  <Phone className="w-5 h-5 text-slate-400 shrink-0" />
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                      Nomor Telepon
+                    </p>
+                    <p className="text-sm font-mono font-medium text-slate-600 tracking-wide select-none">
+                      {maskPhone(offer.companyProfile.phoneNumber)}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Email */}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-4 h-4 text-blue-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                    Email
-                  </p>
-                  {contactVisible ? (
+              {contactVisible ? (
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                      Email
+                    </p>
                     <p className="text-sm font-semibold text-gray-900 truncate">
                       {offer.companyProfile.user.email}
                     </p>
-                  ) : (
-                    <p className="text-sm font-mono text-gray-300 blur-sm select-none truncate">
-                      {offer.companyProfile.user.email}
-                    </p>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3 p-4 bg-gray-50/60 border border-gray-100 rounded-xl min-w-0">
+                  <Mail className="w-5 h-5 text-slate-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                      Email
+                    </p>
+                    <p className="text-sm font-mono font-medium text-slate-600 tracking-wide select-none truncate">
+                      {maskEmail(offer.companyProfile.user.email)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {!contactVisible && (
@@ -390,13 +461,17 @@ export default function GatedContactDetail({ offerId }: Props) {
 
           {isAccepted && (
             <div className="flex gap-3">
-              <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold h-11 gap-2">
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold h-11 gap-2"
+                onClick={handleWhatsApp}
+              >
                 <MessageSquare className="w-4 h-4" />
                 Chat via WhatsApp
               </Button>
               <Button
                 variant="outline"
                 className="flex-1 font-semibold h-11 gap-2"
+                onClick={handleEmail}
               >
                 <Mail className="w-4 h-4" />
                 Kirim Email

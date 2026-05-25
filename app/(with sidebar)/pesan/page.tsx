@@ -192,34 +192,14 @@ export default function PesanPage() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">Messages</h2>
-            {/* <button className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition">
-              <Edit size={20} />
-            </button> */}
           </div>
-          {/* <div className="relative mb-4">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-            />
-          </div> */}
+
           <div className="flex gap-2">
             <button className="px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm font-medium">
               Semua
             </button>
-            {/* <button className="px-4 py-1.5 bg-transparent text-gray-600 hover:bg-gray-200 rounded-full text-sm font-medium transition">Belum Dibaca</button>
-            <button className="px-4 py-1.5 bg-transparent text-gray-600 hover:bg-gray-200 rounded-full text-sm font-medium transition">Arsip</button> */}
           </div>
         </div>
-
-        {/* <div className="bg-blue-100/50 px-4 py-2 flex items-center text-xs font-bold text-blue-800 tracking-wider border-b border-gray-100">
-          <span className="w-2 h-2 rounded-full bg-blue-600 mr-2"></span>2 PESAN
-          BELUM DIBACA
-        </div> */}
 
         <div className="flex-1 overflow-y-auto">
           {offers.map((offer) => {
@@ -347,24 +327,38 @@ export default function PesanPage() {
             </div>
 
             {/* Display the initial offer message */}
-            {selectedOffer.message && (
-              <div className="flex gap-3 max-w-[80%]">
-                <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center overflow-hidden">
-                  <span className="text-xs font-bold text-blue-600">S</span>
-                </div>
-                <div>
-                  <div className="p-4 rounded-2xl text-sm leading-relaxed bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm">
-                    <p className="font-semibold mb-1 text-xs text-gray-500 uppercase">
-                      Pesan Penawaran Awal
-                    </p>
-                    {selectedOffer.message}
+            {selectedOffer.message && (() => {
+              const isMe = user?.role === "COMPANY";
+              return (
+                <div className={`flex gap-3 max-w-[80%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}>
+                  <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0 flex items-center justify-center overflow-hidden">
+                    <span className="text-xs font-bold text-gray-600">
+                      {isMe
+                        ? user?.name?.charAt(0).toUpperCase()
+                        : selectedOffer.companyProfile?.companyName?.charAt(0).toUpperCase() || "S"}
+                    </span>
                   </div>
-                  <div className="text-[10px] text-gray-400 mt-1.5 font-medium flex items-center gap-1 justify-start">
-                    {formatDate(selectedOffer.createdAt)}
+                  <div>
+                    <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                        isMe
+                          ? "bg-blue-600 text-white rounded-tr-sm"
+                          : "bg-white border border-gray-200 text-gray-800 rounded-tl-sm"
+                      }`}>
+                      <p className={`font-semibold mb-1 text-[10px] uppercase ${isMe ? "text-blue-200" : "text-gray-500"}`}>
+                        Pesan Penawaran Awal
+                      </p>
+                      {selectedOffer.message}
+                    </div>
+                    <div className={`text-[10px] text-gray-400 mt-1.5 font-medium flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                      {formatDate(selectedOffer.createdAt)}
+                      {isMe && (
+                        <CheckCircle2 size={12} className="text-blue-500" />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {messages.map((msg) => {
               const isMe = msg.senderId === user?.id;

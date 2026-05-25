@@ -49,8 +49,9 @@ export default function Navbar() {
       <div></div>
       <div className="flex flex-row items-center">
         <div className="flex items-center gap-4 pr-6 border-r-1 border-[#FFDBD2]">
-          <Bell className="" />
-          <MessageSquare className="" />
+          <Link href={"./pesan"}>
+            <MessageSquare className="" />
+          </Link>
         </div>
         <div className="flex flex-row gap-3 items-center pl-6">
           <div>

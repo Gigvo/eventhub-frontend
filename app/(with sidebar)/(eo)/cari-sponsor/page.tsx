@@ -134,6 +134,10 @@ interface IncomingOffer {
     industry: string;
     logoUrl: string | null;
     city: string;
+    phoneNumber?: string;
+    user?: {
+      email: string;
+    };
   };
   tier: {
     name: string;
@@ -371,12 +375,42 @@ export default function CariSponsor() {
     );
   };
 
+  const handleWhatsApp = (phoneNumber: string | undefined, offerId: string) => {
+    if (!phoneNumber) {
+      window.location.href = `/cari-sponsor/gated-contact/${offerId}`;
+      return;
+    }
+    let cleaned = phoneNumber.replace(/\D/g, "");
+    if (cleaned.startsWith("0")) {
+      cleaned = "62" + cleaned.slice(1);
+    }
+    window.open(`https://wa.me/${cleaned}`, "_blank");
+  };
+
+  const handleEmail = (
+    email: string | undefined,
+    companyName: string,
+    eventTitle: string,
+    offerId: string
+  ) => {
+    if (!email) {
+      window.location.href = `/cari-sponsor/gated-contact/${offerId}`;
+      return;
+    }
+    const subject = encodeURIComponent(`Kolaborasi Event: ${eventTitle}`);
+    const body = encodeURIComponent(
+      `Halo ${companyName},\n\nTerima kasih atas penawaran sponsorship yang Anda kirimkan untuk event "${eventTitle}". Kami sangat tertarik untuk berkolaborasi dengan Anda.\n\nMari kita jadwalkan sesi diskusi lebih lanjut.\n\nSalam,\n[Nama Event Organizer]`
+    );
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_self");
+  };
+
   // Gated contact filters
   const gatedFilterTabs = ["Semua", "Baru", "Menunggu", "Disetujui", "Ditolak"];
 
   const statusToFilter: Record<string, string> = {
     PENDING: "Baru",
     UNDER_REVIEW: "Menunggu",
+    NEGOTIATING: "Menunggu",
     ACCEPTED: "Disetujui",
     APPROVED: "Disetujui",
     REJECTED: "Ditolak",
@@ -407,6 +441,12 @@ export default function CariSponsor() {
         return (
           <span className="text-xs font-bold text-orange-500 uppercase">
             MENUNGGU
+          </span>
+        );
+      case "NEGOTIATING":
+        return (
+          <span className="text-xs font-bold text-purple-600 uppercase">
+            NEGOSIASI
           </span>
         );
       case "ACCEPTED":
@@ -460,7 +500,7 @@ export default function CariSponsor() {
             value="gated"
             className="rounded-none px-0 py-3 font-semibold text-gray-500"
           >
-            Gated Contact
+            Sponsor Masuk
           </TabsTrigger>
         </TabsList>
 
@@ -736,7 +776,8 @@ export default function CariSponsor() {
                   const isRejected = offer.status === "REJECTED";
                   const isPending =
                     offer.status === "PENDING" ||
-                    offer.status === "UNDER_REVIEW";
+                    offer.status === "UNDER_REVIEW" ||
+                    offer.status === "NEGOTIATING";
 
                   return (
                     <div
@@ -883,6 +924,7 @@ export default function CariSponsor() {
                                 <Button
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700 text-white font-semibold gap-1.5 h-9"
+                                  onClick={() => handleWhatsApp(offer.companyProfile.phoneNumber, offer.id)}
                                 >
                                   <MessageSquare className="w-3.5 h-3.5" />
                                   Chat via WA
@@ -891,6 +933,7 @@ export default function CariSponsor() {
                                   size="sm"
                                   variant="outline"
                                   className="font-semibold gap-1.5 h-9"
+                                  onClick={() => handleEmail(offer.companyProfile.user?.email, offer.companyProfile.companyName, offer.event.title, offer.id)}
                                 >
                                   <Mail className="w-3.5 h-3.5" />
                                   Kirim Email

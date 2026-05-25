@@ -31,7 +31,7 @@ const menuItems = [
     requiredRole: "EO",
   },
   {
-    name: "Katalog Event",
+    name: "Event Kamu",
     href: "/katalog-event-eo",
     icon: BriefcaseBusiness,
   },
@@ -134,6 +134,11 @@ export default function Sidebar() {
             </Link>
           </li>
         </ul>
+        <Link href={"./katalog-event"}>
+          <Button className="rounded-[4px] bg-[#003EC7] text-white w-full mt-4">
+            Eksplor Katalog Event
+          </Button>
+        </Link>
       </div>
       <div className="border-t-1 border-[#E5E7EB] pt-4">
         <Link
@@ -171,9 +176,11 @@ export default function Sidebar() {
           <p className="text-[12px] text-[#475569] mb-3">
             Dapatkan akses ke analytics premium dan sponsorship tools eksklusif.
           </p>
-          <Button className="w-full bg-[#003EC7] hover:bg-[#002BA8] text-white text-[14px] py-1.5">
-            Upgrade Now
-          </Button>
+          <Link href={"/token-management"}>
+            <Button className="w-full bg-[#003EC7] hover:bg-[#002BA8] text-white text-[14px] py-1.5">
+              Upgrade Now
+            </Button>
+          </Link>
         </div>
         <Button
           onClick={handleLogout}

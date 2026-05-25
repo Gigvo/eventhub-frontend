@@ -118,6 +118,9 @@ function BuatEventForm() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [pdfDragActive, setPdfDragActive] = useState(false);
+  const [isConfirmStep2DialogOpen, setIsConfirmStep2DialogOpen] =
+    useState(false);
+  const [showAIBuilderTone, setShowAIBuilderTone] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<number>(45);
 
   useEffect(() => {
@@ -414,7 +417,7 @@ function BuatEventForm() {
         newErrors.kategoriEvent = "Kategori Event wajib dipilih";
       }
       if (!formData.targetIndustri) {
-        newErrors.targetIndustri = "Target Industri Sponsor wajib dipilih";
+        newErrors.targetIndustri = "Theme Event wajib diisi";
       }
       if (formData.audienceInterests.length === 0) {
         newErrors.audienceInterests = "Minimal 1 Target Interest harus dipilih";
@@ -943,14 +946,14 @@ function BuatEventForm() {
                 />
               </div>
 
-              {/* Tanggal & Waktu */}
+              {/* Tanggal */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
-                    Tanggal & Waktu Mulai
+                    Tanggal Mulai
                   </label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     name="tanggalMulai"
                     value={formData.tanggalMulai}
                     onChange={handleInputChange}
@@ -959,10 +962,10 @@ function BuatEventForm() {
                 </div>
                 <div>
                   <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
-                    Tanggal & Waktu Selesai
+                    Tanggal Selesai
                   </label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     name="tanggalSelesai"
                     value={formData.tanggalSelesai}
                     onChange={handleInputChange}
@@ -1230,64 +1233,54 @@ function BuatEventForm() {
             </div>
 
             {/* Estimasi & Target */}
-            <div className="flex flex-row items-center gap-6">
+            <div className="flex flex-row gap-6 items-stretch">
               {/* Estimasi Peserta */}
               <div className="flex-1 bg-[#F9FAFB80] p-6 rounded-[8px]">
-                <div className="flex items-center justify-between mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
                     Estimasi Peserta
                   </label>
-                  <div className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                    {formData.estimasiPeserta.toLocaleString()}
-                  </div>
-                </div>
-                <div className="flex flex-col justify-center items-center gap-4">
-                  <Slider
-                    min={50}
-                    max={10000}
-                    step={50}
-                    value={[formData.estimasiPeserta]}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, estimasiPeserta: value[0] })
-                    }
+                  <input
+                    type="number"
+                    name="estimasiPeserta"
+                    value={formData.estimasiPeserta || ""}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setFormData({
+                        ...formData,
+                        estimasiPeserta: isNaN(val) ? 0 : val,
+                      });
+                    }}
+                    placeholder="Contoh: 2500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-sm bg-white text-gray-900"
                   />
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-sm text-gray-600">50</span>
-                    <span className="text-sm text-gray-600">5000</span>
-                    <span className="text-sm text-gray-600">10.000+</span>
-                  </div>
+                  <p className="text-[11px] text-gray-500 mt-2">
+                    Masukkan perkiraan jumlah audiens yang akan menghadiri event
+                    Anda.
+                  </p>
                 </div>
               </div>
 
-              {/* Target Industri */}
+              {/* Theme Event */}
               <div className="flex-1 bg-[#F9FAFB80] p-6 rounded-[8px]">
                 <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
-                  Target Industri Sponsor
+                  Theme Event
                 </label>
-                <select
+                <input
+                  type="text"
                   name="targetIndustri"
                   value={formData.targetIndustri}
                   onChange={(e) => {
                     handleInputChange(e);
                     setErrors((prev) => ({ ...prev, targetIndustri: "" }));
                   }}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
+                  placeholder="Contoh: Digital Innovation, Green Energy, Esports"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none text-sm bg-white ${
                     errors.targetIndustri
                       ? "border-red-500 focus:border-red-500"
                       : "border-gray-300 focus:border-blue-600"
                   }`}
-                >
-                  <option value="">Pilih Industri Utama</option>
-                  <option value="Technology">Technology</option>
-                  <option value="Finance">Finance & Banking</option>
-                  <option value="E-commerce">E-commerce</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="Education">Education</option>
-                  <option value="Manufacturing">Manufacturing</option>
-                  <option value="Retail">Retail</option>
-                  <option value="Startup">Startup</option>
-                  <option value="Other">Other</option>
-                </select>
+                />
                 {errors.targetIndustri && (
                   <p className="text-red-600 text-sm font-medium mt-2">
                     {errors.targetIndustri}
@@ -1304,13 +1297,14 @@ function BuatEventForm() {
                 </label>
                 <input
                   type="number"
-                  value={formData.audienceAgeMin}
-                  onChange={(e) =>
+                  value={formData.audienceAgeMin || ""}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
                     setFormData({
                       ...formData,
-                      audienceAgeMin: parseInt(e.target.value) || 0,
-                    })
-                  }
+                      audienceAgeMin: isNaN(val) ? 0 : val,
+                    });
+                  }}
                   min="0"
                   max="100"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
@@ -1322,13 +1316,14 @@ function BuatEventForm() {
                 </label>
                 <input
                   type="number"
-                  value={formData.audienceAgeMax}
-                  onChange={(e) =>
+                  value={formData.audienceAgeMax || ""}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
                     setFormData({
                       ...formData,
-                      audienceAgeMax: parseInt(e.target.value) || 100,
-                    })
-                  }
+                      audienceAgeMax: isNaN(val) ? 0 : val,
+                    });
+                  }}
                   min="0"
                   max="100"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
@@ -1701,11 +1696,11 @@ function BuatEventForm() {
                           <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">
                             Benefit
                           </label>
-                          <div className="flex flex-wrap gap-2 mb-3">
+                          <div className="flex flex-wrap gap-2 mb-3 border border-gray-300 rounded-lg h-10 p-2">
                             {newPackage.benefits.map((benefit) => (
                               <div
                                 key={benefit}
-                                className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+                                className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium "
                               >
                                 {benefit}
                                 <button
@@ -1717,7 +1712,7 @@ function BuatEventForm() {
                                       ),
                                     })
                                   }
-                                  className="hover:text-blue-900 transition"
+                                  className="hover:text-blue-900 transition "
                                 >
                                   <X size={14} />
                                 </button>
@@ -1898,61 +1893,7 @@ function BuatEventForm() {
                   ))}
                 </div>
 
-                {/* Tone Proposal */}
-                <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
-                    Tone Proposal AI
-                  </h2>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Pilih gaya penulisan yang akan digunakan AI untuk membuat
-                    proposal sponsorship.
-                  </p>
-                  <div className="grid grid-cols-3 gap-3">
-                    {(
-                      [
-                        {
-                          value: "FORMAL",
-                          label: "Formal",
-                          desc: "Profesional & resmi, cocok untuk perusahaan besar",
-                        },
-                        {
-                          value: "CASUAL",
-                          label: "Kasual",
-                          desc: "Santai & ramah, cocok untuk komunitas & startup",
-                        },
-                        {
-                          value: "PERSUASIVE",
-                          label: "Persuasif",
-                          desc: "Meyakinkan & berdampak, fokus pada ROI sponsor",
-                        },
-                      ] as const
-                    ).map(({ value, label, desc }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setProposalTone(value)}
-                        className={`p-4 rounded-lg border-2 text-left transition ${
-                          proposalTone === value
-                            ? "border-blue-600 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-300"
-                        }`}
-                      >
-                        <p
-                          className={`font-semibold text-sm mb-1 ${
-                            proposalTone === value
-                              ? "text-blue-700"
-                              : "text-gray-800"
-                          }`}
-                        >
-                          {label}
-                        </p>
-                        <p className="text-xs text-gray-500 leading-snug">
-                          {desc}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+
 
                 {/* Kontak Person */}
                 {/* <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -2060,31 +2001,106 @@ function BuatEventForm() {
                     </p>
                   </div>
 
-                  {/* Bullet points */}
-                  <ul className="space-y-3 text-sm text-gray-600">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-green-500" />
-                      <span>Optimasi copywriting profesional</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-green-500" />
-                      <span>Struktur proposal standar B2B</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-green-500" />
-                      <span>Format PDF siap kirim</span>
-                    </li>
-                  </ul>
+                  {/* Bullet points or Tone Selection */}
+                  {!showAIBuilderTone ? (
+                    <ul className="space-y-3 text-sm text-gray-600">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-green-500" />
+                        <span>Optimasi copywriting profesional</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-green-500" />
+                        <span>Struktur proposal standar B2B</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-green-500" />
+                        <span>Format PDF siap kirim</span>
+                      </li>
+                    </ul>
+                  ) : (
+                    <div className="space-y-4 pt-4 border-t border-gray-100 animate-fadeIn">
+                      <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+                        Pilih Gaya Penulisan (Tone)
+                      </h4>
+                      <div className="flex flex-col gap-2.5">
+                        {(
+                          [
+                            {
+                              value: "FORMAL",
+                              label: "Formal",
+                              desc: "Profesional & resmi, cocok untuk perusahaan besar",
+                            },
+                            {
+                              value: "CASUAL",
+                              label: "Kasual",
+                              desc: "Santai & ramah, cocok untuk komunitas & startup",
+                            },
+                            {
+                              value: "PERSUASIVE",
+                              label: "Persuasif",
+                              desc: "Meyakinkan & berdampak, fokus pada ROI sponsor",
+                            },
+                          ] as const
+                        ).map(({ value, label, desc }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setProposalTone(value)}
+                            className={`p-3 rounded-xl border-2 text-left transition flex items-start gap-3 w-full ${
+                              proposalTone === value
+                                ? "border-blue-600 bg-blue-50/50"
+                                : "border-gray-200 hover:border-blue-300 bg-gray-50/30"
+                            }`}
+                          >
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                              proposalTone === value ? "border-blue-600 text-blue-600" : "border-gray-300"
+                            }`}>
+                              {proposalTone === value && <div className="w-2 h-2 rounded-full bg-blue-600" />}
+                            </div>
+                            <div className="flex-1">
+                              <p className={`font-bold text-xs ${
+                                proposalTone === value ? "text-blue-700" : "text-gray-800"
+                              }`}>
+                                {label}
+                              </p>
+                              <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">
+                                {desc}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="pt-8">
+                <div className="pt-8 flex gap-3">
+                  {showAIBuilderTone && (
+                    <Button
+                      onClick={() => setShowAIBuilderTone(false)}
+                      variant="outline"
+                      className="rounded-xl border-gray-200 text-gray-500 hover:bg-gray-50"
+                    >
+                      Batal
+                    </Button>
+                  )}
                   <Button
-                    onClick={handleSaveAndContinue}
+                    onClick={() => {
+                      if (!showAIBuilderTone) {
+                        setShowAIBuilderTone(true);
+                      } else {
+                        handleSaveAndContinue();
+                      }
+                    }}
                     disabled={isSubmitting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-md flex items-center justify-center gap-2"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-md flex items-center justify-center gap-2"
                   >
                     <Sparkles size={16} />
-                    {isSubmitting ? "Memproses..." : "Gunakan AI Builder"}
+                    {isSubmitting
+                      ? "Memproses..."
+                      : showAIBuilderTone
+                        ? "Mulai Generate"
+                        : "Gunakan AI Builder"}
                   </Button>
                 </div>
               </div>
@@ -2202,13 +2218,11 @@ function BuatEventForm() {
 
             {currentStep === 2 && (
               <Button
-                onClick={handleCreateEvent}
+                onClick={() => setIsConfirmStep2DialogOpen(true)}
                 disabled={!canProceedToNextStep() || isSubmitting}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {isSubmitting
-                  ? "Membuat Event..."
-                  : "Buat Event & Lanjut ke Paket"}
+                Lanjut ke Langkah 3
               </Button>
             )}
 
@@ -2403,6 +2417,167 @@ function BuatEventForm() {
                   {isUploadingPdf ? "Memproses..." : "Mulai Smart Review"}
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Step 2 Confirmation Dialog */}
+        <Dialog
+          open={isConfirmStep2DialogOpen}
+          onOpenChange={setIsConfirmStep2DialogOpen}
+        >
+          <DialogContent
+            className="sm:max-w-xl p-6 rounded-2xl"
+            showCloseButton={false}
+          >
+            <div className="flex flex-col items-center">
+              {/* Circular clipboard icon */}
+              <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-4 shadow-sm">
+                <FileText size={28} className="text-[#3b82f6]" />
+              </div>
+
+              {/* Title & Description */}
+              <h2 className="text-xl font-extrabold text-gray-900 text-center mb-1 font-inter">
+                Konfirmasi Data Sebelum Melanjutkan
+              </h2>
+              <p className="text-xs text-gray-500 text-center mb-6">
+                Data pada langkah ini akan dikunci secara permanen setelah Anda
+                lanjut.
+              </p>
+            </div>
+
+            {/* Content summary */}
+            <div className="space-y-4">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block font-inter">
+                Ringkasan Data yang Akan Dikunci
+              </span>
+
+              {/* Deskripsi Event */}
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+                <div className="space-y-1 overflow-hidden flex-1">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
+                    Deskripsi Event
+                  </span>
+                  <p className="text-sm font-semibold text-gray-800 truncate">
+                    {formData.deskripsiEvent || "-"}
+                  </p>
+                </div>
+                <Lock size={15} className="text-gray-400 flex-shrink-0" />
+              </div>
+
+              {/* Estimasi Peserta */}
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+                <div className="space-y-1 flex-1">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
+                    Estimasi Peserta
+                  </span>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {formData.estimasiPeserta
+                      ? `${formData.estimasiPeserta.toLocaleString()} Orang`
+                      : "-"}
+                  </p>
+                </div>
+                <Lock size={15} className="text-gray-400 flex-shrink-0" />
+              </div>
+
+              {/* Target Demografi */}
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+                <div className="space-y-1.5 overflow-hidden flex-1">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
+                    Target Demografi
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.audienceInterests.length > 0 ? (
+                      formData.audienceInterests.map((interest) => (
+                        <span
+                          key={interest}
+                          className="text-[10px] font-semibold bg-gray-200/60 text-gray-600 px-2 py-0.5 rounded-full capitalize"
+                        >
+                          {interest}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm font-semibold text-gray-800">
+                        -
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Lock size={15} className="text-gray-400 flex-shrink-0" />
+              </div>
+
+              {/* Theme Event */}
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+                <div className="space-y-1 flex-1">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
+                    Theme Event
+                  </span>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {formData.targetIndustri || "-"}
+                  </p>
+                </div>
+                <Lock size={15} className="text-gray-400 flex-shrink-0" />
+              </div>
+
+              {/* Kanal Promosi */}
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+                <div className="space-y-1 flex-1">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
+                    Kanal Promosi
+                  </span>
+                  <p className="text-sm font-semibold text-gray-800 truncate">
+                    {formData.channelData.instagram ||
+                    formData.channelData.tiktok ||
+                    formData.channelData.website
+                      ? [
+                          formData.channelData.instagram &&
+                            `${formData.channelData.instagram} (IG)`,
+                          formData.channelData.tiktok &&
+                            `${formData.channelData.tiktok} (TikTok)`,
+                          formData.channelData.website &&
+                            `${formData.channelData.website} (Web)`,
+                        ]
+                          .filter(Boolean)
+                          .join(" • ")
+                      : "-"}
+                  </p>
+                </div>
+                <Lock size={15} className="text-gray-400 flex-shrink-0" />
+              </div>
+
+              {/* Warning/Caution Box */}
+              <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-xl text-amber-800 flex gap-3 text-xs leading-relaxed font-semibold">
+                <Info
+                  size={16}
+                  className="text-amber-600 flex-shrink-0 mt-0.5"
+                />
+                <p>
+                  Data di atas tidak dapat diubah setelah ini. Data ini
+                  digunakan AI untuk mencocokkan Anda dengan sponsor potensial
+                  secara akurat.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-6">
+              <button
+                onClick={() => setIsConfirmStep2DialogOpen(false)}
+                className="text-sm font-bold text-gray-500 hover:text-gray-700 flex items-center gap-2 py-3 px-4 rounded-xl transition"
+              >
+                <ArrowLeft size={16} />
+                Kembali & Periksa
+              </button>
+              <Button
+                onClick={async () => {
+                  setIsConfirmStep2DialogOpen(false);
+                  await handleCreateEvent();
+                }}
+                disabled={isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition flex items-center gap-1.5"
+              >
+                {isSubmitting ? "Memproses..." : "Ya, Lanjutkan →"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
