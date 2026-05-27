@@ -2364,24 +2364,24 @@ function BuatEventForm() {
           onOpenChange={setIsConfirmStep2DialogOpen}
         >
           <DialogContent
-            className="sm:max-w-xl p-6 rounded-2xl"
+            className="w-[95%] sm:max-w-xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 rounded-2xl"
             showCloseButton={false}
           >
-            <div className="flex flex-col items-center">
+            <DialogHeader className="flex flex-col items-center">
               {/* Circular clipboard icon */}
               <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-4 shadow-sm">
                 <FileText size={28} className="text-[#3b82f6]" />
               </div>
 
               {/* Title & Description */}
-              <h2 className="text-xl font-extrabold text-gray-900 text-center mb-1 font-inter">
+              <DialogTitle className="text-xl font-extrabold text-gray-900 text-center mb-1 font-inter">
                 Konfirmasi Data Sebelum Melanjutkan
-              </h2>
+              </DialogTitle>
               <p className="text-xs text-gray-500 text-center mb-6">
                 Data pada langkah ini akan dikunci secara permanen setelah Anda
                 lanjut.
               </p>
-            </div>
+            </DialogHeader>
 
             {/* Content summary */}
             <div className="space-y-4">
