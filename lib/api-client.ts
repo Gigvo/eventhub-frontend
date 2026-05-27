@@ -1,7 +1,8 @@
 import { auth } from "./firebase";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://eventhub-backend-production-071a.up.railway.app/api/v1";
 
 interface ApiOptions extends RequestInit {
   requireAuth?: boolean;

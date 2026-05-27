@@ -155,7 +155,7 @@ export default function Login() {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                placeholder="nama@perusahaan.com"
+                placeholder="nama@gmail.com"
                 className="w-full px-4 py-3 border border-[#E5E7EB] rounded-[8px] focus:outline-none focus:border-[#003EC7] text-sm"
                 required
                 disabled={isLoading}

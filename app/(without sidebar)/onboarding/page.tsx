@@ -109,6 +109,8 @@ export default function Onboarding() {
   const [interestInput, setInterestInput] = useState("");
 
   useEffect(() => {
+    if (authLoading) return;
+
     const currentUid = auth.currentUser?.uid ?? null;
     const draft = loadDraft();
 
@@ -129,7 +131,7 @@ export default function Onboarding() {
       }
     }
     setIsHydrated(true);
-  }, []);
+  }, [authLoading]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -373,18 +375,18 @@ export default function Onboarding() {
     return (
       <>
         <NavbarOnboarding />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl p-12">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 pt-24 sm:pt-4">
+          <Card className="w-full max-w-2xl p-6 sm:p-12">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Apa peran Anda?
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 Pilih peran yang sesuai dengan tujuan Anda di EventHub.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               {/* Event Organizer Option */}
               <div
                 onClick={() => setRole("EO")}
@@ -451,15 +453,15 @@ export default function Onboarding() {
     return (
       <>
         <NavbarOnboarding />
-        <div className="min-h-screen bg-gray-50 p-6 mt-20">
+        <div className="min-h-screen bg-gray-50 px-4 py-8 sm:p-6 md:p-8 mt-20">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">
               Lengkapi Profil Eventmu
             </h1>
 
-            <div className="grid grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Form Section */}
-              <div className="col-span-2 space-y-6 p-6 bg-white rounded-[8px] shadow-sm border-1 border-[#C3C5D9]">
+              <div className="col-span-1 lg:col-span-2 space-y-6 p-4 sm:p-6 bg-white rounded-[8px] shadow-sm border border-[#C3C5D9]">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nama Organisasi
@@ -555,11 +557,11 @@ export default function Onboarding() {
               </div>
 
               {/* Preview Section */}
-              <div className="max-w-103">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4">
+              <div className="col-span-1 w-full max-w-md mx-auto lg:max-w-none">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4 text-center lg:text-left">
                   PREVIEW PROFIL EO
                 </h3>
-                <div className="p-6 sticky top-6 rounded-[8px]">
+                <div className="p-6 sticky top-6 rounded-[8px] bg-white lg:bg-transparent shadow-sm lg:shadow-none border border-gray-200 lg:border-none">
                   <div className="relative">
                     <Image
                       src={"/bg-eo.jpg"}
@@ -632,15 +634,15 @@ export default function Onboarding() {
     return (
       <>
         <NavbarOnboarding />
-        <div className="min-h-screen bg-gray-50 p-6 mt-20">
+        <div className="min-h-screen bg-gray-50 px-4 py-8 sm:p-6 md:p-8 mt-20">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">
               Lengkapi Profil Perusahaanmu
             </h1>
 
-            <div className="grid grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Form Section */}
-              <div className="col-span-2 space-y-6 p-6 bg-white rounded-[8px] shadow-sm border-1 border-[#C3C5D9]">
+              <div className="col-span-1 lg:col-span-2 space-y-6 p-4 sm:p-6 bg-white rounded-[8px] shadow-sm border border-[#C3C5D9]">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nama Perusahaan
@@ -884,11 +886,11 @@ export default function Onboarding() {
               </div>
 
               {/* Preview Section */}
-              <div className="max-w-103">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4">
+              <div className="col-span-1 w-full max-w-md mx-auto lg:max-w-none">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4 text-center lg:text-left">
                   PREVIEW PROFIL COMPANY
                 </h3>
-                <div className="p-6 sticky top-6 rounded-[8px]">
+                <div className="p-6 sticky top-6 rounded-[8px] bg-white lg:bg-transparent shadow-sm lg:shadow-none border border-gray-200 lg:border-none">
                   <div className="relative">
                     <Image
                       src={"/bg-eo.jpg"}
