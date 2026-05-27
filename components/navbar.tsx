@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Bell, CircleUserRound, MessageSquare } from "lucide-react";
+import { Bell, CircleUserRound, MessageSquare, Menu } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { apiCall } from "@/lib/api-client";
 import { useAuth } from "@/providers/auth-provider";
 import Link from "next/link";
+import { useSidebar } from "@/components/sidebar-provider";
 interface UserData {
   id: string;
   name: string;
@@ -20,6 +21,7 @@ export default function Navbar() {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toggle } = useSidebar();
 
   useEffect(() => {
     // Only fetch user data when Firebase auth is ready and user is authenticated
@@ -45,8 +47,16 @@ export default function Navbar() {
   }, [authLoading, isAuthenticated]);
 
   return (
-    <nav className="bg-[#F8F9FB] py-4.5 px-8 flex items-center justify-between sticky top-0 w-full border-b-1 border-[#E5E7EB] z-10 opacity-100">
-      <div></div>
+    <nav className="bg-[#F8F9FB] py-4.5 px-8 flex items-center justify-between sticky top-0 w-full border-b border-[#E5E7EB] z-10 opacity-100">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggle}
+          className="md:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Toggle Menu"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      </div>
       <div className="flex flex-row items-center">
         <div className="flex items-center gap-4 pr-6 border-r-1 border-[#FFDBD2]">
           <Link href={"./pesan"}>

@@ -274,7 +274,7 @@ export default function KatalogEvent() {
           </div>
 
           {/* Filter Bar and Search */}
-          <div className="flex items-center justify-between gap-4 mb-8 bg-white p-4 rounded-lg">
+          <div className="flex items-center justify-between gap-4 mb-8 bg-white p-4 rounded-lg flex-wrap">
             <div className="flex items-center gap-2 flex-1">
               <Filter className="w-4 h-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-600 mr-2">
@@ -293,19 +293,6 @@ export default function KatalogEvent() {
                   <SelectItem value="TECHNOLOGY">Technology</SelectItem>
                   <SelectItem value="WORKSHOP">Workshop</SelectItem>
                   <SelectItem value="CONFERENCE">Conference</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedScale} onValueChange={setSelectedScale}>
-                <SelectTrigger className="w-32 h-8 text-xs">
-                  <SelectValue placeholder="Skala" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="semua">Semua</SelectItem>
-                  <SelectItem value="Jakarta">Jakarta</SelectItem>
-                  <SelectItem value="Bandung">Bandung</SelectItem>
-                  <SelectItem value="Yogyakarta">Yogyakarta</SelectItem>
-                  <SelectItem value="Surabaya">Surabaya</SelectItem>
                 </SelectContent>
               </Select>
             </div>

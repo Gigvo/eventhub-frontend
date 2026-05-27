@@ -97,9 +97,15 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSaved, setIsSaved] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const [isDownloading, setIsDownloading] = useState(false);
+
+  useEffect(() => {
+    apiCall<{ data: { role: string } }>("/auth/me")
+      .then((res) => setUserRole(res.data.role))
+      .catch(() => setUserRole(null));
+  }, []);
 
   const handleDownloadPDF = async () => {
     if (!event) return;
@@ -107,16 +113,17 @@ export default function EventDetailPage() {
 
     if (proposal?.source === "GENERATED" && proposal.content) {
       setIsDownloading(true);
-      
+
       const iframe = document.createElement("iframe");
       iframe.style.display = "none";
       document.body.appendChild(iframe);
-      
+
       let htmlContent = proposal.content;
       try {
         if (htmlContent.startsWith("{")) {
           const parsed = JSON.parse(htmlContent);
-          const listItems = (items: string[]) => items.map(i => `<li>${i}</li>`).join("");
+          const listItems = (items: string[]) =>
+            items.map((i) => `<li>${i}</li>`).join("");
           htmlContent = `
             <h2>Executive Summary</h2><p>${parsed.executiveSummary}</p>
             <h2>Latar Belakang Event</h2><p>${parsed.eventBackground}</p>
@@ -163,7 +170,7 @@ export default function EventDetailPage() {
           </html>
         `);
         doc.close();
-        
+
         iframe.contentWindow?.focus();
         setTimeout(() => {
           iframe.contentWindow?.print();
@@ -196,7 +203,10 @@ export default function EventDetailPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.warn("Direct download failed, falling back to window.open with GCS URL", error);
+      console.warn(
+        "Direct download failed, falling back to window.open with GCS URL",
+        error,
+      );
       window.open(fileUrl, "_blank");
     } finally {
       setIsDownloading(false);
@@ -302,7 +312,7 @@ export default function EventDetailPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
@@ -325,20 +335,13 @@ export default function EventDetailPage() {
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => setIsSaved(!isSaved)}
-            >
-              <Bookmark
-                className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`}
-              />
-              {isSaved ? "Tersimpan" : "Simpan"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
               onClick={handleDownloadPDF}
               disabled={!event?.proposal?.fileUrl || isDownloading}
-              title={!event?.proposal?.fileUrl ? "Proposal PDF belum tersedia untuk event ini" : undefined}
+              title={
+                !event?.proposal?.fileUrl
+                  ? "Proposal PDF belum tersedia untuk event ini"
+                  : undefined
+              }
             >
               {isDownloading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -354,8 +357,11 @@ export default function EventDetailPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left — Event Info */}
-          <div className="lg:col-span-2 space-y-6">
+          <div
+            className={`space-y-6 ${
+              userRole === "COMPANY" ? "lg:col-span-2" : "lg:col-span-3"
+            }`}
+          >
             {/* Banner */}
             <div className="relative w-full h-72 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl overflow-hidden flex items-end">
               {event.bannerUrl ? (
@@ -377,12 +383,12 @@ export default function EventDetailPage() {
             </div>
 
             {/* Quick Info Row */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg p-4 border flex items-start gap-3">
+            <div className="grid grid-cols-3 lg:gap-4 gap-2">
+              <div className="bg-white rounded-lg md:p-4 p-2 border flex items-start gap-3">
                 <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Tanggal</p>
-                  <p className="text-sm font-medium">
+                  <p className="md:text-sm text-xs font-medium">
                     {formatDate(event.startDate)}
                     {event.startDate !== event.endDate && (
                       <> – {formatDate(event.endDate)}</>
@@ -390,22 +396,22 @@ export default function EventDetailPage() {
                   </p>
                 </div>
               </div>
-              <div className="bg-white rounded-lg p-4 border flex items-start gap-3">
+              <div className="bg-white rounded-lg md:p-4 p-2 border flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Lokasi</p>
-                  <p className="text-sm font-medium">
+                  <p className="md:text-sm text-xs font-medium">
                     {event.isOnline
                       ? "Online"
                       : `${event.venue}, ${event.city}`}
                   </p>
                 </div>
               </div>
-              <div className="bg-white rounded-lg p-4 border flex items-start gap-3">
+              <div className="bg-white rounded-lg md:p-4 p-2 border flex items-start gap-3">
                 <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Estimasi Peserta</p>
-                  <p className="text-sm font-medium">
+                  <p className="md:text-sm text-xs font-medium">
                     {event.expectedAttendees.toLocaleString("id-ID")} orang
                   </p>
                 </div>
@@ -536,248 +542,252 @@ export default function EventDetailPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-6">
-            <Card className="p-6 sticky top-24">
-              {/* Budget */}
-              {minTierPrice !== null && (
-                <>
-                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
-                    Budget Range
-                  </p>
-                  <p className="text-2xl font-light text-blue-600 mb-4">
-                    {minTierPrice === maxTierPrice
-                      ? formatPrice(minTierPrice)
-                      : `${formatPrice(minTierPrice)} – ${formatPrice(maxTierPrice!)}`}
-                  </p>
-                </>
-              )}
+          {userRole === "COMPANY" && (
+            <div className="space-y-6">
+              <Card className="p-6 sticky top-24">
+                {/* Budget */}
+                {minTierPrice !== null && (
+                  <>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Budget Range
+                    </p>
+                    <p className="text-2xl font-light text-blue-600 mb-4">
+                      {minTierPrice === maxTierPrice
+                        ? formatPrice(minTierPrice)
+                        : `${formatPrice(minTierPrice)} – ${formatPrice(maxTierPrice!)}`}
+                    </p>
+                  </>
+                )}
 
-              {/* AI Match Box */}
-              <div className="p-4 bg-blue-50 rounded-lg mb-4">
-                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-blue-900">
-                  <Sparkles className="h-4 w-4 text-blue-600" />
-                  Kenapa Event Ini?
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-700">
-                      Target usia {event.audienceAgeMin}–{event.audienceAgeMax}{" "}
-                      tahun.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-700">
-                      {event.expectedAttendees.toLocaleString("id-ID")} estimasi
-                      peserta.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-700">
-                      Kategori {event.category} · {event.city}.
-                    </p>
+                {/* AI Match Box */}
+                <div className="p-4 bg-blue-50 rounded-lg mb-4">
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-blue-900">
+                    <Sparkles className="h-4 w-4 text-blue-600" />
+                    Kenapa Event Ini?
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-700">
+                        Target usia {event.audienceAgeMin}–
+                        {event.audienceAgeMax} tahun.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-700">
+                        {event.expectedAttendees.toLocaleString("id-ID")}{" "}
+                        estimasi peserta.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-700">
+                        Kategori {event.category} · {event.city}.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Button
-                className={`w-full h-11 font-semibold text-white mb-3 ${
-                  hasExistingOffer || offerSuccess
-                    ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
-                    : "bg-green-500 hover:bg-green-600"
-                }`}
-                onClick={openOfferDialog}
-                disabled={offerSuccess || hasExistingOffer}
-              >
-                {hasExistingOffer || offerSuccess
-                  ? "✓ Penawaran Terkirim"
-                  : "✓ Saya Tertarik"}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full font-semibold text-gray-700"
-                onClick={() => router.back()}
-              >
-                Lihat Katalog Lain
-              </Button>
-            </Card>
-          </div>
+                <Button
+                  className={`w-full h-11 font-semibold text-white mb-3 ${
+                    hasExistingOffer || offerSuccess
+                      ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
+                      : "bg-green-500 hover:bg-green-600"
+                  }`}
+                  onClick={openOfferDialog}
+                  disabled={offerSuccess || hasExistingOffer}
+                >
+                  {hasExistingOffer || offerSuccess
+                    ? "✓ Penawaran Terkirim"
+                    : "✓ Saya Tertarik"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full font-semibold text-gray-700"
+                  onClick={() => router.back()}
+                >
+                  Lihat Katalog Lain
+                </Button>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ─── Offer Dialog ─── */}
-      <Dialog open={offerDialogOpen} onOpenChange={setOfferDialogOpen}>
-        <DialogContent className="max-w-lg">
-          {offerSuccess ? (
-            /* ── Success state ── */
-            <div className="py-8 flex flex-col items-center text-center gap-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <Check className="w-8 h-8 text-green-600" />
-              </div>
-              <DialogTitle className="text-xl font-bold text-gray-900">
-                Penawaran Terkirim!
-              </DialogTitle>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Penawaran Anda untuk{" "}
-                <span className="font-semibold text-gray-800">
-                  {event?.title}
-                </span>{" "}
-                telah berhasil dikirim. Tim EO akan segera meninjau dan
-                merespons penawaran Anda.
-              </p>
-              <Button
-                className="mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8"
-                onClick={() => setOfferDialogOpen(false)}
-              >
-                Tutup
-              </Button>
-            </div>
-          ) : (
-            /* ── Form state ── */
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">
-                  Kirim Penawaran Sponsorship
+      {userRole === "COMPANY" && (
+        <Dialog open={offerDialogOpen} onOpenChange={setOfferDialogOpen}>
+          <DialogContent className="max-w-lg">
+            {offerSuccess ? (
+              /* ── Success state ── */
+              <div className="py-8 flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <Check className="w-8 h-8 text-green-600" />
+                </div>
+                <DialogTitle className="text-xl font-bold text-gray-900">
+                  Penawaran Terkirim!
                 </DialogTitle>
-                <DialogDescription className="text-sm text-gray-500">
-                  Pilih paket dan tulis pesan Anda untuk{" "}
-                  <span className="font-medium text-gray-700">
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Penawaran Anda untuk{" "}
+                  <span className="font-semibold text-gray-800">
                     {event?.title}
-                  </span>
-                  .
-                </DialogDescription>
-              </DialogHeader>
-
-              {/* Tier Selection */}
-              <div className="mt-2">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  Pilih Paket Sponsor
+                  </span>{" "}
+                  telah berhasil dikirim. Tim EO akan segera meninjau dan
+                  merespons penawaran Anda.
                 </p>
-                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                  {event?.tiers.map((tier) => (
-                    <button
-                      key={tier.id}
-                      onClick={() => setSelectedTierId(tier.id)}
-                      className={`w-full text-left rounded-lg border p-3.5 transition-all ${
-                        selectedTierId === tier.id
-                          ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                              selectedTierId === tier.id
-                                ? "border-blue-500 bg-blue-500"
-                                : "border-gray-300"
-                            }`}
-                          >
-                            {selectedTierId === tier.id && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                            )}
+                <Button
+                  className="mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8"
+                  onClick={() => setOfferDialogOpen(false)}
+                >
+                  Tutup
+                </Button>
+              </div>
+            ) : (
+              /* ── Form state ── */
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-bold">
+                    Kirim Penawaran Sponsorship
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-gray-500">
+                    Pilih paket dan tulis pesan Anda untuk{" "}
+                    <span className="font-medium text-gray-700">
+                      {event?.title}
+                    </span>
+                    .
+                  </DialogDescription>
+                </DialogHeader>
+
+                {/* Tier Selection */}
+                <div className="mt-2">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                    Pilih Paket Sponsor
+                  </p>
+                  <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                    {event?.tiers.map((tier) => (
+                      <button
+                        key={tier.id}
+                        onClick={() => setSelectedTierId(tier.id)}
+                        className={`w-full text-left rounded-lg border p-3.5 transition-all ${
+                          selectedTierId === tier.id
+                            ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                selectedTierId === tier.id
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {selectedTierId === tier.id && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                              )}
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm capitalize">
+                              {tier.name}
+                            </span>
                           </div>
-                          <span className="font-semibold text-gray-900 text-sm capitalize">
-                            {tier.name}
+                          <span className="text-blue-600 font-bold text-sm">
+                            {formatPrice(tier.price)}
                           </span>
                         </div>
-                        <span className="text-blue-600 font-bold text-sm">
-                          {formatPrice(tier.price)}
-                        </span>
-                      </div>
-                      {tier.benefits && tier.benefits.length > 0 && (
-                        <ul className="ml-6 space-y-0.5">
-                          {tier.benefits.slice(0, 3).map((b, i) => (
-                            <li
-                              key={i}
-                              className="flex items-center gap-1.5 text-xs text-gray-500"
-                            >
-                              <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
-                              {b}
-                            </li>
-                          ))}
-                          {tier.benefits.length > 3 && (
-                            <li className="text-xs text-gray-400 ml-4">
-                              +{tier.benefits.length - 3} benefit lainnya
-                            </li>
-                          )}
-                        </ul>
-                      )}
-                      {tier.maxSlots && (
-                        <p className="ml-6 text-[11px] text-gray-400 mt-1">
-                          Maks. {tier.maxSlots} slot
-                        </p>
-                      )}
-                    </button>
-                  ))}
+                        {tier.benefits && tier.benefits.length > 0 && (
+                          <ul className="ml-6 space-y-0.5">
+                            {tier.benefits.slice(0, 3).map((b, i) => (
+                              <li
+                                key={i}
+                                className="flex items-center gap-1.5 text-xs text-gray-500"
+                              >
+                                <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                {b}
+                              </li>
+                            ))}
+                            {tier.benefits.length > 3 && (
+                              <li className="text-xs text-gray-400 ml-4">
+                                +{tier.benefits.length - 3} benefit lainnya
+                              </li>
+                            )}
+                          </ul>
+                        )}
+                        {tier.maxSlots && (
+                          <p className="ml-6 text-[11px] text-gray-400 mt-1">
+                            Maks. {tier.maxSlots} slot
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Message Input */}
-              <div className="mt-4">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                  Pesan Penawaran
-                </label>
-                <textarea
-                  rows={4}
-                  value={offerMessage}
-                  onChange={(e) => setOfferMessage(e.target.value)}
-                  minLength={10}
-                  required // Optional: add this if the field cannot be left entirely empty
-                  placeholder="Perkenalkan perusahaan Anda dan jelaskan mengapa Anda tertarik mensponsori event ini..."
-                  className={`w-full rounded-lg border px-3.5 py-3 text-sm text-gray-800 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:border-transparent transition ${
-                    offerMessage.length > 0 && offerMessage.length < 10
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-200 focus:ring-blue-500"
-                  }`}
-                />
+                {/* Message Input */}
+                <div className="mt-4">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                    Pesan Penawaran
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={offerMessage}
+                    onChange={(e) => setOfferMessage(e.target.value)}
+                    minLength={10}
+                    required
+                    placeholder="Perkenalkan perusahaan Anda dan jelaskan mengapa Anda tertarik mensponsori event ini..."
+                    className={`w-full rounded-lg border px-3.5 py-3 text-sm text-gray-800 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                      offerMessage.length > 0 && offerMessage.length < 10
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-200 focus:ring-blue-500"
+                    }`}
+                  />
 
-                {/* Helper text for user feedback */}
-                {offerMessage.length > 0 && offerMessage.length < 10 && (
-                  <p className="mt-1 text-xs text-red-500">
-                    Pesan harus memiliki minimal 10 karakter. (
-                    {offerMessage.length}/10)
+                  {/* Helper text for user feedback */}
+                  {offerMessage.length > 0 && offerMessage.length < 10 && (
+                    <p className="mt-1 text-xs text-red-500">
+                      Pesan harus memiliki minimal 10 karakter. (
+                      {offerMessage.length}/10)
+                    </p>
+                  )}
+                </div>
+
+                {/* Error */}
+                {offerError && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                    {offerError}
                   </p>
                 )}
-              </div>
 
-              {/* Error */}
-              {offerError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
-                  {offerError}
-                </p>
-              )}
-
-              <DialogFooter className="mt-2 gap-2 flex-col sm:flex-row">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setOfferDialogOpen(false)}
-                  disabled={offerSubmitting}
-                >
-                  Batal
-                </Button>
-                <Button
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold gap-2"
-                  onClick={handleCreateOffer}
-                  disabled={
-                    !selectedTierId || !offerMessage.trim() || offerSubmitting
-                  }
-                >
-                  {offerSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  Kirim Penawaran
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+                <DialogFooter className="mt-2 gap-2 flex-col sm:flex-row">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setOfferDialogOpen(false)}
+                    disabled={offerSubmitting}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold gap-2"
+                    onClick={handleCreateOffer}
+                    disabled={
+                      !selectedTierId || !offerMessage.trim() || offerSubmitting
+                    }
+                  >
+                    {offerSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    Kirim Penawaran
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

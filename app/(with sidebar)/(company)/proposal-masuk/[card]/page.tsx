@@ -241,7 +241,7 @@ export default function ProposalCardDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Top Header & Breadcrumb */}
-      <div className="bg-white border-b sticky top-0 z-20 px-6 py-4 flex items-center justify-between shadow-sm">
+      <div className="bg-white border-b sticky top-0 z-20 px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-extrabold text-gray-900 mr-2">
             Proposal Card
@@ -266,7 +266,7 @@ export default function ProposalCardDetailPage() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-6 text-gray-500">
+        <div className="flex items-center gap-3 sm:gap-6 text-gray-500">
           <BellIcon />
           <SettingsIcon />
           <UserCircleIcon />
@@ -274,7 +274,7 @@ export default function ProposalCardDetailPage() {
       </div>
 
       {/* Action Header bar */}
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         <button
           onClick={() => router.push("/proposal-masuk")}
           className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition"
@@ -298,11 +298,11 @@ export default function ProposalCardDetailPage() {
       </div>
 
       {/* Main Grid */}
-      <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row gap-8 items-start">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col lg:flex-row gap-8 items-start">
         {/* Left Column: Event details */}
-        <div className="flex-1 bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="flex-1 min-w-0 bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm w-full">
           {/* Banner Hero Card */}
-          <div className="relative h-[320px] w-full bg-slate-900">
+          <div className="relative h-[200px] sm:h-[320px] w-full bg-slate-900">
             {event.bannerUrl ? (
               <Image
                 src={event.bannerUrl}
@@ -315,7 +315,7 @@ export default function ProposalCardDetailPage() {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
-            <div className="absolute bottom-0 left-0 right-0 p-8">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
               <div className="flex gap-2 mb-3">
                 <Badge className="bg-blue-600 hover:bg-blue-700 text-white border-none tracking-wide text-[10px] font-bold px-2.5 py-1">
                   {event.category || "CONFERENCE"}
@@ -324,20 +324,20 @@ export default function ProposalCardDetailPage() {
                   {event.city?.toUpperCase() || "JAKARTA"}, ID
                 </Badge>
               </div>
-              <h2 className="text-3xl font-extrabold text-white leading-tight drop-shadow-md">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight drop-shadow-md">
                 {event.title}
               </h2>
             </div>
           </div>
 
-          <div className="p-8 space-y-12">
+          <div className="p-4 sm:p-8 space-y-8 sm:space-y-12">
             {/* Section 01: Tentang Event */}
             <section>
               <div className="flex items-center gap-3 mb-5">
                 <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                   01
                 </span>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   Tentang Event
                 </h3>
               </div>
@@ -352,13 +352,13 @@ export default function ProposalCardDetailPage() {
                 <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                   02
                 </span>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   Target Audiens
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="p-5 bg-gray-50 rounded-xl border border-gray-100 space-y-4">
+              <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
+                <div className="w-full p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-100 space-y-4">
                   <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                     Demografi Utama
                   </h4>
@@ -394,7 +394,7 @@ export default function ProposalCardDetailPage() {
                   </div>
                 </div>
 
-                <div className="p-5 bg-gray-50 rounded-xl border border-gray-100 space-y-4">
+                <div className="w-full p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-100 space-y-4">
                   <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                     Industri Dominan
                   </h4>
@@ -471,13 +471,13 @@ export default function ProposalCardDetailPage() {
                 <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                   03
                 </span>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   Paket Sponsorship
                 </h3>
               </div>
 
               {/* Comparative Table */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
+              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white w-full">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
@@ -633,12 +633,12 @@ export default function ProposalCardDetailPage() {
                 <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                   04
                 </span>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   Penyelenggara
                 </h3>
               </div>
 
-              <div className="border border-gray-200 rounded-xl p-5 flex items-start gap-4 shadow-sm bg-white hover:shadow-md transition">
+              <div className="border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start gap-4 shadow-sm bg-white hover:shadow-md transition">
                 <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-150 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   <User className="h-8 w-8 text-gray-400" />
                 </div>
@@ -648,14 +648,14 @@ export default function ProposalCardDetailPage() {
                     <h4 className="text-base font-bold text-gray-900 leading-tight">
                       {event.eoProfile?.organizationName || "Nexus Collective"}
                     </h4>
-                    <span
+                    {/* <span
                       onClick={() =>
                         router.push(`/cari-sponsor?focus=${event.eoProfile.id}`)
                       }
                       className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
                     >
                       Lihat Profil
-                    </span>
+                    </span> */}
                   </div>
 
                   <p className="text-xs text-gray-400 font-medium">
@@ -768,7 +768,7 @@ export default function ProposalCardDetailPage() {
             )}
 
             {/* Bottom Actions grid */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <Button
                 variant="outline"
                 onClick={() => setShowRejectDialog(true)}
@@ -792,14 +792,14 @@ export default function ProposalCardDetailPage() {
               </Button>
             </div>
 
-            <Button
+            {/* <Button
               onClick={() =>
                 router.push(`/cari-sponsor?focus=${event.eoProfile.id}`)
               }
               className="w-full bg-white hover:bg-gray-50 border border-gray-200 text-blue-600 font-bold py-5 rounded-lg shadow-sm transition h-auto text-xs"
             >
               Lihat Profil
-            </Button>
+            </Button> */}
           </Card>
 
           {/* Upgrade banner panel */}

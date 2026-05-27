@@ -7,36 +7,75 @@ import { Sparkles, FileUp, Handshake } from "lucide-react";
 import Marquee from "@/components/landing/marquee/marquee";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 const BRANDS = ["SAMSUNG", "TOKOPEDIA", "TELKOMSEL", "TRAVELOKA", "GRAB"];
 
 export default function Home() {
   const router = useRouter();
+
+  // Stagger container variants for steps
+  const stepsContainerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const stepItemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } as any },
+  };
+
+  // Stagger container variants for testimonials
+  const testimonialsContainerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const testimonialItemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } as any },
+  };
+
   return (
     <>
       <NavbarLanding />
 
-      <section className="flex items-center justify-center gap-16 max-w-7xl mx-auto">
-        <div className="flex-1">
-          <Badge className="font-inter text-[#4A72FF] bg-[#EEF2FF] hover:bg-[#EEF2FF] border-none px-4 py-2 rounded-full mb-8 flex items-center w-fit gap-2 font-bold tracking-wide text-xs">
+      {/* Hero Section */}
+      <section className="flex flex-col-reverse lg:flex-row items-center justify-between gap-12 lg:gap-16 max-w-7xl mx-auto px-4 sm:px-8 py-12 lg:py-24 overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any}
+          className="flex-1 w-full text-center lg:text-left"
+        >
+          <Badge className="font-inter text-[#4A72FF] bg-[#EEF2FF] hover:bg-[#EEF2FF] border-none px-4 py-2 rounded-full mb-6 sm:mb-8 inline-flex items-center gap-2 font-bold tracking-wide text-xs mx-auto lg:mx-0">
             <Sparkles className="w-4 h-4" />
             DI PERCAYA 500+ EO DI INDONESIA
           </Badge>
 
-          <h1 className="text-[64px] leading-[1.05] font-[900] tracking-tight text-[#111827] mb-6 font-inter">
-            Temukan <br />
-            Sponsorship yang <br />
-            <span className="text-[#4A72FF]">Tepat Sasaran,</span>
+          <h1 className="text-[36px] sm:text-[48px] lg:text-[64px] leading-tight lg:leading-[1.05] font-[900] tracking-tight text-[#111827] mb-6 font-inter">
+            Temukan <br className="hidden sm:inline" />
+            Sponsorship yang <br className="hidden sm:inline" />
+            <span className="text-[#4A72FF]">Tepat Sasaran.</span>
           </h1>
 
-          <p className="text-[17px] leading-relaxed text-[#6B7280] max-w-110 mr-11 mb-12">
-            Hubungkan eventmu dengan ratusan perusahaan sponsor yang tepat
-            otomatis, cerdas, tanpa cold pitching.
+          <p className="text-[16px] sm:text-[17px] leading-relaxed text-[#6B7280] max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-12">
+            Hubungkan eventmu dengan ratusan perusahaan sponsor yang tepat otomatis, cerdas, tanpa cold pitching.
           </p>
 
-          <div className="flex items-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8 sm:mb-16">
             <Button
-              className="bg-[#2563EB] hover:bg-[#3b5bdb] text-white px-8 py-4 text-[16px] rounded-[12px] font-semibold h-auto"
+              className="bg-[#2563EB] hover:bg-[#3b5bdb] text-white px-8 py-4 text-[16px] rounded-[12px] font-semibold h-auto w-full sm:w-auto"
               style={{
                 boxShadow:
                   "0px 4px 6px -4px #2563EB33, 0px 10px 15px -3px #2563EB33",
@@ -47,27 +86,34 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="flex items-center gap-4 pt-4 border-t border-gray-200/60 w-fit pr-8">
+          <div className="flex items-center justify-center lg:justify-start gap-4 pt-4 border-t border-gray-200/60 w-fit mx-auto lg:mx-0 pr-8">
             <div className="flex -space-x-3">
-              <div className="w-11 h-11 rounded-full border-[3px] border-white bg-gray-200 overflow-hidden relative"></div>
-              <div className="w-11 h-11 rounded-full border-[3px] border-white bg-gray-300 overflow-hidden relative"></div>
-              <div className="w-11 h-11 rounded-full border-[3px] border-white bg-gray-400 overflow-hidden relative"></div>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-[3px] border-white bg-gray-200 overflow-hidden relative"></div>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-[3px] border-white bg-gray-300 overflow-hidden relative"></div>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-[3px] border-white bg-gray-400 overflow-hidden relative"></div>
             </div>
-            <p className="text-[14px] text-[#6B7280] font-medium">
+            <p className="text-[13px] sm:text-[14px] text-[#6B7280] font-medium">
               Dipercaya oleh 500+ Event Organizer & Brand
             </p>
           </div>
-        </div>
-        <div className="relative w-full h-[900px] flex-1">
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.15, ease: [0.16, 1, 0.3, 1] } as any}
+          className="relative w-full h-[250px] sm:h-[400px] lg:h-[600px] flex-1"
+        >
           <Image
             src={"/hero-image.webp"}
             alt="hero-image"
             fill
             className="object-contain"
-          ></Image>
-        </div>
+            priority
+          />
+        </motion.div>
       </section>
-      {/* Marquee */}
+
+      {/* Marquee Brands */}
       <Marquee>
         {BRANDS.map((brand) => (
           <div key={brand} className="text-[20px] p-4 font-bold text-gray-300">
@@ -75,19 +121,36 @@ export default function Home() {
           </div>
         ))}
       </Marquee>
-      <section className="flex flex-col items-center max-w-7xl mx-auto">
-        <div className="text-center">
-          <p className="font-extrabold text-[30px]">
+
+      {/* Smart Matching Steps Section */}
+      <section className="flex flex-col items-center max-w-7xl mx-auto px-4 sm:px-8 py-16 sm:py-20 w-full overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6, ease: "easeOut" } as any}
+          className="text-center max-w-3xl mb-8"
+        >
+          <h2 className="font-extrabold text-[24px] sm:text-[30px] leading-tight text-[#111827] mb-4">
             Dari Upload Event ke Deal Sponsor, Semua di Satu Tempat
+          </h2>
+          <p className="text-[#6B7280] text-sm sm:text-[15px]">
+            Tidak ada lagi email yang tidak dibalas. Tidak ada lagi proposal yang salah sasaran.
           </p>
-          <p className="text-[#6B7280] text-[15px]">
-            Tidak ada lagi email yang tidak dibalas. Tidak ada lagi proposal
-            yang salah sasaran.
-          </p>
-        </div>
-        <div className="mt-4 flex flex-col items-center gap-16 w-full">
-          <div className="flex flex-row items-center gap-8 py-8 w-full">
-            <div className="flex-1 p-6 rounded-lg bg-gray-50">
+        </motion.div>
+
+        <motion.div
+          variants={stepsContainerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-100px" }}
+          className="flex flex-col lg:flex-row items-stretch gap-6 sm:gap-8 py-8 w-full"
+        >
+          <motion.div
+            variants={stepItemVariants}
+            className="flex-1 p-6 rounded-lg bg-gray-50 border border-gray-100 flex flex-col justify-between hover:shadow-md transition duration-300"
+          >
+            <div>
               <div className="flex items-start justify-between mb-4">
                 <FileUp className="w-8 h-8 text-[#4A72FF]" />
                 <span className="text-[40px] font-[900] text-gray-200">01</span>
@@ -96,12 +159,16 @@ export default function Home() {
                 Buat Event dalam 5 Menit
               </h3>
               <p className="text-[14px] text-[#6B7280]">
-                Isi nama event, target audiens, kebutuhan budget, dan paket
-                sponsor. Tidak perlu desain atau template.
+                Isi nama event, target audiens, kebutuhan budget, dan paket sponsor. Generate proposal sponsorship dengan AI.
               </p>
             </div>
+          </motion.div>
 
-            <div className="flex-1 p-6 rounded-[20px] bg-white border-2 border-[#4A72FF]">
+          <motion.div
+            variants={stepItemVariants}
+            className="flex-1 p-6 rounded-[20px] bg-white border-2 border-[#4A72FF] flex flex-col justify-between shadow-sm hover:shadow-md transition duration-300"
+          >
+            <div>
               <div className="flex items-start justify-between mb-4">
                 <div className="w-10 h-10 rounded-lg bg-[#4A72FF] flex items-center justify-center">
                   <Image
@@ -118,172 +185,158 @@ export default function Home() {
                 Smart Matching
               </h3>
               <p className="text-[14px] text-[#4A72FF] font-semibold mb-1">
-                Langgkai ini otomatis dilakukan AI
+                Langkah ini otomatis dilakukan AI
               </p>
               <p className="text-[14px] text-[#6B7280]">
-                Algoritma kami mencocokkan eventmu dengan perusahaan yang
-                memiliki target audiens serupa. Akurasi hingga 94%.
+                Algoritma kami mencocokkan eventmu dengan perusahaan yang memiliki target audiens serupa.
               </p>
             </div>
+          </motion.div>
 
-            <div className="flex-1 p-6 rounded-lg bg-gray-50">
+          <motion.div
+            variants={stepItemVariants}
+            className="flex-1 p-6 rounded-lg bg-gray-50 border border-gray-100 flex flex-col justify-between hover:shadow-md transition duration-300"
+          >
+            <div>
               <div className="flex items-start justify-between mb-4">
                 <Handshake className="w-8 h-8 text-[#4A72FF]" />
                 <span className="text-[40px] font-[900] text-gray-200">03</span>
-              </div>{" "}
+              </div>
               <h3 className="text-[18px] font-bold text-[#111827] mb-2">
                 Terima & Negosiasi
               </h3>
               <p className="text-[14px] text-[#6B7280]">
-                Hubungi decision-maker perusahaan langsung dari platform. Tanpa
-                antara, tanpa menunggu.
+                Kirim penawaran ke perusahaan langsung dari platform, tanpa menunggu.
               </p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
-      <section className="py-20 w-full">
-        <div className="max-w-7xl mx-auto flex gap-16 items-start">
+
+      {/* Feature Details & Analytics Section */}
+      <section className="py-12 sm:py-20 w-full px-4 sm:px-8 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
           {/* Left Side */}
-          <div className="flex-2">
-            <div className="flex items-start gap-4 mb-8 border-1 border-[#E5E7EB] rounded-[24px] p-8">
-              <div className="max-w-112">
-                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <FileUp className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="text-[24px] font-bold text-[#111827] mb-2">
-                    Proposal Smart Review
-                  </h3>
-                  <p className="text-[15px] text-[#6B7280] leading-relaxed">
-                    Menganalislis lebih dari 50 titik data untuk menaksirkan
-                    proposal Anda sampai ke meja yang tepat dengan tingkat
-                    konversi tinggi.
-                  </p>
-                </div>
+          <motion.div
+            initial={{ opacity: 0, x: -35 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any}
+            className="flex-1 lg:flex-[2] w-full space-y-8"
+          >
+            <div className="flex flex-col sm:flex-row items-start gap-4 border border-[#E5E7EB] rounded-[24px] p-6 sm:p-8 bg-white">
+              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <FileUp className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-[20px] sm:text-[24px] font-bold text-[#111827] mb-2 leading-tight">
+                  Proposal Smart Review
+                </h3>
+                <p className="text-[14px] sm:text-[15px] text-[#6B7280] leading-relaxed">
+                  Menganalisis proposal secara cerdas berdasarkan data relevansi, target audiens, dan kebutuhan sponsor agar peluang diterima proposal menjadi lebih tinggi.
+                </p>
               </div>
             </div>
 
-            {/* Relative Container for Overlay */}
-            <div className="relative">
-              {/* Circular Progress - Overlays the grid */}
-              <div className="absolute left-85 top-[-70] z-10">
-                <svg width="128" height="128" className="transform">
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="56"
-                    fill="none"
-                    stroke="#E5E7EB"
-                    strokeWidth="12"
-                  />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="56"
-                    fill="none"
-                    stroke="#4A72FF"
-                    strokeWidth="12"
-                    strokeDasharray={`${(89 / 100) * 2 * Math.PI * 56} ${2 * Math.PI * 56}`}
-                    strokeLinecap="round"
-                  />
-                  <text
-                    x="64"
-                    y="68"
-                    textAnchor="middle"
-                    className="text-[20px] font-[900] fill-[#4A72FF]"
-                  >
-                    89%
-                  </text>
-                  <text
-                    x="64"
-                    y="90"
-                    textAnchor="middle"
-                    className="text-[12px] font-[900] fill-[#9CA3AF]"
-                  >
-                    Akurasi
-                  </text>
-                </svg>
+            {/* Feature Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+              <div className="border border-[#E5E7EB] rounded-[24px] p-6 sm:p-8 bg-white hover:shadow-sm transition">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-4 h-4 text-[#4A72FF]" />
+                  <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
+                    INSTANT
+                  </span>
+                </div>
+                <h4 className="text-[17px] font-bold text-[#111827] mb-2">
+                  Proposal Otomatis
+                </h4>
+                <p className="text-[14px] text-[#6B7280] leading-relaxed">
+                  AI menyusun proposal profesional yang dipersonalisasi untuk setiap perusahaan target.
+                </p>
               </div>
-
-              {/* Feature Grid */}
-              <div className="grid grid-cols-2 gap-8 ">
-                <div className="border-[#E5E7EB] rounded-[24px] border-1 p-8">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-4 h-4 text-[#4A72FF]" />
-                    <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
-                      INSTANT
-                    </span>
-                  </div>
-                  <h4 className="text-[17px] font-bold text-[#111827] mb-2">
-                    Proposal Otomatis
-                  </h4>
-                  <p className="text-[14px] text-[#6B7280] leading-relaxed">
-                    AI menyusun proposal profesional yang dipersonalisasi untuk
-                    setiap perusahaan target — siap kirim dalam hitungan detik.
-                  </p>
+              <div className="border border-[#E5E7EB] rounded-[24px] p-6 sm:p-8 bg-white hover:shadow-sm transition">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-4 h-4 text-[#4A72FF]" />
+                  <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
+                    TRANSPARENT
+                  </span>
                 </div>
-                <div className="border-[#E5E7EB] rounded-[24px] border-1 p-8">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-4 h-4 text-[#4A72FF]" />
-                    <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
-                      TRANSPARENT
-                    </span>
-                  </div>
-                  <h4 className="text-[17px] font-bold text-[#111827] mb-2">
-                    Token System
-                  </h4>
-                  <p className="text-[14px] text-[#6B7280] leading-relaxed">
-                    Kendali penuh atas budget pitching Anda dengan sistem token
-                    transparan.
-                  </p>
-                </div>
+                <h4 className="text-[17px] font-bold text-[#111827] mb-2">
+                  Token System
+                </h4>
+                <p className="text-[14px] text-[#6B7280] leading-relaxed">
+                  Kelola pitching dan promosi event dengan sistem token transparan untuk menghubungi perusahaan dan meningkatkan jangkauan event.
+                </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Side */}
-          <div className="flex-1 flex flex-col gap-6">
+          <motion.div
+            initial={{ opacity: 0, x: 35 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any}
+            className="flex-1 w-full flex flex-col gap-6"
+          >
             {/* Card 1 */}
-            <div className="bg-gradient-to-br from-[#4A72FF] to-[#5B82FF] rounded-[32px] p-8 text-white min-h-[200px] flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-[#4A72FF] to-[#5B82FF] rounded-[32px] p-6 sm:p-8 text-white min-h-[200px] flex flex-col justify-between shadow-sm">
               <div>
                 <Badge className="bg-white/25 text-white border-0 mb-4 font-bold text-[11px] px-3 py-1">
                   ANALYTICS
                 </Badge>
-                <h3 className="text-[26px] font-bold mb-3">
+                <h3 className="text-[22px] sm:text-[26px] font-bold mb-3 leading-tight">
                   Dashboard Real-Time
                 </h3>
-                <p className="text-[15px] text-white/90 leading-relaxed">
-                  Pantau status proposal, laporan perusahaan, dan pipeline
-                  sponsorship dalam satu tampilan.
+                <p className="text-[14px] sm:text-[15px] text-white/90 leading-relaxed">
+                  Pantau status proposal, laporan perusahaan, dan pipeline sponsorship dalam satu tampilan.
                 </p>
               </div>
             </div>
 
             {/* Card 2 */}
-            <div className="bg-gradient-to-br from-[#4A72FF] to-[#5B82FF] rounded-[32px] p-8 text-white min-h-[220px] flex flex-col justify-between">
-              <h3 className="text-[28px] font-bold">Siap untuk Mulai?</h3>
-              <Button className="bg-white text-[#4A72FF] hover:bg-gray-50 px-6 py-3 font-bold rounded-[10px] w-fit">
-                Coba Sekarang
-              </Button>
+            <div className="bg-gradient-to-br from-[#4A72FF] to-[#5B82FF] rounded-[32px] p-6 sm:p-8 text-white min-h-[220px] flex flex-col justify-between shadow-sm">
+              <h3 className="text-[24px] sm:text-[28px] font-bold leading-tight mb-4">Siap untuk Mulai?</h3>
+              <Link href={"/register"}>
+                <Button className="bg-white text-[#4A72FF] hover:bg-gray-50 px-6 py-3 font-bold rounded-[10px] w-fit">
+                  Coba Sekarang
+                </Button>
+              </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
-      <section className="py-20 w-full bg-[#FAFAFA]">
+
+      {/* Testimonials Section */}
+      <section className="py-12 sm:py-20 w-full bg-[#FAFAFA] px-4 sm:px-8 overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-[36px] font-bold text-[#111827] mb-3">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 } as any}
+            className="text-center mb-12 sm:mb-16"
+          >
+            <h2 className="text-[26px] sm:text-[36px] font-bold text-[#111827] mb-3">
               Cerita Sukses dari Komunitas
             </h2>
-            <p className="text-[16px] text-[#6B7280]">
+            <p className="text-sm sm:text-[16px] text-[#6B7280]">
               Membantu Event Organizer mendapatkan pendanaan lebih cepat.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-3 gap-8">
+          <motion.div
+            variants={testimonialsContainerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-100px" }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8"
+          >
             {/* Testimonial Card 1 */}
-            <div className="bg-white rounded-[16px] p-8 border border-[#E5E7EB]">
+            <motion.div
+              variants={testimonialItemVariants}
+              className="bg-white rounded-[16px] p-6 sm:p-8 border border-[#E5E7EB] hover:shadow-sm transition"
+            >
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <svg
@@ -297,9 +350,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-[14px] text-[#4B5563] mb-6 leading-relaxed">
-                &quot;Biasanya butuh 2 minggu untuk dapat sponsor. Di EventHub,
-                dalam 3 hari sudah ada 4 perusahaan yang tertarik. 2 deal
-                closing.&quot;
+                &quot;Biasanya butuh 2 minggu untuk dapat sponsor. Di EventHub, dalam 3 hari sudah ada 4 perusahaan yang tertarik. &quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0" />
@@ -312,10 +363,13 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Testimonial Card 2 */}
-            <div className="bg-white rounded-[16px] p-8 border border-[#E5E7EB]">
+            <motion.div
+              variants={testimonialItemVariants}
+              className="bg-white rounded-[16px] p-6 sm:p-8 border border-[#E5E7EB] hover:shadow-sm transition"
+            >
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <svg
@@ -329,9 +383,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-[14px] text-[#4B5563] mb-6 leading-relaxed">
-                &quot;AI Match Score-nya surprisingly akurat. Kami langssung
-                tahu event yang worth untuk ditarget tanpa harus review
-                satu-satu.&quot;
+                &quot;AI Match Scorenya surprisingly akurat. Kami langsung tahu event yang sesuai tanpa harus review satu-satu.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-400 flex-shrink-0" />
@@ -344,10 +396,13 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Testimonial Card 3 */}
-            <div className="bg-white rounded-[16px] p-8 border border-[#E5E7EB]">
+            <motion.div
+              variants={testimonialItemVariants}
+              className="bg-white rounded-[16px] p-6 sm:p-8 border border-[#E5E7EB] hover:shadow-sm transition"
+            >
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <svg
@@ -361,8 +416,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-[14px] text-[#4B5563] mb-6 leading-relaxed">
-                &quot;Kami tidak lagi bayar jasa konsultan sponsorship. EventHub
-                replace itu semua dengan hiya 10x lebih murah.&quot;
+                &quot;Kami tidak lagi bayar jasa konsultan sponsorship. EventHub replace itu semua dengan biaya lebih murah.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0" />
@@ -375,36 +429,43 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
-      <section className="py-32 w-full bg-[#2563EB]">
+
+      {/* CTA Section */}
+      <motion.section
+        initial={{ opacity: 0, scale: 0.98 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any}
+        className="py-16 sm:py-24 lg:py-32 w-full bg-[#2563EB] px-4 sm:px-8 overflow-hidden"
+      >
         <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-          <h2 className="text-[48px] font-[900] text-white mb-4">
+          <h2 className="text-[30px] sm:text-[48px] font-[900] text-white mb-4 leading-tight">
             Mulai Gratis Hari Ini
           </h2>
-          <p className="text-[18px] text-white/90 mb-12 max-w-2xl">
-            Bergabunglah dengan 500+ EO yang sudah mendapatkan sponsor lebih
-            cepat bersama EventHub.
+          <p className="text-sm sm:text-[18px] text-white/90 mb-12 max-w-2xl">
+            Bergabunglah dengan 500+ EO yang sudah mendapatkan sponsor lebih cepat bersama EventHub.
           </p>
 
-          <div className="flex items-center gap-4 mb-12">
-            <Link href={"/register"}>
-              <Button className="bg-white text-[#4A72FF] hover:bg-gray-50 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-12 w-full sm:w-auto">
+            <Link href={"/register"} className="w-full sm:w-auto">
+              <Button className="bg-white text-[#4A72FF] hover:bg-gray-50 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto w-full">
                 Daftar Sekarang
               </Button>
             </Link>
 
             <Button
               variant="outline"
-              className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto bg-transparent"
+              className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto bg-transparent w-full sm:w-auto"
             >
               Lihat Cara Kerjanya
             </Button>
           </div>
 
-          <div className="flex items-center justify-center gap-8 flex-wrap text-white">
+          <div className="flex items-center justify-center gap-6 sm:gap-8 flex-wrap text-white">
             <div className="flex items-center gap-2">
               <svg
                 className="w-5 h-5"
@@ -419,7 +480,7 @@ export default function Home() {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="text-[14px] font-medium">
+              <span className="text-[13px] sm:text-[14px] font-medium">
                 Tersertifikasi PSE
               </span>
             </div>
@@ -437,7 +498,7 @@ export default function Home() {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="text-[14px] font-medium">
+              <span className="text-[13px] sm:text-[14px] font-medium">
                 ISO 27001 Certified
               </span>
             </div>
@@ -455,22 +516,23 @@ export default function Home() {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              <span className="text-[14px] font-medium">
+              <span className="text-[13px] sm:text-[14px] font-medium">
                 Setup dalam 5 menit
               </span>
             </div>
           </div>
         </div>
-      </section>
-      <footer className="bg-[#111827] text-white py-16">
+      </motion.section>
+
+      {/* Footer */}
+      <footer className="bg-[#111827] text-white py-12 sm:py-16 px-4 sm:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-5 gap-12 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12 mb-12">
             {/* Brand Column */}
-            <div className="col-span-1">
+            <div className="col-span-2 md:col-span-1">
               <h3 className="text-[20px] font-bold mb-4">EventHub</h3>
               <p className="text-[14px] text-gray-400 mb-6 leading-relaxed">
-                Platform matchmaking sponsor berbasis AI pertama di Indonesia
-                untuk ekosistem event yang lebih transparan.
+                Platform matchmaking sponsor berbasis AI pertama di Indonesia untuk ekosistem event yang lebih transparan.
               </p>
               <div className="flex gap-3">
                 <button className="w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition">
@@ -501,34 +563,22 @@ export default function Home() {
               </h4>
               <ul className="space-y-3">
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Katalog Event
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     AI Matching
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Harga Token
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Studi Kasus
                   </a>
                 </li>
@@ -542,34 +592,22 @@ export default function Home() {
               </h4>
               <ul className="space-y-3">
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Tentang Kami
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Karir
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Kontak
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Blog
                   </a>
                 </li>
@@ -583,26 +621,17 @@ export default function Home() {
               </h4>
               <ul className="space-y-3">
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Privacy Policy
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Terms of Service
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-[14px] text-gray-400 hover:text-white transition"
-                  >
+                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
                     Cookie Policy
                   </a>
                 </li>
@@ -612,7 +641,7 @@ export default function Home() {
 
           {/* Divider */}
           <div className="border-t border-gray-700 pt-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-[12px] text-gray-400">
                 © 2024 EventHub. Built for precision.
               </p>

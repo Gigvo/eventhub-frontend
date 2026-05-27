@@ -173,24 +173,24 @@ export default function DashboardEO() {
     COMPLETED: "bg-purple-600",
   };
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Selamat pagi, {EOName}
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-sm sm:text-base text-gray-600 mt-1">
           Ini adalah ringkasan performa event dan kemitraan Anda hari ini.
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         {stats.map((stat, index) => {
           const Icon = stat.icon as React.ElementType;
           return (
             <div
               key={index}
-              className="bg-white rounded-lg p-6 border border-gray-200"
+              className="bg-white rounded-lg p-5 sm:p-6 border border-gray-200"
             >
               <div
                 className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center mb-4`}
@@ -210,7 +210,7 @@ export default function DashboardEO() {
               <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
                 {stat.label}
               </p>
-              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</p>
             </div>
           );
         })}
@@ -219,7 +219,7 @@ export default function DashboardEO() {
       {/* Events */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Event Kamu</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Event Kamu</h2>
           <Button
             onClick={() => router.push("/katalog-event-eo")}
             className="text-blue-600 font-semibold hover:underline"
@@ -228,7 +228,7 @@ export default function DashboardEO() {
             Lihat Semua
           </Button>
         </div>
-        <div className="flex flex-row items-stretch gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {eventsLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div
@@ -243,7 +243,7 @@ export default function DashboardEO() {
               </div>
             ))
           ) : events.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 w-full">
+            <div className="col-span-full text-center py-12 text-gray-500 w-full">
               <Calendar size={40} className="mx-auto mb-3 text-gray-300" />
               <p>Belum ada event. Buat event pertamamu!</p>
             </div>
@@ -251,57 +251,61 @@ export default function DashboardEO() {
             events.map((event) => (
               <div
                 key={event.id}
-                className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition w-full"
+                className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition w-full flex flex-col justify-between"
               >
-                <div className="relative h-40 bg-gray-200">
-                  {event.bannerUrl ? (
-                    <Image
-                      src={event.bannerUrl}
-                      alt={event.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : null}
-                  <div className="absolute top-3 left-3">
-                    <span
-                      className={`${statusColors[event.status] ?? "bg-gray-700"} text-white text-xs font-semibold px-3 py-1 rounded`}
-                    >
-                      {event.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">
-                    {event.title}
-                  </h3>
-                  <div className="flex items-center gap-3 mb-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={16} />
-                      <span>{formatDate(event.startDate)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} />
-                      <span>{event.city}</span>
-                    </div>
-                  </div>
-                  {event._count.offers > 0 && (
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="flex -space-x-2">
-                        {Array.from({
-                          length: Math.min(event._count.offers, 3),
-                        }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-6 h-6 bg-gray-300 rounded-full border-2 border-white"
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-gray-600">
-                        {event._count.offers} Sponsor Berminat
+                <div>
+                  <div className="relative h-40 bg-gray-200">
+                    {event.bannerUrl ? (
+                      <Image
+                        src={event.bannerUrl}
+                        alt={event.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : null}
+                    <div className="absolute top-3 left-3">
+                      <span
+                        className={`${statusColors[event.status] ?? "bg-gray-700"} text-white text-xs font-semibold px-3 py-1 rounded`}
+                      >
+                        {event.status}
                       </span>
                     </div>
-                  )}
-                  <button className="w-full text-blue-600 font-semibold text-sm hover:underline">
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 mb-3 line-clamp-1">
+                      {event.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-3 mb-4 text-xs sm:text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={16} />
+                        <span>{formatDate(event.startDate)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin size={16} />
+                        <span>{event.city}</span>
+                      </div>
+                    </div>
+                    {event._count.offers > 0 && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex -space-x-2">
+                          {Array.from({
+                            length: Math.min(event._count.offers, 3),
+                          }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="w-6 h-6 bg-gray-300 rounded-full border-2 border-white"
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-600">
+                          {event._count.offers} Sponsor Berminat
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="p-4 pt-0">
+                  <button className="w-full text-blue-600 font-semibold text-sm hover:underline text-left">
                     Lanjutkan Draft →
                   </button>
                 </div>

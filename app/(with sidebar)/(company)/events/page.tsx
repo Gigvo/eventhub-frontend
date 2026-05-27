@@ -77,7 +77,7 @@ interface FilterState {
   budgetMax: string;
 }
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 8;
 
 export default function KatalogEvent() {
   const router = useRouter();
@@ -85,14 +85,8 @@ export default function KatalogEvent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("ai-match");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<FilterState>({
-    categories: [],
-    scales: [],
-    budgetMin: "",
-    budgetMax: "",
-  });
+
   const [selectedCategory, setSelectedCategory] = useState<string>("semua");
-  const [selectedScale, setSelectedScale] = useState<string>("semua");
   const [events, setEvents] = useState<EventCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -186,13 +180,6 @@ export default function KatalogEvent() {
     );
   }
 
-  // Filter by scale (city)
-  if (selectedScale !== "semua") {
-    sortedEvents = sortedEvents.filter(
-      (event) => event.location.toLowerCase() === selectedScale.toLowerCase(),
-    );
-  }
-
   if (sortBy === "ai-match") {
     sortedEvents = sortedEvents.sort((a, b) => b.finalScore - a.finalScore);
   } else if (sortBy === "terbaru") {
@@ -283,7 +270,7 @@ export default function KatalogEvent() {
           </div>
 
           {/* Filter Bar and Search */}
-          <div className="flex items-center justify-between gap-4 mb-8 bg-white p-4 rounded-lg">
+          <div className="flex items-center justify-between gap-4 mb-8 bg-white p-4 rounded-lg flex-wrap">
             <div className="flex items-center gap-2 flex-1">
               <Filter className="w-4 h-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-600 mr-2">
@@ -305,25 +292,6 @@ export default function KatalogEvent() {
                   <SelectItem value="TECHNOLOGY">Technology</SelectItem>
                   <SelectItem value="WORKSHOP">Workshop</SelectItem>
                   <SelectItem value="CONFERENCE">Conference</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={selectedScale}
-                onValueChange={(value) => {
-                  setSelectedScale(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-32 h-8 text-xs">
-                  <SelectValue placeholder="Skala" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="semua">Semua</SelectItem>
-                  <SelectItem value="Jakarta">Jakarta</SelectItem>
-                  <SelectItem value="Bandung">Bandung</SelectItem>
-                  <SelectItem value="Yogyakarta">Yogyakarta</SelectItem>
-                  <SelectItem value="Surabaya">Surabaya</SelectItem>
                 </SelectContent>
               </Select>
             </div>

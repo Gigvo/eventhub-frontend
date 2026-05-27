@@ -10,6 +10,8 @@ import {
 import { auth } from "@/lib/firebase";
 import { apiCall } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -71,10 +73,18 @@ export default function Login() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen lg:h-screen relative w-full flex-col lg:flex-row bg-white">
+      <Button
+        onClick={() => (window.location.href = "/")}
+        variant={"outline"}
+        className="absolute top-4 left-4 z-20 bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
+      </Button>
+
       {/* Left Side - Blue Section */}
       <div
-        className="w-[50%] bg-[#003EC7]/80 text-white bg-cover bg-center overflow-y-auto px-32 py-48"
+        className="hidden lg:block lg:w-1/2 bg-[#003EC7]/80 text-white bg-cover bg-center lg:h-screen lg:overflow-y-auto px-16 xl:px-32 py-24 xl:py-48 relative"
         style={{
           backgroundImage:
             "linear-gradient(135deg, rgba(0, 62, 199, 0.6), rgba(0, 62, 199, 0.6)), url(/bg-login.png)",
@@ -120,7 +130,7 @@ export default function Login() {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="px-32 py-16 w-[50%] overflow-y-auto flex flex-col justify-center">
+      <div className="px-6 sm:px-16 md:px-32 py-24 w-full lg:w-1/2 min-h-screen lg:h-screen lg:overflow-y-auto flex flex-col justify-center bg-white">
         <div className="max-w-md">
           <p className="text-[28px] font-bold mb-2">Selamat Datang Kembali</p>
           <p className="text-[14px] text-gray-600 mb-8">

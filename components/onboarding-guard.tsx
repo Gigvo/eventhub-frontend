@@ -33,7 +33,10 @@ export default function OnboardingGuard() {
         if (!hasProfile) {
           router.replace("/onboarding");
         }
-      } catch {}
+      } catch (err) {
+        console.warn("User has Firebase account but is not registered in the database. Redirecting to onboarding...", err);
+        router.replace("/onboarding");
+      }
     };
 
     check();

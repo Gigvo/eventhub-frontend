@@ -785,11 +785,11 @@ export default function ProposalSmartReview() {
               )}
 
               {isEditingProposal ? (
-                <div className="flex flex-col h-[85vh] bg-gray-50 border rounded-lg overflow-hidden mb-8">
+                <div className="flex flex-col h-auto lg:h-[85vh] bg-gray-50 border rounded-lg lg:overflow-hidden overflow-visible mb-8">
                   {/* Header */}
-                  <div className="flex items-center justify-between p-4 bg-white border-b">
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm text-gray-500">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-white border-b">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="text-xs sm:text-sm text-gray-500">
                         Buat Event &gt; Sponsorship &gt;{" "}
                         <span className="font-semibold text-gray-900">
                           Proposal Smart Review
@@ -802,10 +802,10 @@ export default function ProposalSmartReview() {
                         {eventName}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                       <Button
                         variant="outline"
-                        className="gap-2"
+                        className="gap-2 text-xs px-3 py-1.5 flex-1 md:flex-none justify-center"
                         onClick={handleDownloadPDF}
                       >
                         <Download className="w-4 h-4" /> Unduh PDF
@@ -813,28 +813,29 @@ export default function ProposalSmartReview() {
                       <Button
                         onClick={handleSaveProposal}
                         disabled={isSavingProposal}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 flex-1 md:flex-none justify-center"
                       >
                         {isSavingProposal ? "Menyimpan..." : "Simpan Perubahan"}
                       </Button>
                       <Button
                         variant="ghost"
                         onClick={() => setIsEditingProposal(false)}
+                        className="p-2"
                       >
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="flex flex-1 overflow-hidden">
+                  <div className="flex flex-col lg:flex-row flex-1 lg:overflow-hidden overflow-visible">
                     {/* Left Side: Workspace */}
-                    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 border-r">
+                    <div className="flex-1 flex flex-col lg:overflow-hidden overflow-visible bg-gray-50 lg:border-r border-b lg:border-b-0 min-h-[500px] lg:min-h-0">
                       {/* Workspace Tabs Header */}
-                      <div className="flex items-center justify-between px-6 py-3 bg-white border-b">
-                        <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-lg">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-3 bg-white border-b">
+                        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-gray-100 rounded-lg">
                           <button
                             onClick={() => handleTabChange("preview")}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all ${
                               editorTab === "preview"
                                 ? "bg-white text-blue-700 shadow-sm"
                                 : "text-gray-600 hover:text-gray-950 hover:bg-gray-200/50"
@@ -845,7 +846,7 @@ export default function ProposalSmartReview() {
                           </button>
                           <button
                             onClick={() => handleTabChange("edit")}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all ${
                               editorTab === "edit"
                                 ? "bg-white text-blue-700 shadow-sm"
                                 : "text-gray-600 hover:text-gray-950 hover:bg-gray-200/50"
@@ -856,7 +857,7 @@ export default function ProposalSmartReview() {
                           </button>
                           <button
                             onClick={() => handleTabChange("raw")}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all ${
                               editorTab === "raw"
                                 ? "bg-white text-blue-700 shadow-sm"
                                 : "text-gray-600 hover:text-gray-950 hover:bg-gray-200/50"
@@ -866,7 +867,7 @@ export default function ProposalSmartReview() {
                             Rich Text Editor
                           </button>
                         </div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
                           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                           <span>
                             Status:{" "}
@@ -1471,7 +1472,7 @@ export default function ProposalSmartReview() {
                     </div>
 
                     {/* Right Side: AI Smart Review */}
-                    <div className="w-96 bg-white border-l p-6 overflow-y-auto flex flex-col gap-6">
+                    <div className="w-full lg:w-96 bg-white lg:border-l border-t lg:border-t-0 p-4 sm:p-6 lg:overflow-y-auto overflow-visible flex flex-col gap-6">
                       <div className="flex items-center gap-2 text-[#003EC7] font-semibold text-sm">
                         <Sparkles className="w-4 h-4" /> AI Smart Review
                       </div>
@@ -1589,10 +1590,10 @@ export default function ProposalSmartReview() {
                   <Tabs
                     value={activeTab}
                     onValueChange={setActiveTab}
-                    className="mb-8"
+                    className="mb-6 sm:mb-8"
                   >
                     <TabsList
-                      className="flex items-center gap-8"
+                      className="flex flex-wrap items-center gap-4 sm:gap-8"
                       variant={"line"}
                     >
                       {/* <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger> */}
@@ -1641,15 +1642,15 @@ export default function ProposalSmartReview() {
                               : (eventProposal?.aiScore ?? null);
 
                           return (
-                            <div className="grid grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                               {/* Left Column - Proposals */}
-                              <div className="col-span-2 space-y-4">
-                                <div className="flex items-center justify-between mb-6">
-                                  <h2 className="text-xl font-semibold text-gray-900">
+                              <div className="col-span-1 lg:col-span-2 space-y-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                                     Proposal
                                   </h2>
                                   <Button
-                                    className="gap-2 px-4 py-2 bg-[#003EC7]"
+                                    className="gap-2 px-4 py-2 bg-[#003EC7] w-full sm:w-auto justify-center"
                                     onClick={() => setIsUploadDialogOpen(true)}
                                   >
                                     <Upload className="w-4 h-4" />
@@ -1680,28 +1681,30 @@ export default function ProposalSmartReview() {
                                   </div>
                                 ) : proposal.source === "GENERATED" ? (
                                   <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200 bg-[#DDE1FF4D]">
-                                    <div className="flex gap-4 items-center">
-                                      <div className="flex-shrink-0">
-                                        <div className="w-14 h-14 border-4 rounded-full flex items-center justify-center text-[#003EC7] text-xl font-bold border-[#003EC7]">
-                                          {proposal.aiScore ?? "–"}
-                                        </div>
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-xs font-semibold">
-                                            AI GENERATED
-                                          </Badge>
-                                          <h3 className="font-semibold text-gray-900 text-sm">
-                                            Proposal {eventName}
-                                          </h3>
-                                        </div>
-                                        {tier && (
-                                          <div className="flex gap-3 text-xs text-[#4B5563]">
-                                            <span className="bg-white rounded-[4px] px-2 py-1">
-                                              Tier: {tier.name}
-                                            </span>
+                                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                                      <div className="flex items-center gap-4">
+                                        <div className="flex-shrink-0">
+                                          <div className="w-14 h-14 border-4 rounded-full flex items-center justify-center text-[#003EC7] text-xl font-bold border-[#003EC7]">
+                                            {proposal.aiScore ?? "–"}
                                           </div>
-                                        )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                                            <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-xs font-semibold">
+                                              AI GENERATED
+                                            </Badge>
+                                            <h3 className="font-semibold text-gray-900 text-sm">
+                                              Proposal {eventName}
+                                            </h3>
+                                          </div>
+                                          {tier && (
+                                            <div className="flex gap-3 text-xs text-[#4B5563]">
+                                              <span className="bg-white rounded-[4px] px-2 py-1">
+                                                Tier: {tier.name}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                       <Button
                                         variant="outline"
@@ -1709,7 +1712,7 @@ export default function ProposalSmartReview() {
                                         onClick={() =>
                                           handleOpenEditor(proposal.content)
                                         }
-                                        className="flex-shrink-0 ml-auto bg-white"
+                                        className="w-full sm:w-auto flex-shrink-0 sm:ml-auto bg-white justify-center"
                                       >
                                         Buka & Edit
                                       </Button>
@@ -1717,13 +1720,13 @@ export default function ProposalSmartReview() {
                                   </Card>
                                 ) : (
                                   <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex gap-3 flex-1">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                      <div className="flex gap-3 flex-1 items-center">
                                         <div className="flex-shrink-0 p-4 bg-[#F3F4F6] rounded-[8px] flex items-center justify-center text-[#9CA3AF]">
                                           <FileText className="w-9 h-9" />
                                         </div>
                                         <div className="flex-1">
-                                          <div className="flex items-center gap-2 mb-2">
+                                          <div className="flex flex-wrap items-center gap-2 mb-2">
                                             <Badge
                                               variant="outline"
                                               className="text-xs font-semibold bg-gray-50"
@@ -1742,14 +1745,14 @@ export default function ProposalSmartReview() {
                                           </p>
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                                         <Button
                                           variant="outline"
                                           size="sm"
                                           onClick={() =>
                                             setIsUploadDialogOpen(true)
                                           }
-                                          className="flex-shrink-0"
+                                          className="flex-1 sm:flex-none justify-center text-xs"
                                         >
                                           Ganti PDF
                                         </Button>
@@ -1759,7 +1762,7 @@ export default function ProposalSmartReview() {
                                           onClick={() =>
                                             handleOpenEditor(proposal.content)
                                           }
-                                          className="flex-shrink-0 ml-auto bg-white"
+                                          className="flex-1 sm:flex-none bg-white justify-center text-xs"
                                         >
                                           Buka & Edit
                                         </Button>
@@ -1767,17 +1770,6 @@ export default function ProposalSmartReview() {
                                     </div>
                                   </Card>
                                 )}
-
-                                {/* Upload Section */}
-                                {/* <div
-                                  onClick={() => setIsUploadDialogOpen(true)}
-                                  className="border-2 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center text-center hover:border-gray-400 cursor-pointer transition-colors"
-                                >
-                                  <Upload className="w-8 h-8 text-gray-400 mb-3" />
-                                  <p className="text-gray-600 text-sm">
-                                    Upload Proposal Lain
-                                  </p>
-                                </div> */}
                               </div>
 
                               {/* Right Column - AI Analysis */}

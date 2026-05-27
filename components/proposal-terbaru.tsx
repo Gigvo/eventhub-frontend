@@ -143,17 +143,11 @@ export default function ProposalTerbaru() {
         <h2 className="text-base font-semibold text-gray-900">
           Proposal Terbaru
         </h2>
-        <button
-          onClick={() => router.push("/proposal-smart-review")}
-          className="text-sm font-medium text-blue-600 hover:underline"
-        >
-          Lihat Semua
-        </button>
       </div>
 
       {/* Status tabs */}
-      <div className="flex items-center justify-between px-6 border-b border-gray-100">
-        <div className="flex">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 border-b border-gray-100 gap-3 py-2 sm:py-0">
+        <div className="flex flex-wrap gap-1">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
@@ -171,111 +165,203 @@ export default function ProposalTerbaru() {
             </button>
           ))}
         </div>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-400 self-end sm:self-auto pb-2 sm:pb-0">
           {filtered.length} proposal
         </span>
       </div>
 
-      {/* Table head */}
-      <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-        <div>Event</div>
-        <div>Perusahaan</div>
-        <div>Paket</div>
-        <div>Tanggal</div>
-        <div>Status</div>
-        <div />
+      {/* Table Section (Desktop View) */}
+      <div className="hidden sm:block overflow-x-auto w-full">
+        <div className="min-w-[800px]">
+          {/* Table head */}
+          <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+            <div>Event</div>
+            <div>Perusahaan</div>
+            <div>Paket</div>
+            <div>Tanggal</div>
+            <div>Status</div>
+            <div />
+          </div>
+
+          {/* Rows */}
+          {paginated.length === 0 ? (
+            <div className="py-16 text-center text-gray-400 text-sm">
+              Tidak ada proposal untuk kategori ini.
+            </div>
+          ) : (
+            paginated.map((offer) => {
+              const { cls, label } = statusBadge(offer.status);
+              const initial = (
+                offer.companyProfile.companyName[0] ?? "C"
+              ).toUpperCase();
+              const color = avatarColor(offer.companyProfile.companyName);
+              const date = new Date(offer.createdAt).toLocaleDateString(
+                "id-ID",
+                {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                },
+              );
+
+              return (
+                <div
+                  key={offer.id}
+                  className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition"
+                >
+                  {/* Event */}
+                  <div className="text-sm text-gray-700 truncate">
+                    {offer.event.title}
+                  </div>
+                  {/* Company */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`w-9 h-9 rounded-full ${color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
+                    >
+                      {initial}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 leading-tight truncate">
+                        {offer.companyProfile.companyName}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">
+                        {offer.companyProfile.industry} ·{" "}
+                        {offer.companyProfile.city}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tier badge */}
+                  <div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide ${tierBadge(offer.tier.name)}`}
+                    >
+                      {offer.tier.name}
+                    </span>
+                  </div>
+
+                  {/* Date */}
+                  <div className="text-sm text-gray-600">{date}</div>
+
+                  {/* Status badge */}
+                  <div>
+                    <span
+                      className={`text-xs font-medium px-3 py-1 rounded-full ${cls}`}
+                    >
+                      {label}
+                    </span>
+                  </div>
+
+                  {/* Action */}
+                  <button
+                    onClick={() =>
+                      router.push(`/proposal-smart-review/${offer.id}`)
+                    }
+                    className="text-sm font-semibold text-[#003EC7] border  rounded px-2 py-1 hover:bg-blue-50 transition whitespace-nowrap"
+                  >
+                    <MoveRight />
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
-      {/* Rows */}
-      {paginated.length === 0 ? (
-        <div className="py-16 text-center text-gray-400 text-sm">
-          Tidak ada proposal untuk kategori ini.
-        </div>
-      ) : (
-        paginated.map((offer) => {
-          const { cls, label } = statusBadge(offer.status);
-          const initial = (
-            offer.companyProfile.companyName[0] ?? "C"
-          ).toUpperCase();
-          const color = avatarColor(offer.companyProfile.companyName);
-          const date = new Date(offer.createdAt).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          });
+      {/* Mobile Card List View */}
+      <div className="block sm:hidden divide-y divide-gray-100 border-t border-gray-100">
+        {paginated.length === 0 ? (
+          <div className="py-12 text-center text-gray-400 text-sm">
+            Tidak ada proposal untuk kategori ini.
+          </div>
+        ) : (
+          paginated.map((offer) => {
+            const { cls, label } = statusBadge(offer.status);
+            const initial = (
+              offer.companyProfile.companyName[0] ?? "C"
+            ).toUpperCase();
+            const color = avatarColor(offer.companyProfile.companyName);
+            const date = new Date(offer.createdAt).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
 
-          return (
-            <div
-              key={offer.id}
-              className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition"
-            >
-              {/* Event */}
-              <div className="text-sm text-gray-700 truncate">
-                {offer.event.title}
-              </div>
-              {/* Company */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className={`w-9 h-9 rounded-full ${color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
-                >
-                  {initial}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 leading-tight truncate">
-                    {offer.companyProfile.companyName}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
-                    {offer.companyProfile.industry} ·{" "}
-                    {offer.companyProfile.city}
-                  </p>
-                </div>
-              </div>
-
-              {/* Tier badge */}
-              <div>
-                <span
-                  className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide ${tierBadge(offer.tier.name)}`}
-                >
-                  {offer.tier.name}
-                </span>
-              </div>
-
-              {/* Date */}
-              <div className="text-sm text-gray-600">{date}</div>
-
-              {/* Status badge */}
-              <div>
-                <span
-                  className={`text-xs font-medium px-3 py-1 rounded-full ${cls}`}
-                >
-                  {label}
-                </span>
-              </div>
-
-              {/* Action */}
-              <button
+            return (
+              <div
+                key={offer.id}
+                className="p-5 hover:bg-gray-55/50 transition space-y-4 cursor-pointer"
                 onClick={() =>
                   router.push(`/proposal-smart-review/${offer.id}`)
                 }
-                className="text-sm font-semibold text-[#003EC7] border  rounded px-2 py-1 hover:bg-blue-50 transition whitespace-nowrap"
               >
-                <MoveRight />
-              </button>
-            </div>
-          );
-        })
-      )}
+                {/* Event Name & Package Tier */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-450">
+                      Event
+                    </span>
+                    <h4 className="text-sm font-bold text-gray-900 truncate mt-0.5">
+                      {offer.event.title}
+                    </h4>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wide flex-shrink-0 ${tierBadge(offer.tier.name)}`}
+                  >
+                    {offer.tier.name}
+                  </span>
+                </div>
+
+                {/* Target Company Banner */}
+                <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 p-3 rounded-xl">
+                  <div
+                    className={`w-9 h-9 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm`}
+                  >
+                    {initial}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-gray-900 truncate">
+                      {offer.companyProfile.companyName}
+                    </p>
+                    <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                      {offer.companyProfile.industry} ·{" "}
+                      {offer.companyProfile.city}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer details: Date & Status */}
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    {date}
+                  </span>
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${cls}`}
+                    >
+                      {label}
+                    </span>
+                    <span className="text-[#003EC7] text-xs font-bold flex items-center gap-1">
+                      Detail <MoveRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4">
         <button
           onClick={() => setPage(Math.max(1, safePage - 1))}
           disabled={safePage === 1}
-          className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40"
+          className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40 w-full sm:w-auto text-center"
         >
           Sebelumnya
         </button>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1 justify-center">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
@@ -293,7 +379,7 @@ export default function ProposalTerbaru() {
         <button
           onClick={() => setPage(Math.min(totalPages, safePage + 1))}
           disabled={safePage === totalPages}
-          className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40"
+          className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40 w-full sm:w-auto text-center"
         >
           Selanjutnya
         </button>

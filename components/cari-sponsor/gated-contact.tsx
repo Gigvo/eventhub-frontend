@@ -269,7 +269,7 @@ export default function GatedContactDetail({ offerId }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
         <button
@@ -281,9 +281,9 @@ export default function GatedContactDetail({ offerId }: Props) {
         </button>
 
         {/* Header Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-8 mb-6 shadow-sm">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-start gap-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-8 mb-6 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
               {/* Logo */}
               <div className="w-20 h-20 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {offer.companyProfile.logoUrl ? (
@@ -302,9 +302,9 @@ export default function GatedContactDetail({ offerId }: Props) {
               </div>
 
               {/* Company Info */}
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold text-gray-900">
+              <div className="flex flex-col items-center sm:items-start">
+                <div className="flex items-center gap-3 mb-1 flex-wrap justify-center sm:justify-start">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                     {offer.companyProfile.companyName}
                   </h1>
                   {offer.companyProfile.isVerified && (
@@ -316,7 +316,7 @@ export default function GatedContactDetail({ offerId }: Props) {
                 <p className="text-gray-500 text-sm mb-3">
                   {offer.companyProfile.industry}
                 </p>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs text-gray-500">
                   <span className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5" />
                     {offer.companyProfile.city}
@@ -337,11 +337,13 @@ export default function GatedContactDetail({ offerId }: Props) {
             </div>
 
             {/* Status Badge */}
-            <span
-              className={`text-xs font-bold px-3 py-1.5 rounded-full ${currentStatus.className}`}
-            >
-              {currentStatus.label}
-            </span>
+            <div className="flex justify-center md:justify-end flex-shrink-0">
+              <span
+                className={`text-xs font-bold px-4 py-1.5 rounded-full ${currentStatus.className}`}
+              >
+                {currentStatus.label}
+              </span>
+            </div>
           </div>
 
           {/* Description */}
@@ -438,10 +440,10 @@ export default function GatedContactDetail({ offerId }: Props) {
 
           {/* Action Buttons */}
           {isPending && (
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant="outline"
-                className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold h-11 gap-2"
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold h-11 gap-2 justify-center w-full"
                 onClick={handleReject}
                 disabled={actionLoading}
               >
@@ -449,7 +451,7 @@ export default function GatedContactDetail({ offerId }: Props) {
                 Tolak Penawaran
               </Button>
               <Button
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold h-11 gap-2"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold h-11 gap-2 justify-center w-full"
                 onClick={handleAccept}
                 disabled={actionLoading}
               >
@@ -460,9 +462,9 @@ export default function GatedContactDetail({ offerId }: Props) {
           )}
 
           {isAccepted && (
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold h-11 gap-2"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold h-11 gap-2 justify-center w-full"
                 onClick={handleWhatsApp}
               >
                 <MessageSquare className="w-4 h-4" />
@@ -470,7 +472,7 @@ export default function GatedContactDetail({ offerId }: Props) {
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 font-semibold h-11 gap-2"
+                className="flex-1 font-semibold h-11 gap-2 justify-center w-full bg-white"
                 onClick={handleEmail}
               >
                 <Mail className="w-4 h-4" />
@@ -480,19 +482,19 @@ export default function GatedContactDetail({ offerId }: Props) {
           )}
 
           {/* Offer Details Card */}
-          <div className="my-6">
-            <h2 className="text-base font-bold text-gray-900 mb-5">
+          <div className="my-8">
+            <h2 className="text-base font-bold text-gray-900 mb-4">
               Detail Penawaran
             </h2>
 
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 bg-gray-50 border border-gray-100 p-4 sm:p-5 rounded-2xl">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                   Event Tujuan
                 </p>
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-gray-400" />
-                  <p className="text-sm font-semibold text-gray-900">
+                  <Building2 className="w-4 h-4 text-gray-450" />
+                  <p className="text-sm font-semibold text-gray-900 truncate">
                     {offer.event.title}
                   </p>
                 </div>
@@ -534,7 +536,7 @@ export default function GatedContactDetail({ offerId }: Props) {
                   {offer.tier.benefits.map((benefit, i) => (
                     <span
                       key={i}
-                      className="bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full border border-blue-100"
+                      className="bg-blue-55/60 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-100"
                     >
                       {benefit}
                     </span>
@@ -556,7 +558,7 @@ export default function GatedContactDetail({ offerId }: Props) {
         </div>
 
         {/* AI Match Card */}
-        <div className="bg-gradient-to-r from-[#4338CA] to-[#7C3AED] rounded-2xl p-6 text-white shadow-md">
+        <div className="bg-gradient-to-r from-[#4338CA] to-[#7C3AED] rounded-2xl p-5 sm:p-6 text-white shadow-md">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
               <Sparkles className="w-4 h-4 text-white" />

@@ -305,9 +305,9 @@ export default function OfferDetailsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500">
         <span
           onClick={() => router.push("/dashboard")}
           className="hover:text-blue-600 hover:underline cursor-pointer transition"
@@ -330,7 +330,7 @@ export default function OfferDetailsPage() {
       {/* Header Panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div className="space-y-3">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
             Detail Penawaran
           </h1>
           <div className="flex items-center gap-3">
@@ -339,19 +339,19 @@ export default function OfferDetailsPage() {
             >
               {pitch.companyProfile.companyName[0].toUpperCase()}
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 font-medium">
               <span>{pitch.companyProfile.companyName}</span>
               <span className="text-gray-300">•</span>
               <span>{pitch.event.title}</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 self-start md:self-auto">
+        <div className="flex flex-wrap items-center gap-3 self-start md:self-auto w-full md:w-auto">
           <Button
             variant="outline"
             onClick={handleDownloadPDF}
             disabled={!eventProposalUrl || isDownloading}
-            className="gap-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="flex-1 sm:flex-none gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 justify-center text-xs sm:text-sm"
           >
             {isDownloading ? (
               <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
@@ -364,7 +364,7 @@ export default function OfferDetailsPage() {
             onClick={() =>
               router.push(`/proposal-smart-review?id=${pitch.eventId}`)
             }
-            className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-none"
+            className="flex-1 sm:flex-none gap-2 bg-blue-600 hover:bg-blue-700 text-white border-none justify-center text-xs sm:text-sm"
           >
             <Sparkles className="h-4 w-4" />
             Proposal Smart Review
@@ -377,9 +377,9 @@ export default function OfferDetailsPage() {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Timeline Card */}
-          <Card className="p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+          <Card className="p-4 sm:p-6 border border-gray-100 shadow-sm relative overflow-hidden">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
                 Progress Penawaran
               </h2>
               <Badge
@@ -390,38 +390,39 @@ export default function OfferDetailsPage() {
             </div>
 
             {/* Stepper Progress Bar */}
-            <div className="relative">
-              {/* Connector line */}
-              <div className="absolute top-5 left-8 right-8 h-0.5 bg-gray-200 z-0" />
-              <div
-                className="absolute top-5 left-8 h-0.5 bg-blue-600 z-0 transition-all duration-500"
-                style={{
-                  width:
-                    stepperStep === 1
-                      ? "0%"
-                      : stepperStep === 2
-                        ? "33%"
-                        : stepperStep === 3
-                          ? "66%"
-                          : "100%",
-                }}
-              />
+            <div className="overflow-x-auto w-full pb-4">
+              <div className="relative min-w-[500px] pt-2">
+                {/* Connector line */}
+                <div className="absolute top-7 left-8 right-8 h-0.5 bg-gray-200 z-0" />
+                <div
+                  className="absolute top-7 left-8 h-0.5 bg-blue-600 z-0 transition-all duration-500"
+                  style={{
+                    width:
+                      stepperStep === 1
+                        ? "0%"
+                        : stepperStep === 2
+                          ? "33%"
+                          : stepperStep === 3
+                            ? "66%"
+                            : "100%",
+                  }}
+                />
 
-              <div className="grid grid-cols-4 relative z-10 text-center">
-                {/* Step 1: Proposal Dikirim */}
-                <div className="flex flex-col items-center gap-2.5">
-                  <div className={getStepperCircleClass(1)}>
-                    <CheckCircle2 className="h-5 w-5" />
+                <div className="grid grid-cols-4 relative z-10 text-center">
+                  {/* Step 1: Proposal Dikirim */}
+                  <div className="flex flex-col items-center gap-2.5">
+                    <div className={getStepperCircleClass(1)}>
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">
+                        Proposal Dikirim
+                      </p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        {formatDate(pitch.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-900">
-                      Proposal Dikirim
-                    </p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">
-                      {formatDate(pitch.createdAt)}
-                    </p>
-                  </div>
-                </div>
 
                 {/* Step 2: Dilihat Sponsor */}
                 <div className="flex flex-col items-center gap-2.5">
@@ -510,7 +511,8 @@ export default function OfferDetailsPage() {
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
+        </Card>
 
           {/* Details Card */}
           <Card className="border border-gray-100 shadow-sm overflow-hidden bg-white">

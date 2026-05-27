@@ -64,11 +64,20 @@ export default function Onboarding() {
   const [role, setRole] = useState<Role>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [userName] = useState<string>(() =>
-    typeof window !== "undefined"
-      ? (sessionStorage.getItem("pendingFullName") ?? "")
-      : "",
-  );
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (typeof window !== "undefined") {
+      const sessionName = sessionStorage.getItem("pendingFullName");
+      const firebaseName = auth.currentUser?.displayName || auth.currentUser?.email?.split("@")[0] || "User";
+      let resolvedName = sessionName || firebaseName;
+      if (resolvedName.trim().length < 2) {
+        resolvedName = "User Hub";
+      }
+      setUserName(resolvedName);
+    }
+  }, [authLoading]);
 
   const [organizerData, setOrganizerData] = useState<OrganizerProfile>({
     organizationName: "",
@@ -346,7 +355,7 @@ export default function Onboarding() {
       sessionStorage.removeItem("pendingFullName");
       localStorage.removeItem(DRAFT_KEY);
 
-      setCurrentStep(3);
+      setCurrentStep(4);
     } catch (error: any) {
       console.error("Failed to submit profile:", error);
       setSubmitError(
@@ -681,7 +690,7 @@ export default function Onboarding() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nomor Telepon
+                    Nomor WhatsApp / Telepon
                   </label>
                   <Input
                     type="text"
@@ -757,6 +766,11 @@ export default function Onboarding() {
                     placeholder="Tambah target audiens (tekan Enter)"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
                   />
+                  <p className={`text-xs mt-1.5 ${sponsorData.targetAudience.join(", ").length >= 10 ? "text-green-600 font-semibold" : "text-amber-600"}`}>
+                    {sponsorData.targetAudience.join(", ").length >= 10
+                      ? "✓ Target audiens telah memenuhi panjang minimum (minimal 10 karakter)."
+                      : `⚠ Total panjang tag target audiens saat ini: ${sponsorData.targetAudience.join(", ").length}/10 karakter (minimal 10 karakter).`}
+                  </p>
                 </div>
 
                 {/* Preferred Categories */}
@@ -956,102 +970,6 @@ export default function Onboarding() {
     );
   }
 
-  // Step 3: Review/Confirmation (data already saved, just show summary)
-  if (currentStep === 3) {
-    return (
-      <>
-        <NavbarOnboarding />
-        <div className="min-h-screen bg-gray-50 p-6">
-          <div className="max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
-              Review Profil Anda
-            </h1>
-
-            <Card className="p-8 mb-8">
-              {role === "EO" ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Nama Organisasi</p>
-                    <p className="font-semibold text-gray-900">
-                      {organizerData.organizationName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Jenis Organisasi</p>
-                    <p className="font-semibold text-gray-900">
-                      {organizerData.organizationType}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Kota</p>
-                    <p className="font-semibold text-gray-900">
-                      {organizerData.city}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Kampus / Institusi</p>
-                    <p className="font-semibold text-gray-900">
-                      {organizerData.campus || "Tidak ada"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Deskripsi</p>
-                    <p className="font-semibold text-gray-900">
-                      {organizerData.description || "Tidak ada"}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Nama Perusahaan</p>
-                    <p className="font-semibold text-gray-900">
-                      {sponsorData.companyName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Industri</p>
-                    <p className="font-semibold text-gray-900">
-                      {sponsorData.industry}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Kota</p>
-                    <p className="font-semibold text-gray-900">
-                      {sponsorData.city}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Target Audiens</p>
-                    <p className="font-semibold text-gray-900">
-                      {sponsorData.targetAudience || "Tidak ada"}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </Card>
-
-            <div className="flex gap-4">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(2)}
-                className="px-8"
-              >
-                ← Kembali Edit
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(4)}
-                className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-8"
-              >
-                Konfirmasi →
-              </Button>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
 
   // Step 4: Success
   if (currentStep === 4) {

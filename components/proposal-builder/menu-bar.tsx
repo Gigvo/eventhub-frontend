@@ -97,12 +97,12 @@ export default function MenuBar({ editor }: { editor: Editor | null }) {
   ];
 
   return (
-    <div className="border rounded-md mb-6 flex items-center gap-2 p-1 justify-center w-fit mx-auto">
+    <div className="border border-gray-200 rounded-lg mb-6 flex flex-wrap items-center gap-1 sm:gap-2 p-1 justify-center max-w-full w-fit mx-auto bg-gray-50/50 shadow-sm">
       {Options.map((option, index) => (
         <Toggle
           key={index}
           onClick={option.action}
-          className="p-2 rounded-md aria-pressed:bg-transparent data-[state=on]:bg-transparent"
+          className="p-1.5 sm:p-2 rounded-md aria-pressed:bg-transparent data-[state=on]:bg-transparent hover:bg-gray-100 transition-colors"
         >
           {option.icon}
         </Toggle>

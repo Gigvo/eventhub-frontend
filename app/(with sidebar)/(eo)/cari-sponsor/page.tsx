@@ -391,7 +391,7 @@ export default function CariSponsor() {
     email: string | undefined,
     companyName: string,
     eventTitle: string,
-    offerId: string
+    offerId: string,
   ) => {
     if (!email) {
       window.location.href = `/cari-sponsor/gated-contact/${offerId}`;
@@ -399,7 +399,7 @@ export default function CariSponsor() {
     }
     const subject = encodeURIComponent(`Kolaborasi Event: ${eventTitle}`);
     const body = encodeURIComponent(
-      `Halo ${companyName},\n\nTerima kasih atas penawaran sponsorship yang Anda kirimkan untuk event "${eventTitle}". Kami sangat tertarik untuk berkolaborasi dengan Anda.\n\nMari kita jadwalkan sesi diskusi lebih lanjut.\n\nSalam,\n[Nama Event Organizer]`
+      `Halo ${companyName},\n\nTerima kasih atas penawaran sponsorship yang Anda kirimkan untuk event "${eventTitle}". Kami sangat tertarik untuk berkolaborasi dengan Anda.\n\nMari kita jadwalkan sesi diskusi lebih lanjut.\n\nSalam,\n[Nama Event Organizer]`,
     );
     window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_self");
   };
@@ -474,11 +474,11 @@ export default function CariSponsor() {
   // ─── Render ───
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       {/* Header */}
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-900">Cari Sponsor</h1>
-        <p className="text-sm text-gray-500 mt-1">
+      <div className="mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Cari Sponsor</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
           Temukan mitra strategis yang sesuai dengan profil event Anda melalui
           AI Matching.
         </p>
@@ -487,18 +487,18 @@ export default function CariSponsor() {
       <Tabs defaultValue="temukan" className="w-full">
         {/* Tabs */}
         <TabsList
-          className="justify-start rounded-none h-auto p-0 mb-8 gap-6"
+          className="flex flex-wrap justify-start rounded-none h-auto p-0 mb-6 sm:mb-8 gap-4 sm:gap-6"
           variant={"line"}
         >
           <TabsTrigger
             value="temukan"
-            className="rounded-none px-0 py-3 font-semibold text-gray-500"
+            className="rounded-none px-0 py-3 font-semibold text-gray-500 text-xs sm:text-sm"
           >
             Temukan Sponsor
           </TabsTrigger>
           <TabsTrigger
             value="gated"
-            className="rounded-none px-0 py-3 font-semibold text-gray-500"
+            className="rounded-none px-0 py-3 font-semibold text-gray-500 text-xs sm:text-sm"
           >
             Sponsor Masuk
           </TabsTrigger>
@@ -691,16 +691,16 @@ export default function CariSponsor() {
             </div>
 
             {/* Filters Row */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               {/* Event Filter Dropdown */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-600">
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <span className="text-sm font-medium text-gray-600 flex-shrink-0">
                   Filter Event:
                 </span>
-                <div className="relative">
+                <div className="relative flex-1 md:flex-initial min-w-0 md:min-w-[180px]">
                   <button
                     onClick={() => setEventFilterOpen(!eventFilterOpen)}
-                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition min-w-[180px]"
+                    className="flex items-center justify-between gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition w-full"
                   >
                     <span className="truncate">{eventFilter}</span>
                     <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -729,7 +729,7 @@ export default function CariSponsor() {
               </div>
 
               {/* Status Filter Pills */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
                 {gatedFilterTabs.map((tab) => (
                   <button
                     key={tab}
@@ -791,8 +791,8 @@ export default function CariSponsor() {
                       }`}
                     >
                       {/* Main Row */}
-                      <div className="p-5">
-                        <div className="flex items-start justify-between mb-4">
+                      <div className="p-4 sm:p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
                           {/* Left: Company Info */}
                           <div className="flex items-start gap-3">
                             <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -811,8 +811,8 @@ export default function CariSponsor() {
                               )}
                             </div>
                             <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-gray-900">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-bold text-gray-900 text-sm sm:text-base">
                                   {offer.companyProfile.companyName}
                                 </h3>
                                 {offer.status === "PENDING" && (
@@ -828,39 +828,39 @@ export default function CariSponsor() {
                           </div>
 
                           {/* Right: Date + Status */}
-                          <div className="text-right flex-shrink-0">
+                          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
                             <p className="text-[11px] text-gray-400">
                               {formatDateTime(offer.createdAt)}
                             </p>
-                            <div className="mt-1">
+                            <div>
                               {getStatusBadge(offer.status)}
                             </div>
                           </div>
                         </div>
 
                         {/* Meta Row */}
-                        <div className="flex items-center gap-6 text-xs text-gray-500 mb-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                           <div>
-                            <span className="font-bold text-gray-400 uppercase text-[10px]">
+                            <span className="font-bold text-gray-400 uppercase text-[9px] sm:text-[10px]">
                               Event Tujuan
                             </span>
-                            <p className="text-gray-900 font-semibold text-sm mt-0.5">
+                            <p className="text-gray-900 font-semibold text-xs sm:text-sm mt-0.5">
                               {offer.event.title}
                             </p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-400 uppercase text-[10px]">
+                            <span className="font-bold text-gray-400 uppercase text-[9px] sm:text-[10px]">
                               Paket Sponsor
                             </span>
-                            <p className="text-gray-900 font-semibold text-sm capitalize mt-0.5">
+                            <p className="text-gray-900 font-semibold text-xs sm:text-sm capitalize mt-0.5">
                               {offer.tier.name}
                             </p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-400 uppercase text-[10px]">
+                            <span className="font-bold text-gray-400 uppercase text-[9px] sm:text-[10px]">
                               AI Match Score
                             </span>
-                            <p className="text-green-600 font-bold text-sm mt-0.5 flex items-center gap-1">
+                            <p className="text-green-600 font-bold text-xs sm:text-sm mt-0.5 flex items-center gap-1">
                               <Sparkles className="w-3 h-3" />
                               94% AI Match
                             </p>
@@ -868,7 +868,7 @@ export default function CariSponsor() {
                         </div>
 
                         {/* Action Row */}
-                        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-gray-100">
                           {/* Left: contact status */}
                           <div className="flex items-center gap-1.5 text-xs">
                             {isAccepted ? (
@@ -885,9 +885,9 @@ export default function CariSponsor() {
                           </div>
 
                           {/* Right: Actions */}
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
                             <button
-                              className="text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1"
+                              className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1 mr-auto sm:mr-0 py-2"
                               onClick={() =>
                                 (window.location.href = `/cari-sponsor/gated-contact/${offer.id}`)
                               }
@@ -896,11 +896,11 @@ export default function CariSponsor() {
                             </button>
 
                             {isPending && (
-                              <>
+                              <div className="flex gap-2 w-full sm:w-auto">
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold gap-1.5 h-9"
+                                  className="flex-1 sm:flex-none border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold gap-1.5 h-9 justify-center"
                                   onClick={() => handleReject(offer.id)}
                                   disabled={actionLoading === offer.id}
                                 >
@@ -909,22 +909,27 @@ export default function CariSponsor() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-green-600 hover:bg-green-700 text-white font-semibold gap-1.5 h-9"
+                                  className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-semibold gap-1.5 h-9 justify-center"
                                   onClick={() => handleAccept(offer.id)}
                                   disabled={actionLoading === offer.id}
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                   Setujui
                                 </Button>
-                              </>
+                              </div>
                             )}
 
                             {isAccepted && (
-                              <>
+                              <div className="flex gap-2 w-full sm:w-auto">
                                 <Button
                                   size="sm"
-                                  className="bg-green-600 hover:bg-green-700 text-white font-semibold gap-1.5 h-9"
-                                  onClick={() => handleWhatsApp(offer.companyProfile.phoneNumber, offer.id)}
+                                  className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-semibold gap-1.5 h-9 justify-center"
+                                  onClick={() =>
+                                    handleWhatsApp(
+                                      offer.companyProfile.phoneNumber,
+                                      offer.id,
+                                    )
+                                  }
                                 >
                                   <MessageSquare className="w-3.5 h-3.5" />
                                   Chat via WA
@@ -932,13 +937,20 @@ export default function CariSponsor() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="font-semibold gap-1.5 h-9"
-                                  onClick={() => handleEmail(offer.companyProfile.user?.email, offer.companyProfile.companyName, offer.event.title, offer.id)}
+                                  className="flex-1 sm:flex-none font-semibold gap-1.5 h-9 justify-center bg-white"
+                                  onClick={() =>
+                                    handleEmail(
+                                      offer.companyProfile.user?.email,
+                                      offer.companyProfile.companyName,
+                                      offer.event.title,
+                                      offer.id,
+                                    )
+                                  }
                                 >
                                   <Mail className="w-3.5 h-3.5" />
                                   Kirim Email
                                 </Button>
-                              </>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -974,9 +986,9 @@ export default function CariSponsor() {
               </p>
               <Button
                 className="mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8"
-                onClick={() => setPitchDialogOpen(false)}
+                onClick={() => (window.location.href = "/dashboard")}
               >
-                Tutup
+                Kembali ke Dashboard
               </Button>
             </div>
           ) : (

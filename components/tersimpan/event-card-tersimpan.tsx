@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Bookmark } from "lucide-react";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 
 interface EventCardTersimpanProps {
   id: string;
+  slug: string;
   title: string;
   image: string;
   category: string;
@@ -23,6 +25,7 @@ interface EventCardTersimpanProps {
 
 export default function EventCardTersimpan({
   id,
+  slug,
   title,
   image,
   category,
@@ -33,6 +36,7 @@ export default function EventCardTersimpan({
   isSaved = true,
   onUnsave,
 }: EventCardTersimpanProps) {
+  const router = useRouter();
   const [save, setSave] = useState(false);
 
   useEffect(() => {
@@ -97,11 +101,11 @@ export default function EventCardTersimpan({
         {/* Button */}
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => {}}
+            onClick={() => router.push(`/katalog-event/${slug}`)}
             variant="outline"
             className="w-full mt-auto py-2 border border-[#003EC7] bg-white text-[#003EC7] rounded-[4px] flex-1"
           >
-            Lihat Proposal
+            Lihat Detail
           </Button>
           <Button
             onClick={handleSave}

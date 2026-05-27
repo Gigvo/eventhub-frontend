@@ -15,6 +15,8 @@ import {
   List,
   MessageSquare,
   Image as ImageIcon,
+  Lock,
+  ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
 import { apiCall } from "@/lib/api-client";
@@ -186,9 +188,11 @@ export default function PesanPage() {
     );
 
   return (
-    <div className="flex h-[calc(100vh-128px)] bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm m-6">
+    <div className="flex h-[calc(100vh-64px)] md:h-[calc(100vh-128px)] bg-white rounded-none md:rounded-lg border-0 md:border border-gray-200 overflow-hidden shadow-none md:shadow-sm m-0 md:m-6">
       {/* Sidebar */}
-      <div className="w-[300px] lg:w-[380px] shrink-0 border-r border-gray-200 flex flex-col bg-[#FAFAFA] hidden md:flex">
+      <div
+        className={`shrink-0 border-r border-gray-200 flex flex-col bg-[#FAFAFA] ${selectedOffer ? "hidden md:flex w-[300px] lg:w-[380px]" : "w-full md:w-[300px] lg:w-[380px] flex"}`}
+      >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">Messages</h2>
@@ -275,10 +279,16 @@ export default function PesanPage() {
 
       {/* Main Chat Area */}
       {selectedOffer ? (
-        <div className="flex-1 flex flex-col bg-white relative h-full">
+        <div className="flex-1 flex flex-col bg-white relative h-full min-w-0">
           {/* Header */}
-          <div className="h-[72px] border-b border-gray-200 px-6 flex items-center justify-between bg-white shrink-0">
-            <div className="flex items-center gap-3">
+          <div className="h-[72px] border-b border-gray-200 px-4 sm:px-6 flex items-center justify-between bg-white shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <button
+                onClick={() => setSelectedOffer(null)}
+                className="md:hidden p-1 mr-1 text-gray-550 hover:text-gray-700 shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center overflow-hidden shrink-0">
                 <span className="text-blue-600 font-bold text-lg">
                   {user?.role === "EO"
@@ -288,21 +298,23 @@ export default function PesanPage() {
                     : selectedOffer.event?.title?.charAt(0)?.toUpperCase()}
                 </span>
               </div>
-              <div>
-                <h3 className="font-bold text-gray-900">
+              <div className="min-w-0">
+                <h3 className="font-bold text-gray-900 truncate text-sm sm:text-base">
                   {user?.role === "EO"
                     ? selectedOffer.companyProfile?.companyName
                     : selectedOffer.event?.title}
                 </h3>
-                <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Membahas {selectedOffer.event?.title} -{" "}
-                  {selectedOffer.tier?.name}
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-green-600 font-medium mt-0.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
+                  <span className="truncate">
+                    Membahas {selectedOffer.event?.title} -{" "}
+                    {selectedOffer.tier?.name}
+                  </span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button
+              {/* <Button
                 variant="outline"
                 className="rounded-full text-sm font-semibold flex items-center gap-2"
               >
@@ -310,7 +322,7 @@ export default function PesanPage() {
               </Button>
               <button className="text-gray-400 hover:text-gray-600">
                 <MoreVertical size={20} />
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -327,38 +339,49 @@ export default function PesanPage() {
             </div>
 
             {/* Display the initial offer message */}
-            {selectedOffer.message && (() => {
-              const isMe = user?.role === "COMPANY";
-              return (
-                <div className={`flex gap-3 max-w-[80%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}>
-                  <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0 flex items-center justify-center overflow-hidden">
-                    <span className="text-xs font-bold text-gray-600">
-                      {isMe
-                        ? user?.name?.charAt(0).toUpperCase()
-                        : selectedOffer.companyProfile?.companyName?.charAt(0).toUpperCase() || "S"}
-                    </span>
-                  </div>
-                  <div>
-                    <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
-                        isMe
-                          ? "bg-blue-600 text-white rounded-tr-sm"
-                          : "bg-white border border-gray-200 text-gray-800 rounded-tl-sm"
-                      }`}>
-                      <p className={`font-semibold mb-1 text-[10px] uppercase ${isMe ? "text-blue-200" : "text-gray-500"}`}>
-                        Pesan Penawaran Awal
-                      </p>
-                      {selectedOffer.message}
+            {selectedOffer.message &&
+              (() => {
+                const isMe = user?.role === "COMPANY";
+                return (
+                  <div
+                    className={`flex gap-3 max-w-[80%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0 flex items-center justify-center overflow-hidden">
+                      <span className="text-xs font-bold text-gray-600">
+                        {isMe
+                          ? user?.name?.charAt(0).toUpperCase()
+                          : selectedOffer.companyProfile?.companyName
+                              ?.charAt(0)
+                              .toUpperCase() || "S"}
+                      </span>
                     </div>
-                    <div className={`text-[10px] text-gray-400 mt-1.5 font-medium flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                      {formatDate(selectedOffer.createdAt)}
-                      {isMe && (
-                        <CheckCircle2 size={12} className="text-blue-500" />
-                      )}
+                    <div>
+                      <div
+                        className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                          isMe
+                            ? "bg-blue-600 text-white rounded-tr-sm"
+                            : "bg-white border border-gray-200 text-gray-800 rounded-tl-sm"
+                        }`}
+                      >
+                        <p
+                          className={`font-semibold mb-1 text-[10px] uppercase ${isMe ? "text-blue-200" : "text-gray-500"}`}
+                        >
+                          Pesan Penawaran Awal
+                        </p>
+                        {selectedOffer.message}
+                      </div>
+                      <div
+                        className={`text-[10px] text-gray-400 mt-1.5 font-medium flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}
+                      >
+                        {formatDate(selectedOffer.createdAt)}
+                        {isMe && (
+                          <CheckCircle2 size={12} className="text-blue-500" />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             {messages.map((msg) => {
               const isMe = msg.senderId === user?.id;
@@ -401,75 +424,66 @@ export default function PesanPage() {
 
           {/* Input Area */}
           <div className="p-4 bg-white border-t border-gray-200 shrink-0">
-            <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition shadow-sm">
-              {/* <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex items-center gap-3">
-                <button
-                  type="button"
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                >
-                  <Bold size={16} />
-                </button>
-                <button
-                  type="button"
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                >
-                  <Italic size={16} />
-                </button>
-                <button
-                  type="button"
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                >
-                  <List size={16} />
-                </button>
-                <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                <button
-                  type="button"
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                >
-                  <Paperclip size={16} />
-                </button>
-                <button
-                  type="button"
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                >
-                  <ImageIcon size={16} />
-                </button>
-              </div> */}
-              <form onSubmit={handleSend} className="bg-white p-3 relative">
-                <textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Tulis pesan formal Anda di sini..."
-                  className="w-full resize-none outline-none text-sm text-gray-800 placeholder:text-gray-400 min-h-[60px]"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend(e);
-                    }
-                  }}
-                />
-                <div className="flex justify-between items-end mt-2">
-                  <span className="text-[10px] text-gray-400">
-                    Draft disimpan otomatis pada{" "}
-                    {new Date().toLocaleTimeString("id-ID", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <Button
-                    type="submit"
-                    disabled={isSending || !newMessage.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-2 h-auto text-sm font-semibold flex items-center gap-2 shadow-sm transition"
-                  >
-                    Kirim Pesan <Send size={14} />
-                  </Button>
+            {selectedOffer.status === "NEGOTIATING" ? (
+              <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition shadow-sm">
+                <form onSubmit={handleSend} className="bg-white p-3 relative">
+                  <textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Tulis pesan formal Anda di sini..."
+                    className="w-full resize-none outline-none text-sm text-gray-800 placeholder:text-gray-400 min-h-[60px]"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend(e);
+                      }
+                    }}
+                  />
+                  <div className="flex justify-between text-[10px] mt-1">
+                    <span className="text-gray-500">
+                      ({newMessage.length} / 2000 characters)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <span className="text-[10px] text-gray-400">
+                      Draft disimpan otomatis pada{" "}
+                      {new Date().toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <Button
+                      type="submit"
+                      disabled={isSending || !newMessage.trim()}
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-2 h-auto text-sm font-semibold flex items-center gap-2 shadow-sm transition"
+                    >
+                      Kirim Pesan <Send size={14} />
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800">
+                <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                <div className="text-xs sm:text-sm">
+                  <p className="font-bold text-amber-900 mb-0.5">
+                    Fitur Chat Dinonaktifkan
+                  </p>
+                  <p className="text-amber-700 leading-relaxed font-medium">
+                    {selectedOffer.status === "ACCEPTED" ||
+                    selectedOffer.status === "APPROVED"
+                      ? "Penawaran sponsorship telah disetujui. Komunikasi lebih lanjut dilakukan melalui WhatsApp atau email resmi."
+                      : selectedOffer.status === "REJECTED"
+                        ? "Penawaran ini telah ditolak. Negosiasi pesan tidak lagi tersedia."
+                        : "Pesan hanya dapat dikirim ketika status penawaran sedang dalam tahap NEGOSIASI."}
+                  </p>
                 </div>
-              </form>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/50 h-full">
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/50 h-full hidden md:flex">
           <div className="w-20 h-20 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mb-6">
             <MessageSquare size={32} className="text-blue-500" />
           </div>
@@ -477,37 +491,8 @@ export default function PesanPage() {
             Pilih penawaran untuk membaca pesan
           </h2>
           <p className="text-sm text-gray-500 max-w-sm text-center mb-8 leading-relaxed">
-            Kelola komunikasi dengan sponsor dan mitra secara efisien. Semua
-            riwayat chat, lampiran proposal, dan rincian paket tersedia di sini.
+            Kelola komunikasi dengan sponsor dan mitra secara efisien.
           </p>
-          <div className="flex flex-col gap-3 w-full max-w-md px-6">
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex gap-4 items-start shadow-sm">
-              <div className="mt-1">
-                <Search className="text-gray-400" size={20} />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-gray-900">
-                  Gunakan Filter
-                </h4>
-                <p className="text-xs text-gray-500">
-                  Cari berdasarkan status pesan atau kategori acara.
-                </p>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex gap-4 items-start shadow-sm">
-              <div className="mt-1">
-                <FileText className="text-gray-400" size={20} />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-gray-900">
-                  Cek Proposal
-                </h4>
-                <p className="text-xs text-gray-500">
-                  Proposal terlampir otomatis di dalam percakapan terkait.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

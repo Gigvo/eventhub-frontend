@@ -57,6 +57,7 @@ const TokenManagement = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isTopUpLoading, setIsTopUpLoading] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const [proposalsCount, setProposalsCount] = useState<number>(12);
   const [contactsCount, setContactsCount] = useState<number>(8);
@@ -65,7 +66,7 @@ const TokenManagement = () => {
   const loadBillingData = async () => {
     setIsLoading(true);
     try {
-      const [packagesRes, balanceRes, transactionsRes, usageRes] =
+      const [packagesRes, balanceRes, transactionsRes, usageRes, userRes] =
         await Promise.all([
           apiCall<{ success: boolean; data: any[] }>("/billing/packages"),
           apiCall<{ success: boolean; data: { tokenBalance: number } }>(
@@ -75,6 +76,7 @@ const TokenManagement = () => {
             "/billing/transactions",
           ),
           apiCall<{ success: boolean; data: any[] }>("/billing/usage"),
+          apiCall<{ success: boolean; data: any }>("/auth/me"),
         ]);
 
       if (packagesRes?.success && packagesRes?.data) {
@@ -90,6 +92,10 @@ const TokenManagement = () => {
 
       if (balanceRes?.success && balanceRes?.data) {
         setTokenBalance(balanceRes.data.tokenBalance);
+      }
+
+      if (userRes?.success && userRes?.data) {
+        setUserRole(userRes.data.role);
       }
 
       const txData = transactionsRes?.data;
@@ -270,7 +276,7 @@ const TokenManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 animate-fadeIn">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 animate-fadeIn">
       {/* Midtrans Snap Script dynamically loaded */}
       <Script
         src="https://app.sandbox.midtrans.com/snap/snap.js"
@@ -282,20 +288,20 @@ const TokenManagement = () => {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header with Token Count and Stats */}
-          <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800 p-8 rounded-[12px] shadow-lg text-white flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800 p-6 sm:p-8 rounded-2xl shadow-lg text-white flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Background design elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none"></div>
 
             {/* Left side: Token Balance text */}
-            <div className="space-y-3 z-10 text-center md:text-left">
+            <div className="space-y-3 z-10 text-center md:text-left flex-1">
               <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold tracking-wider text-indigo-100 uppercase">
                 Dompet Token Anda
               </span>
-              <h2 className="text-3xl font-extrabold tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                 Sisa Saldo Token
               </h2>
-              <p className="text-indigo-200 text-sm max-w-md">
+              <p className="text-indigo-250/90 text-xs sm:text-sm max-w-md">
                 Gunakan token Anda untuk mengakses AI Proposal Builder,
                 melakukan AI Smart Review, atau membuka kontak sponsor
                 potensial.
@@ -303,7 +309,7 @@ const TokenManagement = () => {
             </div>
 
             {/* Right side: Beautiful filled Token circle */}
-            <div className="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-inner z-10 min-w-[200px] w-full md:w-auto">
+            <div className="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 p-5 sm:p-6 rounded-2xl shadow-inner z-10 min-w-[180px] sm:min-w-[200px] w-full md:w-auto flex-shrink-0">
               <div className="relative h-28 w-28">
                 <svg
                   className="h-full w-full transform -rotate-90"
@@ -349,58 +355,60 @@ const TokenManagement = () => {
             <h2 className="mb-4 text-lg font-semibold text-gray-900">
               Top Up Tokens
             </h2>
-            <div className="flex gap-6 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <div
                     key={i}
-                    className="flex-1 h-48 bg-gray-100 rounded-xl animate-pulse"
+                    className="h-48 bg-gray-100 rounded-xl animate-pulse"
                   />
                 ))
               ) : tokenPackages.length === 0 ? (
-                <div className="w-full text-center py-8 text-gray-500">
+                <div className="col-span-full text-center py-8 text-gray-500">
                   Tidak ada paket tersedia
                 </div>
               ) : (
                 tokenPackages.map((pkg) => (
                   <div
                     key={pkg.id}
-                    className={`relative p-6 transition-all flex-1 rounded-[8px] border border-[#E5E7EB] ${
+                    className={`relative p-5 sm:p-6 transition-all rounded-2xl border border-[#E5E7EB] bg-white flex flex-col justify-between ${
                       pkg.popular
-                        ? "border-2 border-indigo-600 bg-indigo-50"
+                        ? "border-2 border-indigo-650 bg-indigo-50/50 shadow-sm"
                         : "hover:shadow-lg"
                     } ${selectedPackage === pkg.id ? "ring-2 ring-indigo-600" : ""}`}
                   >
                     {pkg.popular && (
                       <div className="absolute right-0 top-0">
-                        <p className="bg-[#505F76] px-3 py-1 text-white text-[10px]">
+                        <p className="bg-[#505F76] px-3 py-1 text-white text-[10px] font-bold tracking-wide rounded-bl-lg">
                           POPULER
                         </p>
                       </div>
                     )}
-                    <Image
-                      src={"/icons/token.svg"}
-                      alt="token"
-                      width={24}
-                      height={28}
-                      className="mb-3"
-                    />
-                    <h3 className="mb-2 text-lg font-semibold text-gray-900">
-                      {pkg.name}
-                    </h3>
-                    <div className="mb-4">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {pkg.tokens} Tokens
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        Rp {pkg.price.toLocaleString("id-ID")}
+                    <div>
+                      <Image
+                        src={"/icons/token.svg"}
+                        alt="token"
+                        width={24}
+                        height={28}
+                        className="mb-3"
+                      />
+                      <h3 className="mb-1 text-base sm:text-lg font-semibold text-gray-900">
+                        {pkg.name}
+                      </h3>
+                      <div className="mb-4">
+                        <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                          {pkg.tokens} Tokens
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-500 font-medium">
+                          Rp {pkg.price.toLocaleString("id-ID")}
+                        </div>
                       </div>
                     </div>
                     <Button
                       onClick={() => handleTopup(pkg.id)}
                       disabled={isTopUpLoading}
                       variant={pkg.popular ? "default" : "outline"}
-                      className="w-full"
+                      className="w-full mt-2"
                     >
                       {isTopUpLoading && selectedPackage === pkg.id
                         ? "Memproses..."
@@ -414,63 +422,62 @@ const TokenManagement = () => {
 
           {/* Transaction History */}
           <div>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-gray-900">
                 Transaction History
               </h2>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Download className="h-4 w-4" />
-                Download CSV
-              </Button>
             </div>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl border border-gray-250/60 shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[600px] sm:min-w-0">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">
+                      <th className="px-4 sm:px-6 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         DATE
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">
+                      <th className="px-4 sm:px-6 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         DESCRIPTION
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">
+                      <th className="px-4 sm:px-6 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         AMOUNT
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">
+                      <th className="px-4 sm:px-6 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         METHOD
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">
+                      <th className="px-4 sm:px-6 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         STATUS
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-gray-100 bg-white">
                     {transactions.length === 0 ? (
                       <tr>
                         <td
                           colSpan={5}
-                          className="px-6 py-8 text-center text-sm text-gray-500"
+                          className="px-4 sm:px-6 py-10 text-center text-sm text-gray-505 font-medium"
                         >
                           Belum ada riwayat transaksi token.
                         </td>
                       </tr>
                     ) : (
                       transactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">
+                        <tr
+                          key={tx.id}
+                          className="hover:bg-gray-50/80 transition-colors"
+                        >
+                          <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-900 whitespace-nowrap">
                             {tx.date}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
+                          <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">
                             {tx.description}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                          <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-900 font-semibold">
                             {tx.amount}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 whitespace-nowrap">
                             {tx.method}
                           </td>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm whitespace-nowrap">
                             {getStatusBadge(tx.status)}
                           </td>
                         </tr>
@@ -486,54 +493,75 @@ const TokenManagement = () => {
         {/* Right Sidebar */}
         <div className="space-y-6">
           {/* How to Use Tokens */}
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm bg-white">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
               <Zap className="h-5 w-5 text-yellow-500" />
               Cara Pakai Token
             </h3>
-            <div className="space-y-4">
-              <div className=" flex items-start gap-3">
-                <SendHorizonal className="mb-2 h-5 w-5 text-indigo-600" />
-                <div>
-                  <div className="font-semibold text-gray-900">
-                    AI Proposal Builder
+
+            {userRole === "COMPANY" ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-100 flex items-center justify-center rounded-2xl flex-shrink-0">
+                    <UserSearch className="h-6 w-6 text-[#78350F]" />
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Memerlukan <span className="font-bold">5 Token</span> per
-                    proposal.
-                  </div>
-                </div>
-              </div>
-              <div className=" flex items-start gap-3">
-                <UserSearch className="mb-2 h-5 w-5 text-purple-600" />
-                <div>
-                  <div className="font-semibold text-gray-900">
-                    Buat Penawaran
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Buat Penawaran dengan{" "}
-                    <span className="font-bold">2 Token</span>.
+                  <div>
+                    <div className="font-bold text-gray-900 text-base leading-snug">
+                      Ajukan Kerjasama Sponsor
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1 leading-normal">
+                      Perusahaan dapat mengirim penawaran kerja sama langsung
+                      kepada Event Organizer dengan{" "}
+                      <span className="font-bold">2 Token</span>.
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className=" flex items-start gap-3">
-                <Zap className="mb-2 h-5 w-5 text-blue-600" />
-                <div>
-                  <div className="font-semibold text-gray-900">
-                    AI Smart Review
+            ) : (
+              <div className="space-y-4">
+                <div className=" flex items-start gap-3">
+                  <SendHorizonal className="mb-2 h-5 w-5 text-indigo-650 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      AI Proposal Builder
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      Memerlukan <span className="font-bold">5 Token</span> per
+                      proposal.
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Dapatkan proposal terbaik dengan review otomatis dengan
-                    <span className="font-bold"> 3 Token</span>.
+                </div>
+                <div className=" flex items-start gap-3">
+                  <UserSearch className="mb-2 h-5 w-5 text-purple-655 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      Buat Penawaran
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      Buat Penawaran dengan{" "}
+                      <span className="font-bold">2 Token</span>.
+                    </div>
+                  </div>
+                </div>
+                <div className=" flex items-start gap-3">
+                  <Zap className="mb-2 h-5 w-5 text-blue-650 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      AI Smart Review
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      Dapatkan proposal terbaik dengan review otomatis dengan
+                      <span className="font-bold"> 3 Token</span>.
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </Card>
 
           {/* Support Section */}
           <Card
-            className="overflow-hidden  p-6 text-white"
+            className="overflow-hidden p-5 sm:p-6 text-white rounded-2xl shadow-md"
             style={{
               backgroundImage: `linear-gradient(0deg, rgba(17, 24, 39, 1) 0%, rgba(17, 24, 39, 0.4) 50%, rgba(17, 24, 39, 0) 100%), url(/support.png)`,
               backgroundSize: "cover",
@@ -550,7 +578,7 @@ const TokenManagement = () => {
               </div>
               <Button
                 variant="outline"
-                className=" border-white text-black hover:bg-white hover:text-gray-900 px-4 py-1.5 rounded-[4px]"
+                className="border-white text-black hover:bg-white hover:text-gray-900 px-4 py-1.5 rounded-[4px]"
               >
                 Hubungi Support
               </Button>

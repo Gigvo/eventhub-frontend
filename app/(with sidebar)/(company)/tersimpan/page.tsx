@@ -50,6 +50,7 @@ interface ApiEvent {
 
 interface EventCardTersimpanProps {
   id: string;
+  slug: string;
   title: string;
   image: string;
   category: string;
@@ -59,7 +60,7 @@ interface EventCardTersimpanProps {
   location: string;
 }
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 8;
 
 export default function KatalogEvent() {
   const router = useRouter();
@@ -68,7 +69,6 @@ export default function KatalogEvent() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [selectedCategory, setSelectedCategory] = useState<string>("semua");
-  const [selectedScale, setSelectedScale] = useState<string>("semua");
   const [events, setEvents] = useState<EventCardTersimpanProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -150,13 +150,6 @@ export default function KatalogEvent() {
     sortedEvents = sortedEvents.filter(
       (event) =>
         event.category.toLowerCase() === selectedCategory.toLowerCase(),
-    );
-  }
-
-  // Filter by scale (city)
-  if (selectedScale !== "semua") {
-    sortedEvents = sortedEvents.filter(
-      (event) => event.location.toLowerCase() === selectedScale.toLowerCase(),
     );
   }
 
@@ -262,25 +255,6 @@ export default function KatalogEvent() {
                   <SelectItem value="TECHNOLOGY">Technology</SelectItem>
                   <SelectItem value="WORKSHOP">Workshop</SelectItem>
                   <SelectItem value="CONFERENCE">Conference</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={selectedScale}
-                onValueChange={(value) => {
-                  setSelectedScale(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-32 h-8 text-xs">
-                  <SelectValue placeholder="Skala" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="semua">Semua</SelectItem>
-                  <SelectItem value="Jakarta">Jakarta</SelectItem>
-                  <SelectItem value="Bandung">Bandung</SelectItem>
-                  <SelectItem value="Yogyakarta">Yogyakarta</SelectItem>
-                  <SelectItem value="Surabaya">Surabaya</SelectItem>
                 </SelectContent>
               </Select>
             </div>

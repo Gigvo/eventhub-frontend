@@ -456,9 +456,7 @@ function BuatEventForm() {
         endDate: formatDate(endDate),
         city: formData.kota,
         venue: formData.alamatEvent,
-        isOnline:
-          formData.formatEvent === "online" ||
-          formData.formatEvent === "hybrid",
+        isOnline: formData.formatEvent === "online",
         expectedAttendees: formData.estimasiPeserta,
         audienceAgeMin: formData.audienceAgeMin,
         audienceAgeMax: formData.audienceAgeMax,
@@ -879,24 +877,24 @@ function BuatEventForm() {
 
       {/* Progress Indicator */}
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Buat Event Baru</h1>
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h1 className="text-xl sm:text-3xl font-bold">Buat Event Baru</h1>
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              className="flex items-center gap-2 text-sm sm:text-base text-gray-600 hover:text-gray-900"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
               Kembali
             </button>
           </div>
 
           {/* Step Indicators */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-4">
             {STEPS.map((step, idx) => (
               <div key={step.number} className="flex items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-base transition ${
                     currentStep === step.number
                       ? "bg-blue-600 text-white"
                       : currentStep > step.number
@@ -906,14 +904,14 @@ function BuatEventForm() {
                 >
                   {currentStep > step.number ? "✓" : step.number}
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">
+                <div className="hidden sm:block ml-2 sm:ml-3">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 whitespace-nowrap">
                     {step.title}
                   </p>
                 </div>
                 {idx < STEPS.length - 1 && (
                   <div
-                    className={`w-12 h-1 mx-4 rounded ${
+                    className={`w-6 sm:w-12 h-1 mx-2 sm:mx-4 rounded ${
                       currentStep > step.number ? "bg-green-600" : "bg-gray-200"
                     }`}
                   />
@@ -925,12 +923,12 @@ function BuatEventForm() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
         {/* Step 1: Info Dasar */}
         {currentStep === 1 && (
-          <div className="grid grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Left Section - Form */}
-            <div className="col-span-2 space-y-6 p-8 rounded-[8px] border border-[#E5E7EB] bg-white shadow-sm">
+            <div className="col-span-1 lg:col-span-2 space-y-6 p-4 sm:p-8 rounded-[8px] border border-[#E5E7EB] bg-white shadow-sm">
               {/* Nama Event */}
               <div>
                 <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
@@ -947,7 +945,7 @@ function BuatEventForm() {
               </div>
 
               {/* Tanggal */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
                     Tanggal Mulai
@@ -979,7 +977,7 @@ function BuatEventForm() {
                 <label className="text-[12px] font-semibold text-gray-700 block mb-3 uppercase">
                   Format Event
                 </label>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
                     {
                       value: "offline",
@@ -992,12 +990,6 @@ function BuatEventForm() {
                       label: "Online",
                       description: "Video Conference",
                       icon: Video,
-                    },
-                    {
-                      value: "hybrid",
-                      label: "Hybrid",
-                      description: "Kombinasi Keduanya",
-                      icon: null,
                     },
                   ].map((format) => (
                     <button
@@ -1015,9 +1007,6 @@ function BuatEventForm() {
                         {format.icon && (
                           <format.icon size={24} className="text-[#9CA3AF]" />
                         )}
-                        {!format.icon && (
-                          <div className="w-6 h-6 text-[#9CA3AF]">⚙️</div>
-                        )}
                       </div>
                       <p className="font-semibold text-sm">{format.label}</p>
                       <p className="text-xs text-gray-600 mt-1">
@@ -1029,7 +1018,7 @@ function BuatEventForm() {
               </div>
 
               {/* Kota & Kategori */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
                     Kota
@@ -1099,7 +1088,7 @@ function BuatEventForm() {
 
             {/* Right Section - Banner Upload */}
             <div className="space-y-6">
-              <div className="p-8 rounded-[8px] border border-[#E5E7EB] bg-white shadow-sm flex flex-col items-center justify-center">
+              <div className="p-4 sm:p-8 rounded-[8px] border border-[#E5E7EB] bg-white shadow-sm flex flex-col items-center justify-center">
                 <label className="text-[12px] font-semibold text-gray-700 block mb-4 uppercase w-full text-left">
                   Banner Event
                 </label>
@@ -1193,7 +1182,7 @@ function BuatEventForm() {
 
         {/* Step 2: Detail Event & Audiens */}
         {currentStep === 2 && (
-          <div className="max-w-4xl mx-auto bg-white p-8 rounded-[8px] border border-[#E5E7EB] shadow-sm space-y-8">
+          <div className="max-w-4xl mx-auto bg-white p-4 sm:p-8 rounded-[8px] border border-[#E5E7EB] shadow-sm space-y-6 sm:space-y-8">
             {/* Deskripsi Event */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
@@ -1233,9 +1222,9 @@ function BuatEventForm() {
             </div>
 
             {/* Estimasi & Target */}
-            <div className="flex flex-row gap-6 items-stretch">
+            <div className="flex flex-col md:flex-row gap-6 items-stretch">
               {/* Estimasi Peserta */}
-              <div className="flex-1 bg-[#F9FAFB80] p-6 rounded-[8px]">
+              <div className="flex-1 bg-[#F9FAFB80] p-4 sm:p-6 rounded-[8px]">
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
                     Estimasi Peserta
@@ -1262,7 +1251,7 @@ function BuatEventForm() {
               </div>
 
               {/* Theme Event */}
-              <div className="flex-1 bg-[#F9FAFB80] p-6 rounded-[8px]">
+              <div className="flex-1 bg-[#F9FAFB80] p-4 sm:p-6 rounded-[8px]">
                 <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
                   Theme Event
                 </label>
@@ -1290,7 +1279,7 @@ function BuatEventForm() {
             </div>
 
             {/* Age Range */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
                   Usia Minimum Audiens
@@ -1396,7 +1385,7 @@ function BuatEventForm() {
               <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
                 Kanal Promosi & Media Sosial
               </label>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Instagram */}
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <span className="px-4 py-3 bg-gray-100 font-semibold text-gray-700 text-sm">
@@ -1415,7 +1404,7 @@ function BuatEventForm() {
                         },
                       })
                     }
-                    className="flex-1 px-4 py-3 focus:outline-none"
+                    className="flex-1 px-4 py-3 focus:outline-none w-full min-w-0"
                   />
                 </div>
 
@@ -1437,7 +1426,7 @@ function BuatEventForm() {
                         },
                       })
                     }
-                    className="flex-1 px-4 py-3 focus:outline-none"
+                    className="flex-1 px-4 py-3 focus:outline-none w-full min-w-0"
                   />
                 </div>
 
@@ -1459,7 +1448,7 @@ function BuatEventForm() {
                         },
                       })
                     }
-                    className="flex-1 px-4 py-3 focus:outline-none"
+                    className="flex-1 px-4 py-3 focus:outline-none w-full min-w-0"
                   />
                 </div>
               </div>
@@ -1805,7 +1794,7 @@ function BuatEventForm() {
                   {formData.packages.map((pkg) => (
                     <div
                       key={pkg.id}
-                      className="mb-6 bg-white p-6 rounded-lg border border-gray-200 shadow-sm"
+                      className="mb-6 bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm"
                     >
                       <div className="flex items-center gap-3 mb-6">
                         <Image
@@ -1819,7 +1808,7 @@ function BuatEventForm() {
                         </h3>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         {/* Harga */}
                         <div>
                           <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">
@@ -1853,7 +1842,7 @@ function BuatEventForm() {
                         </div>
 
                         {/* Benefit */}
-                        <div className="col-span-2">
+                        <div className="col-span-1 sm:col-span-2">
                           <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">
                             Benefit
                           </label>
@@ -1964,22 +1953,22 @@ function BuatEventForm() {
         )}
 
         {currentStep === 4 && (
-          <div className="max-w-5xl mx-auto space-y-12 animate-fadeIn pb-12">
+          <div className="max-w-5xl mx-auto space-y-8 sm:space-y-12 animate-fadeIn pb-12">
             {/* Header */}
             <div className="text-center space-y-3">
-              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                 Pilih Layanan AI EventHub
               </h2>
-              <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
                 Optimalkan proposal Anda dengan teknologi AI kami untuk menarik
                 mitra strategis lebih cepat.
               </p>
             </div>
 
             {/* Grid options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-stretch">
               {/* Option 1: AI Proposal Builder */}
-              <div className="bg-white rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:shadow-xl transition-all duration-300 p-8 flex flex-col justify-between relative overflow-hidden group">
+              <div className="bg-white rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:shadow-xl transition-all duration-300 p-4 sm:p-8 flex flex-col justify-between relative overflow-hidden group">
                 <div className="absolute right-0 top-0 bg-blue-500/10 text-blue-600 px-4 py-1.5 rounded-bl-2xl font-bold text-sm flex items-center gap-1">
                   <Sparkles size={14} className="animate-pulse" />5 Token
                 </div>
@@ -2106,7 +2095,7 @@ function BuatEventForm() {
               </div>
 
               {/* Option 2: AI Smart Review */}
-              <div className="bg-white rounded-2xl border-2 border-gray-100 hover:border-indigo-500 hover:shadow-xl transition-all duration-300 p-8 flex flex-col justify-between relative overflow-hidden group">
+              <div className="bg-white rounded-2xl border-2 border-gray-100 hover:border-indigo-500 hover:shadow-xl transition-all duration-300 p-4 sm:p-8 flex flex-col justify-between relative overflow-hidden group">
                 <div className="absolute right-0 top-0 bg-indigo-500/10 text-indigo-600 px-4 py-1.5 rounded-bl-2xl font-bold text-sm flex items-center gap-1">
                   <Search size={14} />3 Token
                 </div>
@@ -2163,13 +2152,13 @@ function BuatEventForm() {
               <Button
                 variant="ghost"
                 onClick={() => setIsUploadDialogOpen(true)}
-                className="text-gray-600 hover:text-gray-900 font-medium bg-gray-100 hover:bg-gray-200 px-6 py-2 rounded-full transition duration-300"
+                className="text-gray-600 hover:text-gray-900 font-medium bg-gray-100 hover:bg-gray-200 px-6 py-2 rounded-full transition duration-300 text-sm sm:text-base text-center w-full sm:w-auto"
               >
                 Saya punya proposal sendiri
               </Button>
 
               {/* Token Info Widget */}
-              <div className="flex items-center justify-between gap-6 bg-blue-50/50 border border-blue-100 rounded-2xl px-6 py-4 max-w-md w-full">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 bg-blue-50/50 border border-blue-100 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 max-w-md w-full">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                     🪙
@@ -2178,7 +2167,7 @@ function BuatEventForm() {
                     <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
                       Sisa Token Anda
                     </p>
-                    <p className="text-lg font-bold text-gray-900">
+                    <p className="text-base sm:text-lg font-bold text-gray-900">
                       {tokenBalance} Tokens
                     </p>
                   </div>
@@ -2186,7 +2175,7 @@ function BuatEventForm() {
                 <Button
                   variant="link"
                   onClick={() => window.open("/token-management", "_blank")}
-                  className="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 text-sm p-0"
+                  className="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 text-sm p-0 self-end sm:self-auto"
                 >
                   + Beli Token
                 </Button>
@@ -2196,21 +2185,22 @@ function BuatEventForm() {
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between mt-12 sticky bottom-0 bg-white border-t p-6">
+        <div className="flex items-center justify-between mt-8 sm:mt-12 sticky bottom-0 bg-white border-t p-4 sm:p-6 z-10">
           <Button
             onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
             variant="outline"
             disabled={currentStep === 1 || currentStep === 3}
+            className="text-sm sm:text-base px-3 sm:px-5"
           >
             Kembali
           </Button>
 
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
             {currentStep === 1 && (
               <Button
                 onClick={() => setCurrentStep(2)}
                 disabled={!canProceedToNextStep()}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-base px-3 sm:px-5"
               >
                 Lanjut ke Langkah 2
               </Button>
@@ -2220,7 +2210,7 @@ function BuatEventForm() {
               <Button
                 onClick={() => setIsConfirmStep2DialogOpen(true)}
                 disabled={!canProceedToNextStep() || isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-base px-3 sm:px-5"
               >
                 Lanjut ke Langkah 3
               </Button>
@@ -2243,7 +2233,7 @@ function BuatEventForm() {
                   setCurrentStep(4);
                 }}
                 disabled={formData.packages.length === 0}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-base px-3 sm:px-5"
               >
                 Lanjut ke Layanan AI
               </Button>

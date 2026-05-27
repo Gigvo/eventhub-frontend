@@ -11,6 +11,7 @@ import {
   XCircle,
   Download,
   Lightbulb,
+  Loader2,
 } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ interface PitchListResponse {
   event: {
     id: string;
     title: string;
+    slug: string;
     category: string;
     startDate: string;
     endDate: string;
@@ -196,12 +198,142 @@ export default function ProposalMasuk() {
     }
   };
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadProposal = async () => {
+    if (!pitchDetail) return;
+    const slug = pitchDetail.event.slug;
+    if (!slug) {
+      alert("Slug event tidak ditemukan.");
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const res = await apiCall<{
+        data: {
+          title: string;
+          proposal: {
+            source: string;
+            fileUrl: string | null;
+            content?: string | null;
+          } | null;
+        };
+      }>(`/catalog/events/${slug}`, { requireAuth: false });
+
+      const eventData = res.data;
+      const proposal = eventData?.proposal;
+
+      if (!proposal) {
+        alert("Proposal tidak tersedia untuk event ini.");
+        return;
+      }
+
+      if (proposal.source === "GENERATED" && proposal.content) {
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+
+        let htmlContent = proposal.content;
+        try {
+          if (htmlContent.startsWith("{")) {
+            const parsed = JSON.parse(htmlContent);
+            const listItems = (items: string[]) =>
+              items.map((i) => `<li>${i}</li>`).join("");
+            htmlContent = `
+              <h2>Executive Summary</h2><p>${parsed.executiveSummary}</p>
+              <h2>Latar Belakang Event</h2><p>${parsed.eventBackground}</p>
+              <h2>Tujuan</h2><ul>${listItems(parsed.objectives)}</ul>
+              <h2>Target Audiens</h2><p>${parsed.targetAudience}</p>
+              <h2>Mengapa Event Ini?</h2><p>${parsed.whyThisEvent}</p>
+              <h2>Manfaat Sponsorship</h2><ul>${listItems(parsed.sponsorshipBenefits)}</ul>
+              <h2>Call to Action</h2><p>${parsed.callToAction}</p>
+            `;
+          }
+        } catch (e) {}
+
+        const cleanTitle = eventData.title.replace(/[^a-zA-Z0-9]/g, "_");
+        const doc = iframe.contentWindow?.document;
+        if (doc) {
+          doc.open();
+          doc.write(`
+            <html>
+              <head>
+                <title>Proposal_${cleanTitle}</title>
+                <style>
+                  body { 
+                    font-family: 'Segoe UI', system-ui, sans-serif; 
+                    line-height: 1.6; 
+                    padding: 40px; 
+                    color: #1a1a1a; 
+                    max-width: 800px;
+                    margin: 0 auto;
+                  }
+                  h1 { color: #003EC7; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 30px; }
+                  h2 { color: #111827; margin-top: 32px; margin-bottom: 16px; font-size: 1.5rem; }
+                  p { margin-bottom: 16px; text-align: justify; }
+                  ul, ol { margin-bottom: 24px; padding-left: 24px; }
+                  li { margin-bottom: 8px; }
+                  @media print {
+                    body { padding: 0; }
+                  }
+                </style>
+              </head>
+              <body>
+                <h1>Proposal: ${eventData.title}</h1>
+                ${htmlContent}
+              </body>
+            </html>
+          `);
+          doc.close();
+
+          iframe.contentWindow?.focus();
+          setTimeout(() => {
+            iframe.contentWindow?.print();
+            setTimeout(() => document.body.removeChild(iframe), 1000);
+          }, 500);
+        }
+        return;
+      }
+
+      if (!proposal.fileUrl) {
+        alert("File Proposal PDF belum tersedia untuk event ini.");
+        return;
+      }
+
+      try {
+        const response = await fetch(proposal.fileUrl);
+        if (!response.ok) throw new Error("Network response was not ok");
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const cleanTitle = eventData.title.replace(/[^a-zA-Z0-9]/g, "_");
+        a.download = `Proposal_${cleanTitle}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.warn("Direct download failed, opening in new tab", error);
+        window.open(proposal.fileUrl, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Gagal mengunduh proposal.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-8">
+    <div className="min-h-screen bg-gray-50 py-4 px-4 sm:py-8 sm:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Proposal Masuk</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+            Proposal Masuk
+          </h1>
           <p className="text-gray-600 text-sm mb-6">
             {pitches.length} proposal •{" "}
             <span className="text-blue-600 font-semibold">
@@ -210,7 +342,7 @@ export default function ProposalMasuk() {
           </p>
 
           {/* Tabs */}
-          <div className="flex gap-6 border-b border-gray-200">
+          <div className="flex gap-4 sm:gap-6 border-b border-gray-200 overflow-x-auto whitespace-nowrap pb-1">
             {["Semua", "Baru", "Ditinjau", "Setuju", "Ditolak"].map((tab) => {
               const count =
                 tab === "Semua"
@@ -228,7 +360,7 @@ export default function ProposalMasuk() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`pb-4 text-sm font-medium ${
+                  className={`pb-4 text-sm font-medium shrink-0 ${
                     activeTab === tab
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-gray-500 hover:text-gray-700"
@@ -241,9 +373,9 @@ export default function ProposalMasuk() {
           </div>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Panel: List */}
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 min-w-0 space-y-4">
             {loadingList ? (
               <div className="text-center py-10 text-gray-500">Memuat...</div>
             ) : filteredPitches.length === 0 ? (
@@ -255,53 +387,56 @@ export default function ProposalMasuk() {
                 <div
                   key={pitch.id}
                   onClick={() => setSelectedPitchId(pitch.id)}
-                  className={`bg-white rounded-xl border p-4 cursor-pointer transition flex items-start gap-4 ${
+                  className={`bg-white rounded-xl border p-4 cursor-pointer transition flex flex-col sm:flex-row items-stretch sm:items-start gap-4 ${
                     selectedPitchId === pitch.id
                       ? "border-blue-500 shadow-sm ring-1 ring-blue-500"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
-                    <span className="text-gray-400 font-bold text-lg">
-                      {pitch.event.eoProfile.organizationName
-                        .charAt(0)
-                        .toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      {pitch.event.title}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-3">
-                      {pitch.event.eoProfile.organizationName} •{" "}
-                      {formatDateRange(
-                        pitch.event.startDate,
-                        pitch.event.endDate,
-                      )}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {pitch.status !== "ACCEPTED" && (
-                        <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100 font-normal">
-                          <Lock className="w-3 h-3 mr-1 inline" /> LOCKED
-                        </Badge>
-                      )}
-
-                      <span className="text-sm text-gray-600">
-                        {formatRupiah(pitch.tier.price)} Target
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
+                      <span className="text-gray-400 font-bold text-lg">
+                        {pitch.event.eoProfile.organizationName
+                          .charAt(0)
+                          .toUpperCase()}
                       </span>
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 mb-1 text-base leading-snug">
+                        {pitch.event.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-3 truncate">
+                        {pitch.event.eoProfile.organizationName} •{" "}
+                        {formatDateRange(
+                          pitch.event.startDate,
+                          pitch.event.endDate,
+                        )}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {pitch.status !== "ACCEPTED" && (
+                          <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100 font-normal">
+                            <Lock className="w-3 h-3 mr-1 inline" /> LOCKED
+                          </Badge>
+                        )}
+
+                        <span className="text-sm text-gray-600 font-medium">
+                          {formatRupiah(pitch.tier.price)} Target
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="shrink-0 flex flex-col items-end gap-2">
-                    <Badge className="bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium">
+
+                  <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                    <Badge className="bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold text-xs py-1">
                       ✨ AI Match 94%
                     </Badge>
                     {selectedPitchId === pitch.id && (
-                      <span 
+                      <span
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/proposal-masuk/${pitch.id}`);
                         }}
-                        className="text-xs font-semibold text-blue-600 hover:underline cursor-pointer pt-1"
+                        className="text-xs font-bold text-blue-600 hover:underline cursor-pointer pt-1 whitespace-nowrap"
                       >
                         Lihat Detail &rarr;
                       </span>
@@ -313,13 +448,13 @@ export default function ProposalMasuk() {
           </div>
 
           {/* Right Panel: Detail */}
-          <div className="w-[400px] shrink-0">
+          <div className="w-full lg:w-[400px] shrink-0">
             {loadingDetail || (loadingList && pitches.length > 0) ? (
               <div className="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-500">
                 Memuat detail...
               </div>
             ) : pitchDetail ? (
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm sticky top-6">
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm lg:sticky lg:top-6">
                 {/* Banner Placeholder */}
                 <div className="h-32 bg-slate-800 relative p-4 flex items-end">
                   <h2 className="text-white text-xl font-bold z-10 relative">
@@ -421,10 +556,12 @@ export default function ProposalMasuk() {
 
                   {/* Actions */}
                   <Button
-                    onClick={() => router.push(`/proposal-masuk/${pitchDetail.id}`)}
+                    onClick={() =>
+                      router.push(`/proposal-masuk/${pitchDetail.id}`)
+                    }
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 mb-3 shadow-sm rounded-lg"
                   >
-                    Lihat Detail Proposal
+                    Lihat Detail
                   </Button>
 
                   <div className="flex gap-3 mb-6">
@@ -441,8 +578,20 @@ export default function ProposalMasuk() {
                     >
                       Tolak Proposal
                     </Button>
-                    <Button variant="outline" className="flex-1 text-gray-600">
-                      Unduh Proposal
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-gray-600 gap-2"
+                      onClick={handleDownloadProposal}
+                      disabled={isDownloading}
+                    >
+                      {isDownloading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Unduh...
+                        </>
+                      ) : (
+                        <>Unduh Proposal</>
+                      )}
                     </Button>
                   </div>
                 </div>

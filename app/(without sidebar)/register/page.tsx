@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { BadgeCheck, Eye, EyeOff } from "lucide-react";
+import { BadgeCheck, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import {
   createUserWithEmailAndPassword,
@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -95,12 +96,20 @@ export default function Register() {
     }
   };
   return (
-    <div className="flex h-full">
+    <div className="flex min-h-screen lg:h-screen relative w-full flex-col lg:flex-row bg-white">
+      <Button
+        onClick={() => (window.location.href = "/")}
+        variant={"outline"}
+        className="absolute top-4 left-4 z-20 bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
+      </Button>
+
       <div
-        className="w-[50%] bg-[#003EC7] text-white bg-cover bg-center overflow-y-auto h-full min-h-screen"
+        className="hidden lg:block lg:w-1/2 bg-[#003EC7] text-white bg-cover bg-center lg:h-screen lg:overflow-y-auto relative"
         style={{ backgroundImage: "url(/bg-register.png)" }}
       >
-        <div className="flex flex-col h-full p-12 justify-between">
+        <div className="flex flex-col h-full p-18 justify-between">
           {/* Header Section */}
           <div className="space-y-8">
             {/* Logo */}
@@ -183,7 +192,7 @@ export default function Register() {
           </div>
         </div>
       </div>
-      <div className="px-32 py-16 w-[50%] overflow-y-auto">
+      <div className="px-6 sm:px-16 md:px-32 py-24 w-full lg:w-1/2 min-h-screen lg:h-screen lg:overflow-y-auto bg-white flex flex-col justify-center">
         <p className="text-[32px] font-bold mb-2">Buat Akun EventHub</p>
         <p className="text-[14px] text-gray-600 mb-8">
           Bergabunglah dengan platform event pertama di Indonesia
@@ -234,7 +243,7 @@ export default function Register() {
             </div>
 
             {/* Password Row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-[12px] font-semibold text-gray-700 block mb-2">
                   Password

@@ -41,11 +41,7 @@ interface KerjasamaProps {
   tier: SponsorshipTier;
 }
 
-export default function KerjasamaCard({
-  id,
-  event,
-  tier,
-}: KerjasamaProps) {
+export default function KerjasamaCard({ id, event, tier }: KerjasamaProps) {
   const now = new Date();
   const start = event.startDate ? new Date(event.startDate) : new Date();
   const end = event.endDate ? new Date(event.endDate) : new Date();
@@ -104,7 +100,9 @@ export default function KerjasamaCard({
             No Image
           </div>
         )}
-        <div className={`absolute top-4 left-4 px-3 py-1 text-[10px] font-bold text-white rounded ${badgeColor} uppercase tracking-wider shadow-sm`}>
+        <div
+          className={`absolute top-4 left-4 px-3 py-1 text-[10px] font-bold text-white rounded ${badgeColor} uppercase tracking-wider shadow-sm`}
+        >
           {badgeText}
         </div>
       </div>
@@ -113,15 +111,21 @@ export default function KerjasamaCard({
       <div className="flex-1 p-5 flex flex-col justify-between border-b sm:border-b-0 sm:border-r border-gray-100">
         <div className="flex justify-between items-start gap-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1.5">{event.title}</h3>
+            <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1.5">
+              {event.title}
+            </h3>
             <div className="flex items-center text-xs text-gray-500 font-medium">
               <Building2 className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
               {event.eoProfile?.organizationName || "Organizer"} (EO)
             </div>
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Nilai Kontrak</p>
-            <p className="text-sm font-medium text-gray-600">{formatRupiah(tier.price)}</p>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+              Nilai Kontrak
+            </p>
+            <p className="text-sm font-medium text-gray-600">
+              {formatRupiah(tier.price)}
+            </p>
           </div>
         </div>
 
@@ -131,34 +135,50 @@ export default function KerjasamaCard({
             <p className="text-xs font-bold text-gray-600">Progres Kerjasama</p>
             <p className={`text-xs font-bold ${textColor}`}>{progressText}</p>
           </div>
-          
+
           <div className="relative w-full pt-1">
             {/* Background track */}
             <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
               {/* Fill track */}
-              <div 
-                className={`h-full rounded-full ${trackColor}`} 
+              <div
+                className={`h-full rounded-full ${trackColor}`}
                 style={{ width: `${progressPercent}%` }}
               ></div>
             </div>
-            
+
             {/* Markers */}
             <div className="flex justify-between mt-2.5 text-[10px] font-semibold text-gray-300 relative px-1">
               <div className="flex flex-col items-center absolute left-0 -translate-x-1/2">
-                <div className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 25 ? trackColor : 'bg-gray-300'}`}></div>
-                <span className={progressPercent >= 25 ? 'text-gray-500' : ''}>Kontrak</span>
+                <div
+                  className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 25 ? trackColor : "bg-gray-300"}`}
+                ></div>
+                <span className={progressPercent >= 25 ? "text-gray-500" : ""}>
+                  Kontrak
+                </span>
               </div>
               <div className="flex flex-col items-center absolute left-[45%] -translate-x-1/2">
-                <div className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 65 ? trackColor : 'bg-gray-300'}`}></div>
-                <span className={progressPercent >= 65 ? 'text-gray-500' : ''}>Aktif</span>
+                <div
+                  className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 65 ? trackColor : "bg-gray-300"}`}
+                ></div>
+                <span className={progressPercent >= 65 ? "text-gray-500" : ""}>
+                  Aktif
+                </span>
               </div>
               <div className="flex flex-col items-center absolute left-[75%] -translate-x-1/2">
-                <div className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 90 ? trackColor : 'bg-gray-300'}`}></div>
-                <span className={progressPercent >= 90 ? 'text-gray-500' : ''}>Pelaporan</span>
+                <div
+                  className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 90 ? trackColor : "bg-gray-300"}`}
+                ></div>
+                <span className={progressPercent >= 90 ? "text-gray-500" : ""}>
+                  Pelaporan
+                </span>
               </div>
               <div className="flex flex-col items-center absolute right-0 translate-x-1/2">
-                <div className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 100 ? trackColor : 'bg-gray-300'}`}></div>
-                <span className={progressPercent >= 100 ? 'text-gray-500' : ''}>Selesai</span>
+                <div
+                  className={`w-2 h-2 rounded-full mb-1.5 ${progressPercent >= 100 ? trackColor : "bg-gray-300"}`}
+                ></div>
+                <span className={progressPercent >= 100 ? "text-gray-500" : ""}>
+                  Selesai
+                </span>
               </div>
             </div>
           </div>
@@ -166,11 +186,11 @@ export default function KerjasamaCard({
       </div>
 
       {/* Right: Action */}
-      <div className="w-full sm:w-[200px] flex-shrink-0 flex items-center justify-center p-6 bg-white">
+      {/* <div className="w-full sm:w-[200px] flex-shrink-0 flex items-center justify-center p-6 bg-white">
         <Button className="w-full bg-[#3446C1] hover:bg-blue-700 text-white font-medium py-2.5 h-auto">
           Lihat Detail
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }
