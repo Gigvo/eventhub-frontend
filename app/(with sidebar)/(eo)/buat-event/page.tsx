@@ -13,6 +13,7 @@ import {
   Search,
   FileText,
   CheckCircle2,
+  Target,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -48,11 +49,6 @@ interface FormData {
   audienceAgeMin: number;
   audienceAgeMax: number;
   audienceInterests: string[];
-  channelData: {
-    instagram: string;
-    tiktok: string;
-    website: string;
-  };
 
   // Step 3 - Paket Sponsorship
   totalBudget: string;
@@ -251,11 +247,7 @@ function BuatEventForm() {
     audienceAgeMin: 18,
     audienceAgeMax: 45,
     audienceInterests: [],
-    channelData: {
-      instagram: "@username",
-      tiktok: "@username",
-      website: "www.event.com",
-    },
+
     totalBudget: "250.000.000",
     packages: [],
     contactInfo: {
@@ -1183,6 +1175,27 @@ function BuatEventForm() {
         {/* Step 2: Detail Event & Audiens */}
         {currentStep === 2 && (
           <div className="max-w-4xl mx-auto bg-white p-4 sm:p-8 rounded-[8px] border border-[#E5E7EB] shadow-sm space-y-6 sm:space-y-8">
+            {/* AI Optimization Banner */}
+            <div className="bg-gradient-to-r from-[#2B59FF] to-[#638FFF] rounded-2xl p-5 sm:p-6 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative overflow-hidden border border-blue-400/20">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center flex-shrink-0 shadow-inner border border-white/10 text-3xl">
+                <Target />
+              </div>
+              <div className="flex-1 space-y-1">
+                <h3 className="text-base sm:text-lg font-bold leading-tight tracking-wide">
+                  Langkah terakhir sebelum sponsor menemukanmu!
+                </h3>
+                <p className="text-xs sm:text-[14px] text-white/95 leading-relaxed font-medium">
+                  Semakin lengkap detail event, semakin tinggi peluang Match AI
+                  kami menemukan partner yang tepat.
+                </p>
+                <div className="pt-2">
+                  <span className="inline-flex items-center px-4 py-1.5 rounded-full border border-white/25 bg-white/10 text-xs font-bold text-white/90 backdrop-blur-sm gap-1.5">
+                    Step 2 dari 3 - Hampir selesai!
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Deskripsi Event */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
@@ -1378,80 +1391,6 @@ function BuatEventForm() {
                   {errors.audienceInterests}
                 </p>
               )}
-            </div>
-
-            {/* Kanal Promosi */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase">
-                Kanal Promosi & Media Sosial
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Instagram */}
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <span className="px-4 py-3 bg-gray-100 font-semibold text-gray-700 text-sm">
-                    IG
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="@username"
-                    value={formData.channelData.instagram}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        channelData: {
-                          ...formData.channelData,
-                          instagram: e.target.value,
-                        },
-                      })
-                    }
-                    className="flex-1 px-4 py-3 focus:outline-none w-full min-w-0"
-                  />
-                </div>
-
-                {/* TikTok */}
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <span className="px-4 py-3 bg-gray-100 font-semibold text-gray-700 text-sm">
-                    TT
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="@username"
-                    value={formData.channelData.tiktok}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        channelData: {
-                          ...formData.channelData,
-                          tiktok: e.target.value,
-                        },
-                      })
-                    }
-                    className="flex-1 px-4 py-3 focus:outline-none w-full min-w-0"
-                  />
-                </div>
-
-                {/* Website */}
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <span className="px-4 py-3 bg-gray-100 font-semibold text-gray-700 text-sm">
-                    🌐
-                  </span>
-                  <input
-                    type="url"
-                    placeholder="www.event.com"
-                    value={formData.channelData.website}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        channelData: {
-                          ...formData.channelData,
-                          website: e.target.value,
-                        },
-                      })
-                    }
-                    className="flex-1 px-4 py-3 focus:outline-none w-full min-w-0"
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Confirmation Section */}
@@ -1882,8 +1821,6 @@ function BuatEventForm() {
                   ))}
                 </div>
 
-
-
                 {/* Kontak Person */}
                 {/* <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">
@@ -2041,15 +1978,25 @@ function BuatEventForm() {
                                 : "border-gray-200 hover:border-blue-300 bg-gray-50/30"
                             }`}
                           >
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
-                              proposalTone === value ? "border-blue-600 text-blue-600" : "border-gray-300"
-                            }`}>
-                              {proposalTone === value && <div className="w-2 h-2 rounded-full bg-blue-600" />}
+                            <div
+                              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                                proposalTone === value
+                                  ? "border-blue-600 text-blue-600"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {proposalTone === value && (
+                                <div className="w-2 h-2 rounded-full bg-blue-600" />
+                              )}
                             </div>
                             <div className="flex-1">
-                              <p className={`font-bold text-xs ${
-                                proposalTone === value ? "text-blue-700" : "text-gray-800"
-                              }`}>
+                              <p
+                                className={`font-bold text-xs ${
+                                  proposalTone === value
+                                    ? "text-blue-700"
+                                    : "text-gray-800"
+                                }`}
+                              >
                                 {label}
                               </p>
                               <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">
@@ -2443,12 +2390,12 @@ function BuatEventForm() {
               </span>
 
               {/* Deskripsi Event */}
-              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3 overflow-hidden text-ellipsis">
                 <div className="space-y-1 overflow-hidden flex-1">
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
                     Deskripsi Event
                   </span>
-                  <p className="text-sm font-semibold text-gray-800 truncate">
+                  <p className="text-sm font-semibold text-gray-800">
                     {formData.deskripsiEvent || "-"}
                   </p>
                 </div>
@@ -2456,7 +2403,7 @@ function BuatEventForm() {
               </div>
 
               {/* Estimasi Peserta */}
-              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3 text-ellipsis">
                 <div className="space-y-1 flex-1">
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
                     Estimasi Peserta
@@ -2471,7 +2418,7 @@ function BuatEventForm() {
               </div>
 
               {/* Target Demografi */}
-              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3 text-ellipsis">
                 <div className="space-y-1.5 overflow-hidden flex-1">
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
                     Target Demografi
@@ -2497,39 +2444,13 @@ function BuatEventForm() {
               </div>
 
               {/* Theme Event */}
-              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3 text-ellipsis">
                 <div className="space-y-1 flex-1">
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
                     Theme Event
                   </span>
                   <p className="text-sm font-semibold text-gray-800">
                     {formData.targetIndustri || "-"}
-                  </p>
-                </div>
-                <Lock size={15} className="text-gray-400 flex-shrink-0" />
-              </div>
-
-              {/* Kanal Promosi */}
-              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-100/80 flex items-center justify-between gap-3">
-                <div className="space-y-1 flex-1">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                    Kanal Promosi
-                  </span>
-                  <p className="text-sm font-semibold text-gray-800 truncate">
-                    {formData.channelData.instagram ||
-                    formData.channelData.tiktok ||
-                    formData.channelData.website
-                      ? [
-                          formData.channelData.instagram &&
-                            `${formData.channelData.instagram} (IG)`,
-                          formData.channelData.tiktok &&
-                            `${formData.channelData.tiktok} (TikTok)`,
-                          formData.channelData.website &&
-                            `${formData.channelData.website} (Web)`,
-                        ]
-                          .filter(Boolean)
-                          .join(" • ")
-                      : "-"}
                   </p>
                 </div>
                 <Lock size={15} className="text-gray-400 flex-shrink-0" />

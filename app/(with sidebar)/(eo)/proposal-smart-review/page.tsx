@@ -36,6 +36,8 @@ import {
   ChevronRight,
   TrendingUp,
   Award,
+  Check,
+  Globe,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiCall } from "@/lib/api-client";
@@ -45,13 +47,26 @@ import Tiptap from "@/components/proposal-builder/tiptap";
 
 import ProposalTerbaru from "@/components/proposal-terbaru";
 
+interface SponsorshipPackage {
+  tierName: string;
+  price: string;
+  benefits: string[];
+}
+
 interface ProposalJSON {
+  title: string;
   executiveSummary: string;
+  aboutOrganizer: string;
   eventBackground: string;
+  eventTheme: string;
   objectives: string[];
+  activities: string[];
   targetAudience: string;
-  whyThisEvent: string;
-  sponsorshipBenefits: string[];
+  audienceReach: string;
+  whySponsor: string;
+  sponsorshipPackages: SponsorshipPackage[];
+  generalBenefits: string[];
+  closingStatement: string;
   callToAction: string;
 }
 
@@ -61,7 +76,7 @@ const isValidProposalJson = (contentStr: string): boolean => {
     return (
       typeof parsed === "object" &&
       parsed !== null &&
-      "executiveSummary" in parsed
+      ("executiveSummary" in parsed || "title" in parsed)
     );
   } catch (e) {
     return false;
@@ -72,24 +87,42 @@ const parseProposal = (contentStr: string): ProposalJSON => {
   try {
     const parsed = JSON.parse(contentStr);
     return {
+      title: parsed.title || "",
       executiveSummary: parsed.executiveSummary || "",
+      aboutOrganizer: parsed.aboutOrganizer || "",
       eventBackground: parsed.eventBackground || "",
+      eventTheme: parsed.eventTheme || "",
       objectives: Array.isArray(parsed.objectives) ? parsed.objectives : [],
+      activities: Array.isArray(parsed.activities) ? parsed.activities : [],
       targetAudience: parsed.targetAudience || "",
-      whyThisEvent: parsed.whyThisEvent || "",
-      sponsorshipBenefits: Array.isArray(parsed.sponsorshipBenefits)
-        ? parsed.sponsorshipBenefits
+      audienceReach: parsed.audienceReach || "",
+      whySponsor: parsed.whySponsor || parsed.whyThisEvent || "",
+      sponsorshipPackages: Array.isArray(parsed.sponsorshipPackages)
+        ? parsed.sponsorshipPackages
         : [],
+      generalBenefits: Array.isArray(parsed.generalBenefits)
+        ? parsed.generalBenefits
+        : Array.isArray(parsed.sponsorshipBenefits)
+          ? parsed.sponsorshipBenefits
+          : [],
+      closingStatement: parsed.closingStatement || "",
       callToAction: parsed.callToAction || "",
     };
   } catch (e) {
     return {
+      title: "",
       executiveSummary: "",
+      aboutOrganizer: "",
       eventBackground: "",
+      eventTheme: "",
       objectives: [],
+      activities: [],
       targetAudience: "",
-      whyThisEvent: "",
-      sponsorshipBenefits: [],
+      audienceReach: "",
+      whySponsor: "",
+      sponsorshipPackages: [],
+      generalBenefits: [],
+      closingStatement: "",
       callToAction: "",
     };
   }
@@ -97,42 +130,81 @@ const parseProposal = (contentStr: string): ProposalJSON => {
 
 function buildHtml(content: ProposalJSON, eventName: string): string {
   const listItems = (items: string[]) =>
-    items.map((i) => `<li>${i}</li>`).join("");
+    items ? items.map((i) => `<li>${i}</li>`).join("") : "";
+
+  const packagesHtml = (packages: SponsorshipPackage[]) => {
+    if (!packages || !Array.isArray(packages)) return "";
+    return packages
+      .map(
+        (pkg) => `
+<h3>${pkg.tierName} (${pkg.price})</h3>
+<ul>${listItems(pkg.benefits)}</ul>
+      `,
+      )
+      .join("");
+  };
+
+  const titleText = content.title || `${eventName} — Proposal Sponsorship`;
 
   return `
-<h1>${eventName} — Proposal Sponsorship</h1>
+<h1>${titleText}</h1>
 
 <h2>Executive Summary</h2>
-<p>${content.executiveSummary}</p>
+<p>${content.executiveSummary || ""}</p>
+
+<h2>Tentang Penyelenggara</h2>
+<p>${content.aboutOrganizer || ""}</p>
 
 <h2>Latar Belakang Event</h2>
-<p>${content.eventBackground}</p>
+<p>${content.eventBackground || ""}</p>
+
+<h2>Tema Event</h2>
+<p>${content.eventTheme || ""}</p>
 
 <h2>Tujuan</h2>
 <ul>${listItems(content.objectives)}</ul>
 
+<h2>Rencana Aktivitas</h2>
+<ul>${listItems(content.activities)}</ul>
+
 <h2>Target Audiens</h2>
-<p>${content.targetAudience}</p>
+<p>${content.targetAudience || ""}</p>
 
-<h2>Mengapa Event Ini?</h2>
-<p>${content.whyThisEvent}</p>
+<h2>Jangkauan Audiens</h2>
+<p>${content.audienceReach || ""}</p>
 
-<h2>Manfaat Sponsorship</h2>
-<ul>${listItems(content.sponsorshipBenefits)}</ul>
+<h2>Mengapa Sponsor Harus Bergabung</h2>
+<p>${content.whySponsor || ""}</p>
+
+<h2>Paket Sponsorship</h2>
+${packagesHtml(content.sponsorshipPackages)}
+
+<h2>Benefit Umum</h2>
+<ul>${listItems(content.generalBenefits)}</ul>
+
+<h2>Penutup</h2>
+<p>${content.closingStatement || ""}</p>
 
 <h2>Call to Action</h2>
-<p>${content.callToAction}</p>
+<p>${content.callToAction || ""}</p>
   `.trim();
 }
 
 function parseHtmlToProposalContent(html: string): ProposalJSON {
   const defaultContent: ProposalJSON = {
+    title: "",
     executiveSummary: "",
+    aboutOrganizer: "",
     eventBackground: "",
+    eventTheme: "",
     objectives: [],
+    activities: [],
     targetAudience: "",
-    whyThisEvent: "",
-    sponsorshipBenefits: [],
+    audienceReach: "",
+    whySponsor: "",
+    sponsorshipPackages: [],
+    generalBenefits: [],
+    closingStatement: "",
     callToAction: "",
   };
 
@@ -182,21 +254,74 @@ function parseHtmlToProposalContent(html: string): ProposalJSON {
     return items;
   };
 
+  const getSponsorshipPackages = (): SponsorshipPackage[] => {
+    const headings = Array.from(doc.querySelectorAll("h2"));
+    const sponsorHeading = headings.find((h) =>
+      h.textContent?.toLowerCase().includes("paket sponsorship"),
+    );
+    if (!sponsorHeading) return [];
+
+    const packages: SponsorshipPackage[] = [];
+    let next = sponsorHeading.nextElementSibling;
+    while (next && next.tagName !== "H2" && next.tagName !== "H1") {
+      if (next.tagName === "H3") {
+        const h3Text = next.textContent || "";
+        const match = h3Text.match(/^(.*?)\s*\((.*?)\)$/);
+        const tierName = match ? match[1].trim() : h3Text.trim();
+        const price = match ? match[2].trim() : "";
+
+        const benefits: string[] = [];
+        let listSibling = next.nextElementSibling;
+        if (
+          listSibling &&
+          (listSibling.tagName === "UL" || listSibling.tagName === "OL")
+        ) {
+          const lis = listSibling.querySelectorAll("li");
+          lis.forEach((li) => {
+            if (li.textContent) benefits.push(li.textContent);
+          });
+        }
+        packages.push({ tierName, price, benefits });
+      }
+      next = next.nextElementSibling;
+    }
+    return packages;
+  };
+
+  const h1El = doc.querySelector("h1");
+  const title = h1El ? h1El.textContent || "" : "";
+
   return {
+    title,
     executiveSummary:
       getSectionContent("Executive Summary") ||
       getSectionContent("Ringkasan Eksekutif"),
+    aboutOrganizer:
+      getSectionContent("Tentang Penyelenggara") ||
+      getSectionContent("Organizer"),
     eventBackground:
       getSectionContent("Latar Belakang Event") ||
       getSectionContent("Background"),
+    eventTheme:
+      getSectionContent("Tema Event") ||
+      getSectionContent("Theme") ||
+      getSectionContent("Tema"),
     objectives: getSectionList("Tujuan") || getSectionList("Objectives"),
+    activities: getSectionList("Aktivitas") || getSectionList("Activities"),
     targetAudience:
       getSectionContent("Target Audiens") || getSectionContent("Audience"),
-    whyThisEvent:
-      getSectionContent("Mengapa Event Ini") ||
-      getSectionContent("Why This Event"),
-    sponsorshipBenefits:
-      getSectionList("Manfaat Sponsorship") || getSectionList("Benefits"),
+    audienceReach:
+      getSectionContent("Jangkauan Audiens") || getSectionContent("Reach"),
+    whySponsor:
+      getSectionContent("Mengapa Sponsor") ||
+      getSectionContent("Mengapa Event Ini"),
+    sponsorshipPackages: getSponsorshipPackages(),
+    generalBenefits:
+      getSectionList("Benefit Umum") ||
+      getSectionList("General Benefits") ||
+      getSectionList("Manfaat"),
+    closingStatement:
+      getSectionContent("Penutup") || getSectionContent("Closing"),
     callToAction:
       getSectionContent("Call to Action") || getSectionContent("CTA"),
   };
@@ -364,7 +489,7 @@ export default function ProposalSmartReview() {
   };
 
   const updateFormArrayField = (
-    field: "objectives" | "sponsorshipBenefits",
+    field: "objectives" | "generalBenefits" | "activities",
     index: number,
     value: string,
   ) => {
@@ -374,19 +499,78 @@ export default function ProposalSmartReview() {
     updateFormField(field, newArray);
   };
 
-  const addFormArrayItem = (field: "objectives" | "sponsorshipBenefits") => {
+  const addFormArrayItem = (
+    field: "objectives" | "generalBenefits" | "activities",
+  ) => {
     if (!proposalForm) return;
     const newArray = [...proposalForm[field], ""];
     updateFormField(field, newArray);
   };
 
   const removeFormArrayItem = (
-    field: "objectives" | "sponsorshipBenefits",
+    field: "objectives" | "generalBenefits" | "activities",
     index: number,
   ) => {
     if (!proposalForm) return;
     const newArray = proposalForm[field].filter((_, i) => i !== index);
     updateFormField(field, newArray);
+  };
+
+  const updatePackageField = (
+    index: number,
+    field: keyof SponsorshipPackage,
+    value: any,
+  ) => {
+    if (!proposalForm) return;
+    const pkgs = [...proposalForm.sponsorshipPackages];
+    pkgs[index] = { ...pkgs[index], [field]: value };
+    updateFormField("sponsorshipPackages", pkgs);
+  };
+
+  const addPackage = () => {
+    if (!proposalForm) return;
+    const pkgs = [
+      ...proposalForm.sponsorshipPackages,
+      { tierName: "Baru", price: "Rp 0", benefits: [] },
+    ];
+    updateFormField("sponsorshipPackages", pkgs);
+  };
+
+  const removePackage = (index: number) => {
+    if (!proposalForm) return;
+    const pkgs = proposalForm.sponsorshipPackages.filter((_, i) => i !== index);
+    updateFormField("sponsorshipPackages", pkgs);
+  };
+
+  const updatePackageBenefit = (
+    pkgIndex: number,
+    benefitIndex: number,
+    value: string,
+  ) => {
+    if (!proposalForm) return;
+    const pkgs = [...proposalForm.sponsorshipPackages];
+    const benefits = [...pkgs[pkgIndex].benefits];
+    benefits[benefitIndex] = value;
+    pkgs[pkgIndex] = { ...pkgs[pkgIndex], benefits };
+    updateFormField("sponsorshipPackages", pkgs);
+  };
+
+  const addPackageBenefit = (pkgIndex: number) => {
+    if (!proposalForm) return;
+    const pkgs = [...proposalForm.sponsorshipPackages];
+    const benefits = [...pkgs[pkgIndex].benefits, ""];
+    pkgs[pkgIndex] = { ...pkgs[pkgIndex], benefits };
+    updateFormField("sponsorshipPackages", pkgs);
+  };
+
+  const removePackageBenefit = (pkgIndex: number, benefitIndex: number) => {
+    if (!proposalForm) return;
+    const pkgs = [...proposalForm.sponsorshipPackages];
+    const benefits = pkgs[pkgIndex].benefits.filter(
+      (_, i) => i !== benefitIndex,
+    );
+    pkgs[pkgIndex] = { ...pkgs[pkgIndex], benefits };
+    updateFormField("sponsorshipPackages", pkgs);
   };
 
   const handleDownloadPDF = async () => {
@@ -867,17 +1051,6 @@ export default function ProposalSmartReview() {
                             Rich Text Editor
                           </button>
                         </div>
-                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                          <span>
-                            Status:{" "}
-                            <strong className="text-gray-700">
-                              {proposalForm
-                                ? "Format Terstruktur"
-                                : "Format Teks Bebas"}
-                            </strong>
-                          </span>
-                        </div>
                       </div>
 
                       {/* Workspace Body */}
@@ -1000,6 +1173,19 @@ export default function ProposalSmartReview() {
                                       </div>
                                     )}
 
+                                    {/* About Organizer */}
+                                    {proposalForm.aboutOrganizer && (
+                                      <div className="space-y-4">
+                                        <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                          <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                                          Tentang Penyelenggara
+                                        </h3>
+                                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                                          {proposalForm.aboutOrganizer}
+                                        </p>
+                                      </div>
+                                    )}
+
                                     {/* Event Background */}
                                     {proposalForm.eventBackground && (
                                       <div className="space-y-4">
@@ -1010,6 +1196,24 @@ export default function ProposalSmartReview() {
                                         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
                                           {proposalForm.eventBackground}
                                         </p>
+                                      </div>
+                                    )}
+
+                                    {/* Event Theme */}
+                                    {proposalForm.eventTheme && (
+                                      <div className="space-y-4">
+                                        <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                          <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                                          Tema Kegiatan
+                                        </h3>
+                                        <div className="p-6 rounded-xl border border-indigo-100 bg-indigo-50/30 flex items-start gap-4">
+                                          <div className="p-3 bg-indigo-100 text-indigo-700 rounded-lg flex-shrink-0">
+                                            <Sparkles className="w-5 h-5 animate-pulse" />
+                                          </div>
+                                          <p className="text-sm text-gray-700 font-semibold leading-relaxed whitespace-pre-line">
+                                            {proposalForm.eventTheme}
+                                          </p>
+                                        </div>
                                       </div>
                                     )}
 
@@ -1041,49 +1245,148 @@ export default function ProposalSmartReview() {
                                         </div>
                                       )}
 
-                                    {/* Target Audience */}
-                                    {proposalForm.targetAudience && (
+                                    {/* Activities */}
+                                    {proposalForm.activities &&
+                                      proposalForm.activities.length > 0 && (
+                                        <div className="space-y-4">
+                                          <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                                            Rencana Aktivitas
+                                          </h3>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {proposalForm.activities.map(
+                                              (act, i) => (
+                                                <div
+                                                  key={i}
+                                                  className="flex gap-3 p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all duration-200"
+                                                >
+                                                  <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                                    {i + 1}
+                                                  </div>
+                                                  <p className="text-xs text-gray-700 font-medium leading-normal mt-0.5">
+                                                    {act}
+                                                  </p>
+                                                </div>
+                                              ),
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Target Audience & Reach */}
+                                    {(proposalForm.targetAudience ||
+                                      proposalForm.audienceReach) && (
                                       <div className="space-y-4">
                                         <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                           <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                                          Target Peserta & Audiens
+                                          Target Peserta & Jangkauan
                                         </h3>
-                                        <div className="p-6 rounded-xl border border-blue-100 bg-blue-50/30 flex items-start gap-4">
-                                          <div className="p-3 bg-blue-100 text-blue-700 rounded-lg flex-shrink-0">
-                                            <Users className="w-5 h-5" />
-                                          </div>
-                                          <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">
-                                            {proposalForm.targetAudience}
-                                          </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {proposalForm.targetAudience && (
+                                            <div className="p-6 rounded-xl border border-blue-100 bg-blue-50/30 flex items-start gap-4">
+                                              <div className="p-3 bg-blue-100 text-blue-700 rounded-lg flex-shrink-0">
+                                                <Users className="w-5 h-5" />
+                                              </div>
+                                              <div className="space-y-1">
+                                                <h4 className="text-xs font-bold text-gray-900 uppercase">
+                                                  Target Peserta
+                                                </h4>
+                                                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">
+                                                  {proposalForm.targetAudience}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          )}
+                                          {proposalForm.audienceReach && (
+                                            <div className="p-6 rounded-xl border border-teal-100 bg-teal-50/30 flex items-start gap-4">
+                                              <div className="p-3 bg-teal-100 text-teal-700 rounded-lg flex-shrink-0">
+                                                <Globe className="w-5 h-5" />
+                                              </div>
+                                              <div className="space-y-1">
+                                                <h4 className="text-xs font-bold text-gray-900 uppercase">
+                                                  Jangkauan Audiens
+                                                </h4>
+                                                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">
+                                                  {proposalForm.audienceReach}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     )}
 
                                     {/* Why Sponsor */}
-                                    {proposalForm.whyThisEvent && (
+                                    {proposalForm.whySponsor && (
                                       <div className="space-y-4">
                                         <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                           <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                                          Nilai Tambah bagi Sponsor
+                                          Mengapa Sponsor Harus Bergabung
                                         </h3>
                                         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                                          {proposalForm.whyThisEvent}
+                                          {proposalForm.whySponsor}
                                         </p>
                                       </div>
                                     )}
 
-                                    {/* Benefits */}
-                                    {proposalForm.sponsorshipBenefits &&
-                                      proposalForm.sponsorshipBenefits.length >
+                                    {/* Sponsorship Packages */}
+                                    {proposalForm.sponsorshipPackages &&
+                                      proposalForm.sponsorshipPackages.length >
                                         0 && (
                                         <div className="space-y-4">
                                           <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                                            Keuntungan Sponsorship (Sponsorship
+                                            Paket Sponsorship
+                                          </h3>
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {proposalForm.sponsorshipPackages.map(
+                                              (pkg, i) => (
+                                                <div
+                                                  key={i}
+                                                  className="border rounded-xl p-5 bg-gradient-to-b from-white to-gray-50/50 shadow-sm relative overflow-hidden flex flex-col justify-between"
+                                                >
+                                                  <div className="space-y-3">
+                                                    <div className="space-y-1">
+                                                      <h4 className="text-sm font-extrabold text-gray-900">
+                                                        {pkg.tierName}
+                                                      </h4>
+                                                      <p className="text-xs font-black text-blue-600">
+                                                        {pkg.price}
+                                                      </p>
+                                                    </div>
+                                                    <ul className="space-y-1.5 pt-2">
+                                                      {pkg.benefits.map(
+                                                        (b, bIdx) => (
+                                                          <li
+                                                            key={bIdx}
+                                                            className="text-[11px] text-gray-600 flex items-start gap-1.5"
+                                                          >
+                                                            <Check className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
+                                                            <span>{b}</span>
+                                                          </li>
+                                                        ),
+                                                      )}
+                                                    </ul>
+                                                  </div>
+                                                </div>
+                                              ),
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* General Benefits */}
+                                    {proposalForm.generalBenefits &&
+                                      proposalForm.generalBenefits.length >
+                                        0 && (
+                                        <div className="space-y-4">
+                                          <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                                            Keuntungan Sponsorship (General
                                             Benefits)
                                           </h3>
                                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                                            {proposalForm.sponsorshipBenefits.map(
+                                            {proposalForm.generalBenefits.map(
                                               (benefit, i) => (
                                                 <div
                                                   key={i}
@@ -1101,6 +1404,19 @@ export default function ProposalSmartReview() {
                                           </div>
                                         </div>
                                       )}
+
+                                    {/* Closing Statement */}
+                                    {proposalForm.closingStatement && (
+                                      <div className="space-y-4">
+                                        <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                          <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                                          Penutup
+                                        </h3>
+                                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                                          {proposalForm.closingStatement}
+                                        </p>
+                                      </div>
+                                    )}
 
                                     {/* Call to Action */}
                                     {proposalForm.callToAction && (
@@ -1149,15 +1465,27 @@ export default function ProposalSmartReview() {
                           <div className="max-w-3xl mx-auto space-y-6 pb-12">
                             {proposalForm ? (
                               <>
+                                {/* Form - Title */}
+                                <Card className="p-6 space-y-3">
+                                  <label className="text-sm font-bold text-gray-900 block">
+                                    Judul Proposal (Proposal Title)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    value={proposalForm.title}
+                                    onChange={(e) =>
+                                      updateFormField("title", e.target.value)
+                                    }
+                                    placeholder="Tulis judul proposal..."
+                                  />
+                                </Card>
+
                                 {/* Form - Executive Summary */}
                                 <Card className="p-6 space-y-3">
                                   <label className="text-sm font-bold text-gray-900 block">
                                     Ringkasan Eksekutif (Executive Summary)
                                   </label>
-                                  <p className="text-xs text-gray-500">
-                                    Pernyataan pembuka yang menarik minat
-                                    sponsor secara ringkas dan lugas.
-                                  </p>
                                   <textarea
                                     className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                     rows={4}
@@ -1172,15 +1500,30 @@ export default function ProposalSmartReview() {
                                   />
                                 </Card>
 
+                                {/* Form - About Organizer */}
+                                <Card className="p-6 space-y-3">
+                                  <label className="text-sm font-bold text-gray-900 block">
+                                    Tentang Penyelenggara (About Organizer)
+                                  </label>
+                                  <textarea
+                                    className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    rows={4}
+                                    value={proposalForm.aboutOrganizer}
+                                    onChange={(e) =>
+                                      updateFormField(
+                                        "aboutOrganizer",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="Tulis informasi penyelenggara..."
+                                  />
+                                </Card>
+
                                 {/* Form - Event Background */}
                                 <Card className="p-6 space-y-3">
                                   <label className="text-sm font-bold text-gray-900 block">
                                     Latar Belakang Kegiatan (Event Background)
                                   </label>
-                                  <p className="text-xs text-gray-500">
-                                    Penjelasan detail mengenai deskripsi, latar
-                                    belakang, dan signifikansi event ini.
-                                  </p>
                                   <textarea
                                     className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                     rows={4}
@@ -1195,6 +1538,25 @@ export default function ProposalSmartReview() {
                                   />
                                 </Card>
 
+                                {/* Form - Event Theme */}
+                                <Card className="p-6 space-y-3">
+                                  <label className="text-sm font-bold text-gray-900 block">
+                                    Tema Kegiatan (Event Theme)
+                                  </label>
+                                  <textarea
+                                    className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    rows={2}
+                                    value={proposalForm.eventTheme}
+                                    onChange={(e) =>
+                                      updateFormField(
+                                        "eventTheme",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="Tulis tema kegiatan..."
+                                  />
+                                </Card>
+
                                 {/* Form - Objectives */}
                                 <Card className="p-6 space-y-4">
                                   <div className="flex justify-between items-center border-b pb-3">
@@ -1202,10 +1564,6 @@ export default function ProposalSmartReview() {
                                       <label className="text-sm font-bold text-gray-900 block">
                                         Tujuan & Sasaran (Objectives)
                                       </label>
-                                      <p className="text-xs text-gray-500">
-                                        Tujuan konkret yang ingin dicapai
-                                        melalui penyelenggaraan event ini.
-                                      </p>
                                     </div>
                                     <Button
                                       type="button"
@@ -1259,8 +1617,73 @@ export default function ProposalSmartReview() {
                                     ))}
                                     {proposalForm.objectives.length === 0 && (
                                       <p className="text-xs text-gray-400 italic text-center py-4">
-                                        Belum ada tujuan ditambahkan. Klik
-                                        'Tambah' untuk membuat tujuan baru.
+                                        Belum ada tujuan ditambahkan.
+                                      </p>
+                                    )}
+                                  </div>
+                                </Card>
+
+                                {/* Form - Activities */}
+                                <Card className="p-6 space-y-4">
+                                  <div className="flex justify-between items-center border-b pb-3">
+                                    <div>
+                                      <label className="text-sm font-bold text-gray-900 block">
+                                        Rencana Aktivitas (Activities)
+                                      </label>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        addFormArrayItem("activities")
+                                      }
+                                      className="text-xs font-semibold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" /> Tambah
+                                    </Button>
+                                  </div>
+                                  <div className="space-y-2.5 pt-1">
+                                    {proposalForm.activities.map((act, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="flex gap-2 items-center"
+                                      >
+                                        <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 flex-shrink-0">
+                                          {idx + 1}
+                                        </div>
+                                        <input
+                                          type="text"
+                                          className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                          value={act}
+                                          onChange={(e) =>
+                                            updateFormArrayField(
+                                              "activities",
+                                              idx,
+                                              e.target.value,
+                                            )
+                                          }
+                                          placeholder={`Aktivitas ${idx + 1}...`}
+                                        />
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            removeFormArrayItem(
+                                              "activities",
+                                              idx,
+                                            )
+                                          }
+                                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 h-auto rounded-lg"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                    {proposalForm.activities.length === 0 && (
+                                      <p className="text-xs text-gray-400 italic text-center py-4">
+                                        Belum ada aktivitas ditambahkan.
                                       </p>
                                     )}
                                   </div>
@@ -1271,10 +1694,6 @@ export default function ProposalSmartReview() {
                                   <label className="text-sm font-bold text-gray-900 block">
                                     Target Peserta & Audiens (Target Audience)
                                   </label>
-                                  <p className="text-xs text-gray-500">
-                                    Demografi, estimasi jumlah, usia, dan
-                                    ketertarikan peserta target Anda.
-                                  </p>
                                   <textarea
                                     className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                     rows={4}
@@ -1289,51 +1708,202 @@ export default function ProposalSmartReview() {
                                   />
                                 </Card>
 
-                                {/* Form - Why Sponsor */}
+                                {/* Form - Audience Reach */}
                                 <Card className="p-6 space-y-3">
                                   <label className="text-sm font-bold text-gray-900 block">
-                                    Nilai Tambah & Alasan Memilih Event (Why
-                                    This Event)
+                                    Jangkauan Audiens (Audience Reach)
                                   </label>
-                                  <p className="text-xs text-gray-500">
-                                    Argumen kuat mengapa sponsor harus
-                                    berpartisipasi dan nilai balik yang mereka
-                                    dapatkan.
-                                  </p>
                                   <textarea
                                     className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                    rows={4}
-                                    value={proposalForm.whyThisEvent}
+                                    rows={3}
+                                    value={proposalForm.audienceReach}
                                     onChange={(e) =>
                                       updateFormField(
-                                        "whyThisEvent",
+                                        "audienceReach",
                                         e.target.value,
                                       )
                                     }
-                                    placeholder="Tulis nilai tambah bagi sponsor..."
+                                    placeholder="Tulis potensi jangkauan audiens..."
                                   />
                                 </Card>
 
-                                {/* Form - Benefits */}
+                                {/* Form - Why Sponsor */}
+                                <Card className="p-6 space-y-3">
+                                  <label className="text-sm font-bold text-gray-900 block">
+                                    Mengapa Sponsor Harus Bergabung (Why
+                                    Sponsor)
+                                  </label>
+                                  <textarea
+                                    className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    rows={4}
+                                    value={proposalForm.whySponsor}
+                                    onChange={(e) =>
+                                      updateFormField(
+                                        "whySponsor",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="Tulis alasan mengapa sponsor harus bergabung..."
+                                  />
+                                </Card>
+
+                                {/* Form - Sponsorship Packages */}
                                 <Card className="p-6 space-y-4">
                                   <div className="flex justify-between items-center border-b pb-3">
                                     <div>
                                       <label className="text-sm font-bold text-gray-900 block">
-                                        Keuntungan Kemitraan (Sponsorship
-                                        Benefits)
+                                        Paket Sponsorship (Packages)
                                       </label>
                                       <p className="text-xs text-gray-500">
-                                        Daftar benefit konkret (booth, logo,
-                                        media exposure, dsb.) yang didapatkan
-                                        sponsor.
+                                        Pilihan paket sponsorship yang
+                                        ditawarkan kepada calon partner.
                                       </p>
                                     </div>
                                     <Button
                                       type="button"
                                       variant="outline"
                                       size="sm"
+                                      onClick={addPackage}
+                                      className="text-xs font-semibold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" /> Tambah
+                                      Paket
+                                    </Button>
+                                  </div>
+                                  <div className="space-y-4 pt-1">
+                                    {proposalForm.sponsorshipPackages.map(
+                                      (pkg, pIdx) => (
+                                        <div
+                                          key={pIdx}
+                                          className="p-4 border rounded-xl bg-gray-50/50 space-y-3 relative"
+                                        >
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => removePackage(pIdx)}
+                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-2 h-auto rounded-lg"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                              <label className="text-[10px] font-bold text-gray-500 uppercase">
+                                                Nama Tier
+                                              </label>
+                                              <input
+                                                type="text"
+                                                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                                value={pkg.tierName}
+                                                onChange={(e) =>
+                                                  updatePackageField(
+                                                    pIdx,
+                                                    "tierName",
+                                                    e.target.value,
+                                                  )
+                                                }
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="text-[10px] font-bold text-gray-500 uppercase">
+                                                Harga
+                                              </label>
+                                              <input
+                                                type="text"
+                                                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                                value={pkg.price}
+                                                onChange={(e) =>
+                                                  updatePackageField(
+                                                    pIdx,
+                                                    "price",
+                                                    e.target.value,
+                                                  )
+                                                }
+                                              />
+                                            </div>
+                                          </div>
+                                          <div className="space-y-2">
+                                            <div className="flex justify-between items-center">
+                                              <label className="text-[10px] font-bold text-gray-500 uppercase">
+                                                Benefit Paket
+                                              </label>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                  addPackageBenefit(pIdx)
+                                                }
+                                                className="text-[10px] text-blue-600 hover:text-blue-700 p-1 h-auto"
+                                              >
+                                                + Tambah Benefit
+                                              </Button>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                              {pkg.benefits.map(
+                                                (benefit, bIdx) => (
+                                                  <div
+                                                    key={bIdx}
+                                                    className="flex gap-2 items-center"
+                                                  >
+                                                    <input
+                                                      type="text"
+                                                      className="flex-1 rounded-lg border border-gray-200 px-3 py-1 text-[11px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                                      value={benefit}
+                                                      onChange={(e) =>
+                                                        updatePackageBenefit(
+                                                          pIdx,
+                                                          bIdx,
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      placeholder={`Benefit ${bIdx + 1}...`}
+                                                    />
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      onClick={() =>
+                                                        removePackageBenefit(
+                                                          pIdx,
+                                                          bIdx,
+                                                        )
+                                                      }
+                                                      className="text-red-500 hover:text-red-700 p-1 h-auto"
+                                                    >
+                                                      <X className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                  </div>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ),
+                                    )}
+                                    {proposalForm.sponsorshipPackages.length ===
+                                      0 && (
+                                      <p className="text-xs text-gray-400 italic text-center py-4">
+                                        Belum ada paket ditambahkan.
+                                      </p>
+                                    )}
+                                  </div>
+                                </Card>
+
+                                {/* Form - General Benefits */}
+                                <Card className="p-6 space-y-4">
+                                  <div className="flex justify-between items-center border-b pb-3">
+                                    <div>
+                                      <label className="text-sm font-bold text-gray-900 block">
+                                        Benefit Umum (General Benefits)
+                                      </label>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
                                       onClick={() =>
-                                        addFormArrayItem("sponsorshipBenefits")
+                                        addFormArrayItem("generalBenefits")
                                       }
                                       className="text-xs font-semibold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
                                     >
@@ -1341,7 +1911,7 @@ export default function ProposalSmartReview() {
                                     </Button>
                                   </div>
                                   <div className="space-y-2.5 pt-1">
-                                    {proposalForm.sponsorshipBenefits.map(
+                                    {proposalForm.generalBenefits.map(
                                       (benefit, idx) => (
                                         <div
                                           key={idx}
@@ -1356,12 +1926,12 @@ export default function ProposalSmartReview() {
                                             value={benefit}
                                             onChange={(e) =>
                                               updateFormArrayField(
-                                                "sponsorshipBenefits",
+                                                "generalBenefits",
                                                 idx,
                                                 e.target.value,
                                               )
                                             }
-                                            placeholder={`Keuntungan/Benefit ${idx + 1}...`}
+                                            placeholder={`Benefit ${idx + 1}...`}
                                           />
                                           <Button
                                             type="button"
@@ -1369,7 +1939,7 @@ export default function ProposalSmartReview() {
                                             size="sm"
                                             onClick={() =>
                                               removeFormArrayItem(
-                                                "sponsorshipBenefits",
+                                                "generalBenefits",
                                                 idx,
                                               )
                                             }
@@ -1380,14 +1950,32 @@ export default function ProposalSmartReview() {
                                         </div>
                                       ),
                                     )}
-                                    {proposalForm.sponsorshipBenefits.length ===
+                                    {proposalForm.generalBenefits.length ===
                                       0 && (
                                       <p className="text-xs text-gray-400 italic text-center py-4">
-                                        Belum ada benefit ditambahkan. Klik
-                                        'Tambah' untuk membuat benefit baru.
+                                        Belum ada benefit umum ditambahkan.
                                       </p>
                                     )}
                                   </div>
+                                </Card>
+
+                                {/* Form - Closing Statement */}
+                                <Card className="p-6 space-y-3">
+                                  <label className="text-sm font-bold text-gray-900 block">
+                                    Kalimat Penutup (Closing Statement)
+                                  </label>
+                                  <textarea
+                                    className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    rows={4}
+                                    value={proposalForm.closingStatement}
+                                    onChange={(e) =>
+                                      updateFormField(
+                                        "closingStatement",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="Tulis kalimat penutup..."
+                                  />
                                 </Card>
 
                                 {/* Form - Call to Action */}
@@ -1395,11 +1983,6 @@ export default function ProposalSmartReview() {
                                   <label className="text-sm font-bold text-gray-900 block">
                                     Ajakan Bertindak (Call to Action)
                                   </label>
-                                  <p className="text-xs text-gray-500">
-                                    Pernyataan persuasif di bagian akhir yang
-                                    mendorong sponsor untuk segera merespons &
-                                    menghubungi Anda.
-                                  </p>
                                   <textarea
                                     className="w-full rounded-lg border border-gray-200 px-3.5 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                     rows={4}
@@ -1431,20 +2014,27 @@ export default function ProposalSmartReview() {
                                   type="button"
                                   onClick={() => {
                                     const template = {
+                                      title: "",
                                       executiveSummary:
                                         editedContent ||
                                         "Kami siap menyelenggarakan event spektakuler ini...",
+                                      aboutOrganizer: "",
                                       eventBackground: "",
+                                      eventTheme: "",
                                       objectives: [
                                         "Meningkatkan exposure sponsor",
                                         "Menyediakan wadah networking",
                                       ],
+                                      activities: [],
                                       targetAudience: "",
-                                      whyThisEvent: "",
-                                      sponsorshipBenefits: [
+                                      audienceReach: "",
+                                      whySponsor: "",
+                                      sponsorshipPackages: [],
+                                      generalBenefits: [
                                         "Exposure logo di backdrop",
                                         "Booth promosi khusus",
                                       ],
+                                      closingStatement: "",
                                       callToAction:
                                         "Mari bergabung bersama kami untuk menyukseskan event ini!",
                                     };

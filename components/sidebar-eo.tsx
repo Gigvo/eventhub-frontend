@@ -181,39 +181,39 @@ export default function Sidebar() {
       </div>
       <div className="border-t border-[#E5E7EB] pt-4">
         <Link
-          href="/settings"
+          href="/pengaturan"
           className={`flex items-center text-[14px] transition-colors ${
             isCollapsed
               ? "justify-center py-2 px-0 w-12 mx-auto"
               : "gap-3 pb-2.5 px-3"
           } ${
-            isActive("/settings")
+            isActive("/pengaturan")
               ? "text-[#003EC7] font-semibold"
               : "text-[#6B7280] hover:text-[#374151]"
           }`}
           title={isCollapsed ? "Pengaturan" : undefined}
         >
           <Settings
-            className={`w-6 h-6 flex-shrink-0 ${isActive("/settings") ? "text-[#003EC7]" : ""}`}
+            className={`w-6 h-6 flex-shrink-0 ${isActive("/pengaturan") ? "text-[#003EC7]" : ""}`}
           />
           {!isCollapsed && <span>Pengaturan</span>}
         </Link>
 
         <Link
-          href="/help"
+          href="/bantuan"
           className={`flex items-center text-[14px] transition-colors ${
             isCollapsed
               ? "justify-center py-2 px-0 w-12 mx-auto"
               : "gap-3 py-2.5 px-3"
           } ${
-            isActive("/help")
+            isActive("/bantuan")
               ? "text-[#003EC7] font-semibold"
               : "text-[#6B7280] hover:text-[#374151]"
           }`}
           title={isCollapsed ? "Bantuan" : undefined}
         >
           <HelpCircle
-            className={`w-6 h-6 flex-shrink-0 ${isActive("/help") ? "text-[#003EC7]" : ""}`}
+            className={`w-6 h-6 flex-shrink-0 ${isActive("/bantuan") ? "text-[#003EC7]" : ""}`}
           />
           {!isCollapsed && <span>Bantuan</span>}
         </Link>

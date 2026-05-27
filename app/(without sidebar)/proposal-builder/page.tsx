@@ -25,13 +25,26 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+interface SponsorshipPackage {
+  tierName: string;
+  price: string;
+  benefits: string[];
+}
+
 interface ProposalContent {
+  title: string;
   executiveSummary: string;
+  aboutOrganizer: string;
   eventBackground: string;
+  eventTheme: string;
   objectives: string[];
+  activities: string[];
   targetAudience: string;
-  whyThisEvent: string;
-  sponsorshipBenefits: string[];
+  audienceReach: string;
+  whySponsor: string;
+  sponsorshipPackages: SponsorshipPackage[];
+  generalBenefits: string[];
+  closingStatement: string;
   callToAction: string;
 }
 
@@ -59,31 +72,63 @@ interface SmartReview {
 
 function buildHtml(content: ProposalContent, eventName: string): string {
   const listItems = (items: string[]) =>
-    items.map((i) => `<li>${i}</li>`).join("");
+    items ? items.map((i) => `<li>${i}</li>`).join("") : "";
+
+  const packagesHtml = (packages: SponsorshipPackage[]) => {
+    if (!packages || !Array.isArray(packages)) return "";
+    return packages
+      .map(
+        (pkg) => `
+<h3>${pkg.tierName} (${pkg.price})</h3>
+<ul>${listItems(pkg.benefits)}</ul>
+      `,
+      )
+      .join("");
+  };
+
+  const titleText = content.title || `${eventName} — Proposal Sponsorship`;
 
   return `
-<h1>${eventName} — Proposal Sponsorship</h1>
+<h1>${titleText}</h1>
 
 <h2>Executive Summary</h2>
-<p>${content.executiveSummary}</p>
+<p>${content.executiveSummary || ""}</p>
+
+<h2>Tentang Penyelenggara</h2>
+<p>${content.aboutOrganizer || ""}</p>
 
 <h2>Latar Belakang Event</h2>
-<p>${content.eventBackground}</p>
+<p>${content.eventBackground || ""}</p>
+
+<h2>Tema Event</h2>
+<p>${content.eventTheme || ""}</p>
 
 <h2>Tujuan</h2>
 <ul>${listItems(content.objectives)}</ul>
 
+<h2>Rencana Aktivitas</h2>
+<ul>${listItems(content.activities)}</ul>
+
 <h2>Target Audiens</h2>
-<p>${content.targetAudience}</p>
+<p>${content.targetAudience || ""}</p>
 
-<h2>Mengapa Event Ini?</h2>
-<p>${content.whyThisEvent}</p>
+<h2>Jangkauan Audiens</h2>
+<p>${content.audienceReach || ""}</p>
 
-<h2>Manfaat Sponsorship</h2>
-<ul>${listItems(content.sponsorshipBenefits)}</ul>
+<h2>Mengapa Sponsor Harus Bergabung</h2>
+<p>${content.whySponsor || ""}</p>
+
+<h2>Paket Sponsorship</h2>
+${packagesHtml(content.sponsorshipPackages)}
+
+<h2>Benefit Umum</h2>
+<ul>${listItems(content.generalBenefits)}</ul>
+
+<h2>Penutup</h2>
+<p>${content.closingStatement || ""}</p>
 
 <h2>Call to Action</h2>
-<p>${content.callToAction}</p>
+<p>${content.callToAction || ""}</p>
   `.trim();
 }
 
@@ -96,12 +141,19 @@ function scoreLabel(score: number): string {
 
 function parseHtmlToProposalContent(html: string): ProposalContent {
   const defaultContent: ProposalContent = {
+    title: "",
     executiveSummary: "",
+    aboutOrganizer: "",
     eventBackground: "",
+    eventTheme: "",
     objectives: [],
+    activities: [],
     targetAudience: "",
-    whyThisEvent: "",
-    sponsorshipBenefits: [],
+    audienceReach: "",
+    whySponsor: "",
+    sponsorshipPackages: [],
+    generalBenefits: [],
+    closingStatement: "",
     callToAction: "",
   };
 
@@ -151,13 +203,54 @@ function parseHtmlToProposalContent(html: string): ProposalContent {
     return items;
   };
 
+  const getSponsorshipPackages = (): SponsorshipPackage[] => {
+    const headings = Array.from(doc.querySelectorAll("h2"));
+    const sponsorHeading = headings.find((h) => 
+      h.textContent?.toLowerCase().includes("paket sponsorship")
+    );
+    if (!sponsorHeading) return [];
+
+    const packages: SponsorshipPackage[] = [];
+    let next = sponsorHeading.nextElementSibling;
+    while (next && next.tagName !== "H2" && next.tagName !== "H1") {
+      if (next.tagName === "H3") {
+        const h3Text = next.textContent || "";
+        const match = h3Text.match(/^(.*?)\s*\((.*?)\)$/);
+        const tierName = match ? match[1].trim() : h3Text.trim();
+        const price = match ? match[2].trim() : "";
+        
+        const benefits: string[] = [];
+        let listSibling = next.nextElementSibling;
+        if (listSibling && (listSibling.tagName === "UL" || listSibling.tagName === "OL")) {
+          const lis = listSibling.querySelectorAll("li");
+          lis.forEach((li) => {
+            if (li.textContent) benefits.push(li.textContent);
+          });
+        }
+        packages.push({ tierName, price, benefits });
+      }
+      next = next.nextElementSibling;
+    }
+    return packages;
+  };
+
+  const h1El = doc.querySelector("h1");
+  const title = h1El ? h1El.textContent || "" : "";
+
   return {
+    title,
     executiveSummary: getSectionContent("Executive Summary") || getSectionContent("Ringkasan Eksekutif"),
+    aboutOrganizer: getSectionContent("Tentang Penyelenggara") || getSectionContent("Organizer"),
     eventBackground: getSectionContent("Latar Belakang Event") || getSectionContent("Background"),
+    eventTheme: getSectionContent("Tema Event") || getSectionContent("Theme") || getSectionContent("Tema"),
     objectives: getSectionList("Tujuan") || getSectionList("Objectives"),
+    activities: getSectionList("Aktivitas") || getSectionList("Activities"),
     targetAudience: getSectionContent("Target Audiens") || getSectionContent("Audience"),
-    whyThisEvent: getSectionContent("Mengapa Event Ini") || getSectionContent("Why This Event"),
-    sponsorshipBenefits: getSectionList("Manfaat Sponsorship") || getSectionList("Benefits"),
+    audienceReach: getSectionContent("Jangkauan Audiens") || getSectionContent("Reach"),
+    whySponsor: getSectionContent("Mengapa Sponsor") || getSectionContent("Mengapa Event Ini"),
+    sponsorshipPackages: getSponsorshipPackages(),
+    generalBenefits: getSectionList("Benefit Umum") || getSectionList("General Benefits") || getSectionList("Manfaat"),
+    closingStatement: getSectionContent("Penutup") || getSectionContent("Closing"),
     callToAction: getSectionContent("Call to Action") || getSectionContent("CTA"),
   };
 }
@@ -196,7 +289,12 @@ export default function ProposalBuilder() {
     if (typeof window === "undefined") return null;
     try {
       const stored = localStorage.getItem("generatedProposal");
-      return stored ? (JSON.parse(stored) as StoredProposal) : null;
+      if (!stored) return null;
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.content && typeof parsed.content === "string") {
+        parsed.content = JSON.parse(parsed.content);
+      }
+      return parsed as StoredProposal;
     } catch {
       return null;
     }
@@ -207,7 +305,10 @@ export default function ProposalBuilder() {
     try {
       const stored = localStorage.getItem("generatedProposal");
       if (!stored) return "";
-      const parsed = JSON.parse(stored) as StoredProposal;
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.content && typeof parsed.content === "string") {
+        parsed.content = JSON.parse(parsed.content);
+      }
       return buildHtml(parsed.content, parsed.eventName);
     } catch {
       return "";

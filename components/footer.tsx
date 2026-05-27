@@ -28,10 +28,10 @@ export default function Footer() {
               Terms of Service
             </a>
             <a
-              href="/help-center"
+              href="/bantuan"
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
-              Help Center
+              Bantuan
             </a>
             <a
               href="/contact-us"

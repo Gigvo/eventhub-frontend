@@ -27,7 +27,11 @@ export default function Home() {
 
   const stepItemVariants = {
     hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } as any },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } as any,
+    },
   };
 
   // Stagger container variants for testimonials
@@ -43,7 +47,11 @@ export default function Home() {
 
   const testimonialItemVariants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } as any },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" } as any,
+    },
   };
 
   return (
@@ -59,18 +67,19 @@ export default function Home() {
           className="flex-1 w-full text-center lg:text-left"
         >
           <Badge className="font-inter text-[#4A72FF] bg-[#EEF2FF] hover:bg-[#EEF2FF] border-none px-4 py-2 rounded-full mb-6 sm:mb-8 inline-flex items-center gap-2 font-bold tracking-wide text-xs mx-auto lg:mx-0">
-            <Sparkles className="w-4 h-4" />
-            DI PERCAYA 500+ EO DI INDONESIA
+            {/* <Sparkles className="w-4 h-4" /> */}
+            DIPERCAYA 500+ EO DI INDONESIA
           </Badge>
 
           <h1 className="text-[36px] sm:text-[48px] lg:text-[64px] leading-tight lg:leading-[1.05] font-[900] tracking-tight text-[#111827] mb-6 font-inter">
             Temukan <br className="hidden sm:inline" />
             Sponsorship yang <br className="hidden sm:inline" />
-            <span className="text-[#4A72FF]">Tepat Sasaran.</span>
+            <span className="text-[#4A72FF]">Tepat Sasaran,</span>
           </h1>
 
-          <p className="text-[16px] sm:text-[17px] leading-relaxed text-[#6B7280] max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-12">
-            Hubungkan eventmu dengan ratusan perusahaan sponsor yang tepat otomatis, cerdas, tanpa cold pitching.
+          <p className="text-[16px] sm:text-[17px] leading-relaxed text-[#6B7280] max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-12 lg:mr-11">
+            Hubungkan eventmu dengan ratusan perusahaan sponsor yang tepat
+            otomatis, cerdas, tanpa cold pitching.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8 sm:mb-16">
@@ -100,7 +109,9 @@ export default function Home() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.15, ease: [0.16, 1, 0.3, 1] } as any}
+          transition={
+            { duration: 1, delay: 0.15, ease: [0.16, 1, 0.3, 1] } as any
+          }
           className="relative w-full h-[250px] sm:h-[400px] lg:h-[600px] flex-1"
         >
           <Image
@@ -135,7 +146,8 @@ export default function Home() {
             Dari Upload Event ke Deal Sponsor, Semua di Satu Tempat
           </h2>
           <p className="text-[#6B7280] text-sm sm:text-[15px]">
-            Tidak ada lagi email yang tidak dibalas. Tidak ada lagi proposal yang salah sasaran.
+            Tidak ada lagi email yang tidak dibalas. Tidak ada lagi proposal
+            yang salah sasaran.
           </p>
         </motion.div>
 
@@ -159,7 +171,8 @@ export default function Home() {
                 Buat Event dalam 5 Menit
               </h3>
               <p className="text-[14px] text-[#6B7280]">
-                Isi nama event, target audiens, kebutuhan budget, dan paket sponsor. Generate proposal sponsorship dengan AI.
+                Isi nama event, target audiens, kebutuhan budget, dan paket
+                sponsor. Generate proposal sponsorhip dengan AI.
               </p>
             </div>
           </motion.div>
@@ -188,7 +201,8 @@ export default function Home() {
                 Langkah ini otomatis dilakukan AI
               </p>
               <p className="text-[14px] text-[#6B7280]">
-                Algoritma kami mencocokkan eventmu dengan perusahaan yang memiliki target audiens serupa.
+                Algoritma kami mencocokkan eventmu dengan perusahaan yang
+                memiliki target audiens serupa.
               </p>
             </div>
           </motion.div>
@@ -206,7 +220,8 @@ export default function Home() {
                 Terima & Negosiasi
               </h3>
               <p className="text-[14px] text-[#6B7280]">
-                Kirim penawaran ke perusahaan langsung dari platform, tanpa menunggu.
+                Kirim penawaran ke perusahaan langsung dari platform, tanpa
+                menunggu.
               </p>
             </div>
           </motion.div>
@@ -233,40 +248,88 @@ export default function Home() {
                   Proposal Smart Review
                 </h3>
                 <p className="text-[14px] sm:text-[15px] text-[#6B7280] leading-relaxed">
-                  Menganalisis proposal secara cerdas berdasarkan data relevansi, target audiens, dan kebutuhan sponsor agar peluang diterima proposal menjadi lebih tinggi.
+                  Menganalisis proposal secara cerdas berdasarkan data
+                  relevansi, target audiens, dan kebutuhan sponsor agar peluang
+                  diterima proposal menjadi lebih tinggi.
                 </p>
               </div>
             </div>
 
-            {/* Feature Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-              <div className="border border-[#E5E7EB] rounded-[24px] p-6 sm:p-8 bg-white hover:shadow-sm transition">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-[#4A72FF]" />
-                  <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
-                    INSTANT
-                  </span>
+            {/* Relative Container for Overlay */}
+            <div className="relative">
+              {/* Circular Progress - Overlays the grid */}
+              {/* <div className="absolute left-85 top-[-70] z-10">
+                <svg width="128" height="128" className="transform">
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    fill="none"
+                    stroke="#E5E7EB"
+                    strokeWidth="12"
+                  />
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    fill="none"
+                    stroke="#4A72FF"
+                    strokeWidth="12"
+                    strokeDasharray={`${(89 / 100) * 2 * Math.PI * 56} ${2 * Math.PI * 56}`}
+                    strokeLinecap="round"
+                  />
+                  <text
+                    x="64"
+                    y="68"
+                    textAnchor="middle"
+                    className="text-[20px] font-[900] fill-[#4A72FF]"
+                  >
+                    89%
+                  </text>
+                  <text
+                    x="64"
+                    y="90"
+                    textAnchor="middle"
+                    className="text-[12px] font-[900] fill-[#9CA3AF]"
+                  >
+                    Akurasi
+                  </text>
+                </svg>
+              </div> */}
+
+              {/* Feature Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+                <div className="border border-[#E5E7EB] rounded-[24px] p-6 sm:p-8 bg-white hover:shadow-sm transition">
+                  <div className="flex items-center gap-2 mb-3">
+                    {/* <Sparkles className="w-4 h-4 text-[#4A72FF]" /> */}
+                    <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
+                      INSTANT
+                    </span>
+                  </div>
+                  <h4 className="text-[17px] font-bold text-[#111827] mb-2">
+                    Proposal Otomatis
+                  </h4>
+                  <p className="text-[14px] text-[#6B7280] leading-relaxed">
+                    AI menyusun proposal profesional yang dipersonalisasi untuk
+                    setiap perusahaan target.
+                  </p>
                 </div>
-                <h4 className="text-[17px] font-bold text-[#111827] mb-2">
-                  Proposal Otomatis
-                </h4>
-                <p className="text-[14px] text-[#6B7280] leading-relaxed">
-                  AI menyusun proposal profesional yang dipersonalisasi untuk setiap perusahaan target.
-                </p>
-              </div>
-              <div className="border border-[#E5E7EB] rounded-[24px] p-6 sm:p-8 bg-white hover:shadow-sm transition">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-[#4A72FF]" />
-                  <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
-                    TRANSPARENT
-                  </span>
+                <div className="border border-[#E5E7EB] rounded-[24px] p-6 sm:p-8 bg-white hover:shadow-sm transition">
+                  <div className="flex items-center gap-2 mb-3">
+                    {/* <Sparkles className="w-4 h-4 text-[#4A72FF]" /> */}
+                    <span className="text-[11px] font-bold text-[#4A72FF] tracking-widest">
+                      TRANSPARENT
+                    </span>
+                  </div>
+                  <h4 className="text-[17px] font-bold text-[#111827] mb-2">
+                    Token System
+                  </h4>
+                  <p className="text-[14px] text-[#6B7280] leading-relaxed">
+                    Kelola pitching dan promosi event dengan sistem token
+                    transparan untuk menghubungi perusahaan dan meningkatkan
+                    jangkauan event.
+                  </p>
                 </div>
-                <h4 className="text-[17px] font-bold text-[#111827] mb-2">
-                  Token System
-                </h4>
-                <p className="text-[14px] text-[#6B7280] leading-relaxed">
-                  Kelola pitching dan promosi event dengan sistem token transparan untuk menghubungi perusahaan dan meningkatkan jangkauan event.
-                </p>
               </div>
             </div>
           </motion.div>
@@ -289,14 +352,17 @@ export default function Home() {
                   Dashboard Real-Time
                 </h3>
                 <p className="text-[14px] sm:text-[15px] text-white/90 leading-relaxed">
-                  Pantau status proposal, laporan perusahaan, dan pipeline sponsorship dalam satu tampilan.
+                  Pantau status proposal, laporan perusahaan, dan pipeline
+                  sponsorship dalam satu tampilan.
                 </p>
               </div>
             </div>
 
             {/* Card 2 */}
             <div className="bg-gradient-to-br from-[#4A72FF] to-[#5B82FF] rounded-[32px] p-6 sm:p-8 text-white min-h-[220px] flex flex-col justify-between shadow-sm">
-              <h3 className="text-[24px] sm:text-[28px] font-bold leading-tight mb-4">Siap untuk Mulai?</h3>
+              <h3 className="text-[24px] sm:text-[28px] font-bold leading-tight mb-4">
+                Siap untuk Mulai?
+              </h3>
               <Link href={"/register"}>
                 <Button className="bg-white text-[#4A72FF] hover:bg-gray-50 px-6 py-3 font-bold rounded-[10px] w-fit">
                   Coba Sekarang
@@ -350,7 +416,8 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-[14px] text-[#4B5563] mb-6 leading-relaxed">
-                &quot;Biasanya butuh 2 minggu untuk dapat sponsor. Di EventHub, dalam 3 hari sudah ada 4 perusahaan yang tertarik. &quot;
+                &quot;Biasanya butuh 2 minggu untuk dapat sponsor. Di EventHub,
+                dalam 3 hari sudah ada 4 perusahaan yang tertarik. &quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0" />
@@ -383,7 +450,8 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-[14px] text-[#4B5563] mb-6 leading-relaxed">
-                &quot;AI Match Scorenya surprisingly akurat. Kami langsung tahu event yang sesuai tanpa harus review satu-satu.&quot;
+                &quot;AI Match Scorenya surprisingly akurat. Kami langsung tahu
+                event yang sesuai tanpa harus review satu-satu.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-400 flex-shrink-0" />
@@ -416,7 +484,8 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-[14px] text-[#4B5563] mb-6 leading-relaxed">
-                &quot;Kami tidak lagi bayar jasa konsultan sponsorship. EventHub replace itu semua dengan biaya lebih murah.&quot;
+                &quot;Kami tidak lagi bayar jasa konsultan sponsorship. EventHub
+                replace itu semua dengan biaya lebih murah.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0" />
@@ -447,7 +516,8 @@ export default function Home() {
             Mulai Gratis Hari Ini
           </h2>
           <p className="text-sm sm:text-[18px] text-white/90 mb-12 max-w-2xl">
-            Bergabunglah dengan 500+ EO yang sudah mendapatkan sponsor lebih cepat bersama EventHub.
+            Bergabunglah dengan 500+ EO yang sudah mendapatkan sponsor lebih
+            cepat bersama EventHub.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 mb-12 w-full sm:w-auto">
@@ -532,7 +602,8 @@ export default function Home() {
             <div className="col-span-2 md:col-span-1">
               <h3 className="text-[20px] font-bold mb-4">EventHub</h3>
               <p className="text-[14px] text-gray-400 mb-6 leading-relaxed">
-                Platform matchmaking sponsor berbasis AI pertama di Indonesia untuk ekosistem event yang lebih transparan.
+                Platform matchmaking sponsor berbasis AI pertama di Indonesia
+                untuk ekosistem event yang lebih transparan.
               </p>
               <div className="flex gap-3">
                 <button className="w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition">
@@ -563,22 +634,34 @@ export default function Home() {
               </h4>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Katalog Event
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     AI Matching
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Harga Token
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Studi Kasus
                   </a>
                 </li>
@@ -592,22 +675,34 @@ export default function Home() {
               </h4>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Tentang Kami
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Karir
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Kontak
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Blog
                   </a>
                 </li>
@@ -621,17 +716,26 @@ export default function Home() {
               </h4>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Privacy Policy
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Terms of Service
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[14px] text-gray-400 hover:text-white transition">
+                  <a
+                    href="#"
+                    className="text-[14px] text-gray-400 hover:text-white transition"
+                  >
                     Cookie Policy
                   </a>
                 </li>
@@ -643,7 +747,7 @@ export default function Home() {
           <div className="border-t border-gray-700 pt-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-[12px] text-gray-400">
-                © 2024 EventHub. Built for precision.
+                © 2026 EventHub. Built for precision.
               </p>
               <div className="flex items-center gap-4">
                 <button className="text-[12px] text-gray-400 hover:text-white transition">

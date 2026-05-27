@@ -181,7 +181,7 @@ export default function Sidebar() {
       </div>
       <div className="border-t border-[#E5E7EB] pt-4">
         <Link
-          href="/settings"
+          href="/pengaturan"
           className={`flex items-center text-[14px] text-[#6B7280] hover:text-[#374151] transition-colors ${
             isCollapsed
               ? "justify-center py-2 px-0 w-12 mx-auto"
@@ -194,7 +194,7 @@ export default function Sidebar() {
         </Link>
 
         <Link
-          href="/help"
+          href="/bantuan"
           className={`flex items-center text-[14px] text-[#6B7280] hover:text-[#374151] transition-colors ${
             isCollapsed
               ? "justify-center py-2 px-0 w-12 mx-auto"
