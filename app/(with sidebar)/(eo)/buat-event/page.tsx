@@ -148,14 +148,12 @@ function BuatEventForm() {
         setCurrentStep(parseInt(stepParam, 10) || 1);
       }
 
-      // Fetch existing event details from backend to load draft and tiers
       const fetchEventData = async () => {
         try {
           const res = await apiCall<any>(`/events/${idParam}`);
           if (res.success && res.data) {
             const event = res.data;
 
-            // Format dates
             let formattedStart = "";
             let formattedEnd = "";
             if (event.startDate) {
@@ -173,7 +171,6 @@ function BuatEventForm() {
               formattedEnd = `${year}-${month}-${day}`;
             }
 
-            // Map tiers/packages
             const mappedPackages = Array.isArray(event.tiers)
               ? event.tiers.map((tier: any, idx: number) => ({
                   id: idx + 1,
@@ -204,7 +201,6 @@ function BuatEventForm() {
               packages: mappedPackages,
             }));
 
-            // If they are returning to step 3, we auto-confirm the checklist since they already created the event!
             if (stepParam === "3") {
               setConfirmDeskripsi(true);
               setConfirmEstimasi(true);
@@ -256,14 +252,12 @@ function BuatEventForm() {
     },
   });
 
-  // Load progress from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem("buatEventFormProgress");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.formData) {
-          // Restore form data (bannerFile is always null initially)
           setFormData((prev) => ({
             ...prev,
             ...parsed.formData,
@@ -283,7 +277,6 @@ function BuatEventForm() {
           setConfirmDemografi(parsed.confirmDemografi);
         }
 
-        // Only restore step if URL doesn't specify one
         const stepParam = searchParams.get("step");
         if (!stepParam && parsed.currentStep) {
           setCurrentStep(parsed.currentStep);
@@ -294,10 +287,8 @@ function BuatEventForm() {
     }
   }, [searchParams]);
 
-  // Save progress to localStorage
   useEffect(() => {
     try {
-      // Exclude bannerFile from JSON stringify since File objects are not serializable
       const { bannerFile, ...serializableFormData } = formData;
       const progress = {
         formData: serializableFormData,
@@ -388,7 +379,6 @@ function BuatEventForm() {
     }
   };
 
-  // Helper function to show notification
   const showNotification = (
     type: "success" | "error",
     message: string,
@@ -404,7 +394,6 @@ function BuatEventForm() {
       setIsSubmitting(true);
       const newErrors: typeof errors = {};
 
-      // Validation
       if (!formData.kategoriEvent) {
         newErrors.kategoriEvent = "Kategori Event wajib dipilih";
       }
@@ -418,17 +407,14 @@ function BuatEventForm() {
         newErrors.deskripsiEvent = "Deskripsi Event harus minimal 20 karakter";
       }
 
-      // If there are errors, set them and return
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
         setIsSubmitting(false);
         return;
       }
 
-      // Clear errors if validation passes
       setErrors({});
 
-      // Parse dates and format as YYYY-MM-DD
       const startDate = new Date(formData.tanggalMulai);
       const endDate = new Date(formData.tanggalSelesai);
 
@@ -549,7 +535,6 @@ function BuatEventForm() {
       });
 
       if (response.success) {
-        // Add to local state to show in UI
         const newPackage = {
           id: formData.packages.length + 1,
           name: packageName,
@@ -575,7 +560,6 @@ function BuatEventForm() {
     }
   };
 
-  // Handle final save — calls AI proposal builder then navigates to proposal-builder page
   const handleSaveAndContinue = async () => {
     if (!eventId) {
       showNotification(
@@ -600,7 +584,6 @@ function BuatEventForm() {
       });
 
       if (response?.data) {
-        // Save dummy PDF proposal to firebase storage
         try {
           let pdfContent = "";
           try {
@@ -628,7 +611,6 @@ function BuatEventForm() {
               bodyText += `7. CALL TO ACTION\n${parsed.callToAction || ""}\n`;
             }
 
-            // Simple text wrap helper to prevent lines from spilling off the PDF page
             const wrapText = (text: string, maxChars: number = 80) => {
               const lines: string[] = [];
               const paragraphs = text.split("\n");
@@ -644,7 +626,7 @@ function BuatEventForm() {
                   }
                 }
                 if (currentLine) lines.push(currentLine);
-                lines.push(""); // spacer between paragraphs
+                lines.push("");
               }
               return lines;
             };
@@ -676,11 +658,9 @@ function BuatEventForm() {
 
           await uploadBytes(storageRef, file);
 
-          // Get public download URL
           const fileUrl = await getDownloadURL(storageRef);
           console.log("Firebase generated proposal file URL: ", fileUrl);
 
-          // POST generated proposal URL to backend
           await apiCall<any>(`/events/${eventId}/proposal`, {
             method: "POST",
             body: JSON.stringify({
@@ -695,7 +675,6 @@ function BuatEventForm() {
           );
         }
 
-        // Store the AI-generated proposal so proposal-builder page can read it
         localStorage.setItem(
           "generatedProposal",
           JSON.stringify({
@@ -707,7 +686,6 @@ function BuatEventForm() {
           }),
         );
 
-        // Also keep step3 data for other pages that rely on it
         localStorage.setItem(
           "buatEventStep3Data",
           JSON.stringify({
@@ -720,7 +698,6 @@ function BuatEventForm() {
           }),
         );
 
-        // Clear local storage progress draft
         localStorage.removeItem("buatEventFormProgress");
 
         router.push("/proposal-builder");

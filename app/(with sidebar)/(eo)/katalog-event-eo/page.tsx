@@ -272,7 +272,10 @@ export default function ProposalSmartReview() {
                 onValueChange={setActiveTab}
                 className="mb-6 sm:mb-8"
               >
-                <TabsList className="flex flex-wrap items-center gap-4 sm:gap-8" variant={"line"}>
+                <TabsList
+                  className="flex flex-wrap items-center gap-4 sm:gap-8"
+                  variant={"line"}
+                >
                   <TabsTrigger value="event-kamu">Event Kamu</TabsTrigger>
 
                   <TabsTrigger value="laporan">Laporan</TabsTrigger>
@@ -592,7 +595,6 @@ export default function ProposalSmartReview() {
                         0,
                       );
 
-                      // Default fallback values if no accepted offers to make UI premium and realistic (like mockup)
                       const displaySponsorsCount =
                         acceptedOffers.length > 0 ? acceptedOffers.length : 0;
                       const displayMitraAktif =
@@ -600,7 +602,6 @@ export default function ProposalSmartReview() {
                       const displayAttendees =
                         laporanDetail.expectedAttendees || 0;
 
-                      // ROI calculation: dynamic from aiScore or default 4.8
                       const roiScore = laporanDetail.proposal?.aiScore
                         ? (laporanDetail.proposal.aiScore / 20).toFixed(1)
                         : "0";

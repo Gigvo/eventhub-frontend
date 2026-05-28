@@ -103,7 +103,6 @@ export default function ProposalCardDetailPage() {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        // 1. Fetch Pitch Details
         const res = await apiCall<{ data: PitchDetail }>(
           `/pitches/incoming/${pitchId}`,
           {
@@ -113,7 +112,6 @@ export default function ProposalCardDetailPage() {
         if (!res.data) throw new Error("Pitch not found");
         setPitch(res.data);
 
-        // 2. Fetch catalog details in background to resolve proposal fileUrl
         try {
           const catRes = await apiCall<{
             data: { proposal?: { fileUrl: string } };
@@ -880,7 +878,6 @@ export default function ProposalCardDetailPage() {
   );
 }
 
-// Simple icons for top right bar
 const BellIcon = () => (
   <svg
     className="w-5 h-5"

@@ -47,7 +47,7 @@ export default function Navbar() {
   }, [authLoading, isAuthenticated]);
 
   return (
-    <nav className="bg-[#F8F9FB] py-4.5 px-8 flex items-center justify-between sticky top-0 w-full border-b border-[#E5E7EB] z-10 opacity-100">
+    <nav className="bg-[#F8F9FB] py-3.5 sm:py-4.5 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 w-full border-b border-[#E5E7EB] z-10 opacity-100">
       <div className="flex items-center gap-3">
         <button
           onClick={toggle}
@@ -57,26 +57,26 @@ export default function Navbar() {
           <Menu className="w-6 h-6" />
         </button>
       </div>
-      <div className="flex flex-row items-center">
-        <div className="flex items-center gap-4 pr-6 border-r-1 border-[#FFDBD2]">
+      <div className="flex flex-row items-center gap-3 sm:gap-4">
+        <div className="flex items-center pr-3 sm:pr-4 md:pr-6 border-r border-[#FFDBD2]">
           <Link href={"./pesan"}>
-            <MessageSquare className="" />
+            <MessageSquare className="w-5 h-5 text-gray-700 hover:text-gray-900 transition-colors" />
           </Link>
         </div>
-        <div className="flex flex-row gap-3 items-center pl-6">
-          <div>
-            <p className="text-[14px] font-bold">
+        <div className="flex flex-row gap-2.5 items-center pl-1 sm:pl-2">
+          <div className="hidden sm:block text-right">
+            <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 leading-tight">
               {isLoading ? "Loading..." : user?.name || "User"}
             </p>
-            <p className="text-[11px] text-[#6B7280]">
+            <p className="text-[10px] sm:text-[11px] text-[#6B7280]">
               {isLoading ? "-" : user?.role || "-"}
             </p>
           </div>
-          <CircleUserRound className="w-8 h-8" />
+          <CircleUserRound className="w-7 h-7 sm:w-8 h-8 text-gray-700" />
         </div>
         {user?.role === "EO" && (
-          <Link href="/buat-event" className="ml-6">
-            <Button className="rounded-[4px] bg-[#003EC7] px-4 py-2">
+          <Link href="/buat-event" className="hidden sm:block ml-2 sm:ml-4">
+            <Button className="rounded-[4px] bg-[#003EC7] px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm">
               Buat Event Baru
             </Button>
           </Link>

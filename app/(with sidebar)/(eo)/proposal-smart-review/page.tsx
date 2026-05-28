@@ -707,7 +707,6 @@ export default function ProposalSmartReview() {
     try {
       setIsPublishing(true);
 
-      // PATCH/save the latest proposal content to the backend first!
       if (editorHtml) {
         const parsedContent = parseHtmlToProposalContent(editorHtml);
         await apiCall(`/events/${eventId}/proposal/content`, {
@@ -804,7 +803,6 @@ export default function ProposalSmartReview() {
       });
 
       if (res?.success && res?.data) {
-        // Update the event details in our local array
         setMyEvents((prevEvents) =>
           prevEvents.map((e) => (e.id === id ? res.data : e)),
         );
@@ -836,7 +834,6 @@ export default function ProposalSmartReview() {
       return;
     }
 
-    // Always fetch event details when eventId is selected to ensure we have the latest proposal URL and analysis
     fetchEventDetails(eventId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);

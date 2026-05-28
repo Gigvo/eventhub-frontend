@@ -91,7 +91,6 @@ export default function KatalogEvent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch recommendations from API
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -112,7 +111,6 @@ export default function KatalogEvent() {
           savedEventsRes.data?.map((item) => item.id) || [],
         );
 
-        // Transform API response to EventCard format
         const transformedEvents: EventCardProps[] =
           recommendationsRes.recommendations.map((event: ApiEvent) => {
             const startDate = new Date(event.startDate);
@@ -159,10 +157,8 @@ export default function KatalogEvent() {
     fetchEvents();
   }, []);
 
-  // Sort events
   let sortedEvents = [...events];
 
-  // Filter by search query
   if (searchQuery.trim()) {
     sortedEvents = sortedEvents.filter(
       (event) =>
@@ -172,7 +168,6 @@ export default function KatalogEvent() {
     );
   }
 
-  // Filter by category
   if (selectedCategory !== "semua") {
     sortedEvents = sortedEvents.filter(
       (event) =>
@@ -186,7 +181,6 @@ export default function KatalogEvent() {
     sortedEvents = sortedEvents.reverse();
   }
 
-  // Pagination
   const totalPages = Math.ceil(sortedEvents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedEvents = sortedEvents.slice(

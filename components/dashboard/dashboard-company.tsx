@@ -40,9 +40,12 @@ interface CatalogEvent {
   city: string;
   startDate: string;
   expectedAttendees: number;
-  eoProfile: { organizationName: string };
-  tiers: { id: string; name: string; price: number }[];
-  _count: { offers: number };
+  eoProfile?: { organizationName: string };
+  eoOrganizationName?: string;
+  _count?: { offers: number };
+  bannerUrl?: string | null;
+  similarity?: number;
+  finalScore?: number;
 }
 
 export interface EoProfile {
@@ -111,13 +114,20 @@ export default function DashboardCompany() {
     const fetchDashboardData = async () => {
       try {
         const [eventsRes, pitchesRes, savedRes, userRes] = await Promise.all([
-          apiCall<{ data: CatalogEvent[] }>("/catalog/events?limit=3"),
+          apiCall<any>("/recommendations/events?limit=3"),
           apiCall<{ data: Pitches[] }>("/pitches/incoming"),
           apiCall<{ data: EventData[] }>("/saved-events"),
           apiCall<{ data: userData }>("/auth/me"),
         ]);
 
-        setRecommendations(eventsRes.data);
+        const rawRecommendations = eventsRes?.recommendations || eventsRes?.data || [];
+        const sortedRecommendations = [...rawRecommendations].sort((a: any, b: any) => {
+          const scoreA = a.finalScore ?? a.similarity ?? 0;
+          const scoreB = b.finalScore ?? b.similarity ?? 0;
+          return scoreB - scoreA;
+        });
+
+        setRecommendations(sortedRecommendations);
         setPitches(pitchesRes.data);
         setSaved(savedRes.data);
         setUser(userRes.data);
@@ -222,7 +232,9 @@ export default function DashboardCompany() {
               <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
                 {stat.value}
               </p>
-              <p className={`text-xs font-medium ${stat.subColor}`}>{stat.sub}</p>
+              <p className={`text-xs font-medium ${stat.subColor}`}>
+                {stat.sub}
+              </p>
             </div>
           ))}
         </div>
@@ -249,236 +261,236 @@ export default function DashboardCompany() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {recoLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse"
-              >
-                <div className="h-36 bg-gray-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-full" />
-                </div>
-              </div>
-            ))
-          ) : recommendations.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-gray-500">
-              <Star size={40} className="mx-auto mb-3 text-gray-300" />
-              <p>Belum ada rekomendasi event tersedia.</p>
-            </div>
-          ) : (
-            recommendations.map((r) => {
-              const categoryColor =
-                CATEGORY_COLORS[r.category] ?? "bg-gray-600";
-              const tier = r.tiers[0];
-              return (
+            {recoLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
                 <div
-                  key={r.id}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col justify-between"
+                  key={i}
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse"
                 >
-                  <div>
-                    <div className="relative h-36 bg-gradient-to-br from-gray-700 to-gray-900">
-                      <span
-                        className={`absolute top-2 left-2 ${categoryColor} text-white text-[10px] font-bold px-2 py-0.5 rounded`}
-                      >
-                        {r.category}
-                      </span>
-                      <div className="absolute top-2 right-2 bg-white/90 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                        <Star
-                          size={10}
-                          className="fill-blue-500 text-blue-500"
-                        />
-                        {r._count.offers > 0
-                          ? `${r._count.offers} offer`
-                          : "Baru"}
-                      </div>
-                    </div>
-                    <div className="p-4 pb-0">
-                      <p className="text-[11px] text-gray-500 mb-1">
-                        {r.eoProfile.organizationName}
-                      </p>
-                      <h3 className="font-bold text-gray-900 text-sm mb-2 leading-tight line-clamp-1">
-                        {r.title}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500 mb-3">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={11} />
-                          {formatDate(r.startDate)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin size={11} />
-                          {r.city}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users size={11} />
-                          {r.expectedAttendees.toLocaleString("id-ID")}+
-                        </span>
-                      </div>
-                       <div className="grid grid-cols-3 gap-1 sm:gap-2 border-t border-gray-100 pt-3 mb-3">
-                        {[
-                          {
-                            label: "BUDGET",
-                            value: tier ? formatPrice(tier.price) : "-",
-                          },
-                          { label: "PAKET", value: tier?.name ?? "-" },
-                          { label: "OFFER", value: `${r._count.offers} masuk` },
-                        ].map((item) => (
-                          <div key={item.label} className="min-w-0">
-                            <p className="text-[9px] text-gray-400 font-semibold uppercase truncate">
-                              {item.label}
-                            </p>
-                            <p className="text-xs font-bold text-blue-600 truncate" title={item.value}>
-                              {item.value}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="h-36 bg-gray-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-full" />
                   </div>
-                  <div className="p-4 pt-0">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() => router.push(`/katalog-event/${r.slug}`)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-lg transition"
-                      >
-                        Lihat Detail
-                      </Button>
-                      {/* <button className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition">
+                </div>
+              ))
+            ) : recommendations.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-gray-500">
+                <Star size={40} className="mx-auto mb-3 text-gray-300" />
+                <p>Belum ada rekomendasi event tersedia.</p>
+              </div>
+            ) : (
+              recommendations.map((r) => {
+                const categoryColor =
+                  CATEGORY_COLORS[r.category] ?? "bg-gray-600";
+                return (
+                  <div
+                    key={r.id}
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="relative h-36 bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden flex items-center justify-center">
+                        {r.bannerUrl ? (
+                          <img
+                            src={r.bannerUrl}
+                            alt={r.title}
+                            className="w-full h-full object-cover opacity-90 transition hover:scale-105 duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-indigo-700 via-indigo-800 to-purple-900" />
+                        )}
+                        <span
+                          className={`absolute top-2 left-2 ${categoryColor} text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm z-10`}
+                        >
+                          {r.category}
+                        </span>
+
+                        {/* AI Match Badge */}
+                        {(r.finalScore !== undefined || r.similarity !== undefined) && (
+                          <div className="absolute bottom-2 left-2 bg-indigo-600/90 backdrop-blur-sm text-white text-[10px] font-extrabold px-2 py-1 rounded-full flex items-center gap-1 shadow z-10 border border-white/10">
+                            <Zap size={10} className="fill-yellow-400 text-yellow-400" />
+                            AI Match: {Math.round((r.finalScore ?? r.similarity ?? 0) * 100)}%
+                          </div>
+                        )}
+
+                        <div className="absolute top-2 right-2 bg-white/90 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 z-10">
+                          <Star
+                            size={10}
+                            className="fill-blue-500 text-blue-500"
+                          />
+                          {r._count?.offers !== undefined && r._count.offers > 0
+                            ? `${r._count.offers} offer`
+                            : "Baru"}
+                        </div>
+                      </div>
+                      <div className="p-4 pb-4">
+                        <p className="text-[11px] text-gray-500 mb-1">
+                          {r.eoOrganizationName || r.eoProfile?.organizationName || "Organizer"}
+                        </p>
+                        <h3 className="font-bold text-gray-900 text-sm mb-2 leading-tight line-clamp-1">
+                          {r.title}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar size={11} />
+                            {formatDate(r.startDate)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin size={11} />
+                            {r.city}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users size={11} />
+                            {r.expectedAttendees.toLocaleString("id-ID")}+
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 pt-0">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() =>
+                            router.push(`/katalog-event/${r.slug}`)
+                          }
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-lg transition"
+                        >
+                          Lihat Detail
+                        </Button>
+                        {/* <button className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition">
                         <Bookmark size={14} className="text-gray-400" />
                       </button> */}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Active Partnerships */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-gray-100 gap-2">
-          <h2 className="font-bold text-gray-900 text-sm sm:text-base">
-            KERJASAMA BERJALAN
-          </h2>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => (window.location.href = "./kerjasama-aktif")}
-              className="bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition"
-            >
-              Lihat Selengkapnya
-            </Button>
+                );
+              })
+            )}
           </div>
         </div>
-        <div className="overflow-x-auto w-full">
-          <table className="w-full min-w-[700px]">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                {[
-                  "NAMA EVENT",
-                  "ORGANIZER",
-                  "NILAI KONTRAK",
-                  "STATUS",
-                  "PROGRES",
-                  "",
-                ].map((h, i) => (
-                  <th
-                    key={i}
-                    className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {kerjasamaAktif.map((p) => (
-                <tr
-                  key={p.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition"
-                >
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-sm text-gray-900">
-                      {p.event.title}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatDate(p.event.startDate)} -{" "}
-                      {formatDate(p.event.endDate)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 bg-blue-100 rounded flex items-center justify-center">
-                        <FileText size={12} className="text-blue-600" />
-                      </div>
-                      <span className="text-sm text-gray-700">
-                        {p.event.eoProfile.organizationName}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    {p.tier.price}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-1 rounded ${statusColors[p.status]}`}
+
+        {/* Active Partnerships */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-gray-100 gap-2">
+            <h2 className="font-bold text-gray-900 text-sm sm:text-base">
+              KERJASAMA BERJALAN
+            </h2>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => (window.location.href = "./kerjasama-aktif")}
+                className="bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+              >
+                Lihat Selengkapnya
+              </Button>
+            </div>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-[700px]">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  {[
+                    "NAMA EVENT",
+                    "ORGANIZER",
+                    "NILAI KONTRAK",
+                    "STATUS",
+                    "PROGRES",
+                    "",
+                  ].map((h, i) => (
+                    <th
+                      key={i}
+                      className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider"
                     >
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 min-w-[160px]">
-                    {(() => {
-                      const now = new Date();
-                      const start = p.event.startDate
-                        ? new Date(p.event.startDate)
-                        : new Date();
-                      const end = p.event.endDate
-                        ? new Date(p.event.endDate)
-                        : new Date();
-
-                      let progress = 0;
-                      let label = "";
-
-                      if (now < start) {
-                        progress = 25;
-                        label = "Persiapan";
-                      } else if (now >= start && now <= end) {
-                        progress = 65;
-                        label = "Aktif";
-                      } else {
-                        progress = 90;
-                        label = "Pelaporan";
-                      }
-
-                      return (
-                        <>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
-                            <div
-                              className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <p className="text-[10px] font-medium text-gray-500">
-                            {progress}% — {label}
-                          </p>
-                        </>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <MoreVertical size={16} className="text-gray-400" />
-                    </button>
-                  </td>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {kerjasamaAktif.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition"
+                  >
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-sm text-gray-900">
+                        {p.event.title}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(p.event.startDate)} -{" "}
+                        {formatDate(p.event.endDate)}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-blue-100 rounded flex items-center justify-center">
+                          <FileText size={12} className="text-blue-600" />
+                        </div>
+                        <span className="text-sm text-gray-700">
+                          {p.event.eoProfile.organizationName}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      {p.tier.price}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-1 rounded ${statusColors[p.status]}`}
+                      >
+                        {p.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 min-w-[160px]">
+                      {(() => {
+                        const now = new Date();
+                        const start = p.event.startDate
+                          ? new Date(p.event.startDate)
+                          : new Date();
+                        const end = p.event.endDate
+                          ? new Date(p.event.endDate)
+                          : new Date();
+
+                        let progress = 0;
+                        let label = "";
+
+                        if (now < start) {
+                          progress = 25;
+                          label = "Persiapan";
+                        } else if (now >= start && now <= end) {
+                          progress = 65;
+                          label = "Aktif";
+                        } else {
+                          progress = 90;
+                          label = "Pelaporan";
+                        }
+
+                        return (
+                          <>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                              <div
+                                className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <p className="text-[10px] font-medium text-gray-500">
+                              {progress}% — {label}
+                            </p>
+                          </>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button className="p-1 hover:bg-gray-100 rounded">
+                        <MoreVertical size={16} className="text-gray-400" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
   );
 }

@@ -29,8 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 interface EventDetail {
   id: string;
   title: string;
@@ -151,8 +149,6 @@ interface MyPitch {
   companyProfileId: string;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
 export default function CariSponsor() {
   // Temukan Sponsor state
   const router = useRouter();
@@ -172,10 +168,9 @@ export default function CariSponsor() {
 
   const [event, setEvent] = useState<MyEvent | null>(null);
 
-  // ─── Pitch dialog state ───
   const [pitchDialogOpen, setPitchDialogOpen] = useState(false);
-  const [pitchCompanyId, setPitchCompanyId] = useState<string | null>(null); // sponsor being pitched to
-  const [pitchEventId, setPitchEventId] = useState<string | null>(null); // EO's chosen event
+  const [pitchCompanyId, setPitchCompanyId] = useState<string | null>(null);
+  const [pitchEventId, setPitchEventId] = useState<string | null>(null);
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [pitchMessage, setPitchMessage] = useState("");
   const [pitchSubmitting, setPitchSubmitting] = useState(false);
@@ -227,8 +222,6 @@ export default function CariSponsor() {
         }),
       });
       setPitchSuccess(true);
-      // Optimistically update myPitches so the event is immediately hidden
-      // from the event list if the dialog is reopened for the same company
       setMyPitches((prev) => [
         ...prev,
         {
@@ -259,13 +252,11 @@ export default function CariSponsor() {
           })),
         ]);
 
-        // Store pitches for event filtering in dialog
         setMyPitches(pitchesRes.data || []);
 
         const publishedWithTiers = (eventsRes.data || []).filter(
           (e) => e.status === "PUBLISHED" && e.tiers.length > 0,
         );
-        // Pre-populate so the dialog doesn't need a separate fetch
         setMyEvents(publishedWithTiers);
         setHasNoPublishedEvents(publishedWithTiers.length === 0);
 
@@ -307,8 +298,6 @@ export default function CariSponsor() {
     loadOffers();
   }, []);
 
-  // ─── Accept / Reject handlers ───
-
   async function handleAccept(offerId: string) {
     setActionLoading(offerId);
     try {
@@ -336,8 +325,6 @@ export default function CariSponsor() {
       setActionLoading(null);
     }
   }
-
-  // ─── Helpers ───
 
   const formatRupiah = (amount: number) =>
     new Intl.NumberFormat("id-ID", {
@@ -470,8 +457,6 @@ export default function CariSponsor() {
         );
     }
   };
-
-  // ─── Render ───
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
