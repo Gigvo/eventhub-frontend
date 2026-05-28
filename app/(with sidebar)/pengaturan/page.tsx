@@ -485,7 +485,7 @@ export default function PengaturanPage() {
                 className="p-6 sm:p-8 space-y-6"
               >
                 {/* Description Target & Audience description */}
-                <div className="gap-6">
+                <div className="gap-6 space-y-4">
                   <div className="space-y-2">
                     <label className="block text-xs sm:text-sm font-bold text-slate-700">
                       Target Audiens

@@ -289,10 +289,17 @@ export default function KatalogEvent() {
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="semua">Semua</SelectItem>
                   <SelectItem value="TECHNOLOGY">Technology</SelectItem>
-                  <SelectItem value="WORKSHOP">Workshop</SelectItem>
+                  <SelectItem value="BUSINESS">Business</SelectItem>
+                  <SelectItem value="ARTS">Arts</SelectItem>
+                  <SelectItem value="SPORTS">Sports</SelectItem>
+                  <SelectItem value="EDUCATION">Education</SelectItem>
+                  <SelectItem value="SOCIAL">Social</SelectItem>
+                  <SelectItem value="ENTERTAINMENT">Entertainment</SelectItem>
+                  <SelectItem value="COMPETITION">Competition</SelectItem>
                   <SelectItem value="CONFERENCE">Conference</SelectItem>
+                  <SelectItem value="WORKSHOP">Workshop</SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>

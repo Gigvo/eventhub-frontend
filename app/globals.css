@@ -145,11 +145,8 @@ body {
   }
 }
 
-/* Custom scrollbar hiding utility */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+[role="option"]:hover,
+[role="option"][data-highlighted] {
+  background-color: #0b2150 !important;
+  color: #ffffff !important;
 }

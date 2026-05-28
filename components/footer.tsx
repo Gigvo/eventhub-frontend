@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="text-center md:text-left">
             <h3 className="text-lg font-bold text-gray-900 mb-2">EventHub</h3>
             <p className="text-sm text-gray-600">
-              © 2024 EventHub. Platform Matching Sponsor Terpercaya.
+              © 2026 EventHub. Platform Matching Sponsor Terpercaya.
             </p>
           </div>
 

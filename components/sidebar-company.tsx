@@ -107,8 +107,8 @@ export default function Sidebar() {
         )}
       </button>
 
-      <div>
-        <div className="flex flex-row items-center justify-between mx-4 pb-6">
+      <div className="flex flex-col min-h-0 flex-1">
+        <div className="flex flex-row items-center justify-between mx-4 pb-6 flex-shrink-0">
           <Link href={"/"}>
             <div className="flex flex-row items-center gap-3">
               <div className="w-8 h-8 rounded-[4px] flex items-center justify-center bg-[#003EC7] flex-shrink-0">
@@ -141,55 +141,63 @@ export default function Sidebar() {
           )}
         </div>
 
-        <ul className="flex flex-col items-start text-[#6B7280] gap-1">
-          {menuItems.map((item) => (
-            <li key={item.name} className="w-full px-1 text-[14px]">
+        <div className="flex-1 overflow-y-auto no-scrollbar min-h-0 py-1">
+          <ul className="flex flex-col items-start text-[#6B7280] gap-1">
+            {menuItems.map((item) => (
+              <li key={item.name} className="w-full px-1 text-[14px]">
+                <Link
+                  href={item.href}
+                  className={linkClass(item.href)}
+                  title={isCollapsed ? item.name : undefined}
+                >
+                  <item.icon className={iconClass(item.href)} />
+                  {!isCollapsed && <span>{item.name}</span>}
+                </Link>
+              </li>
+            ))}
+            <li className="w-full px-1 text-[14px]">
               <Link
-                href={item.href}
-                className={linkClass(item.href)}
-                title={isCollapsed ? item.name : undefined}
+                href="/token-management"
+                className={linkClass("/token-management")}
+                title={isCollapsed ? "Token Management" : undefined}
               >
-                <item.icon className={iconClass(item.href)} />
-                {!isCollapsed && <span>{item.name}</span>}
+                <Image
+                  src={"/icons/token.svg"}
+                  width={20}
+                  height={20}
+                  alt="Token Management"
+                  className="flex-shrink-0"
+                />
+                {!isCollapsed && <span>Token Management</span>}
               </Link>
             </li>
-          ))}
-          <li className="w-full px-1 text-[14px]">
-            <Link
-              href="/token-management"
-              className={linkClass("/token-management")}
-              title={isCollapsed ? "Token Management" : undefined}
-            >
-              <Image
-                src={"/icons/token.svg"}
-                width={20}
-                height={20}
-                alt="Token Management"
-                className="flex-shrink-0"
-              />
-              {!isCollapsed && <span>Token Management</span>}
+          </ul>
+          {!isCollapsed && (
+            <Link href={"./katalog-event"}>
+              <Button className="rounded-[4px] bg-[#003EC7] text-white w-full mt-4">
+                Eksplor Katalog Event
+              </Button>
             </Link>
-          </li>
-        </ul>
-        {!isCollapsed && (
-          <Link href={"./katalog-event"}>
-            <Button className="rounded-[4px] bg-[#003EC7] text-white w-full mt-4">
-              Eksplor Katalog Event
-            </Button>
-          </Link>
-        )}
+          )}
+        </div>
       </div>
-      <div className="border-t border-[#E5E7EB] pt-4">
+      <div className="border-t border-[#E5E7EB] pt-4 flex-shrink-0">
         <Link
           href="/pengaturan"
-          className={`flex items-center text-[14px] text-[#6B7280] hover:text-[#374151] transition-colors ${
+          className={`flex items-center text-[14px] transition-colors ${
             isCollapsed
               ? "justify-center py-2 px-0 w-12 mx-auto"
               : "gap-3 pb-2.5 px-3"
+          } ${
+            isActive("/pengaturan")
+              ? "text-[#003EC7] font-semibold"
+              : "text-[#6B7280] hover:text-[#374151]"
           }`}
           title={isCollapsed ? "Pengaturan" : undefined}
         >
-          <Settings className="w-6 h-6 flex-shrink-0" />
+          <Settings
+            className={`w-6 h-6 flex-shrink-0 ${isActive("/pengaturan") ? "text-[#003EC7]" : ""}`}
+          />
           {!isCollapsed && <span>Pengaturan</span>}
         </Link>
 

@@ -33,18 +33,25 @@ interface Offer {
   status: string;
   message: string;
   createdAt: string;
+  initiatedBy?: string;
   event: {
     id: string;
     title: string;
     slug: string;
+    eoProfile?: {
+      id: string;
+      organizationName: string;
+      campus?: string;
+      logoUrl?: string | null;
+    };
   };
-  companyProfile: {
+  companyProfile?: {
     id: string;
     companyName: string;
-    industry: string;
-    logoUrl: string | null;
+    industry?: string;
+    logoUrl?: string | null;
   };
-  tier: {
+  tier?: {
     name: string;
     price: number;
   };
@@ -83,14 +90,58 @@ export default function PesanPage() {
         if (userRes?.success) {
           const u = userRes.data;
           setUser(u);
-          const endpoint =
-            u.role === "COMPANY" ? "/offers/my" : "/offers/incoming";
-          const offersRes = await apiCall<{ success: boolean; data: Offer[] }>(
-            endpoint,
-          );
-          if (offersRes?.success) {
-            setOffers(offersRes.data);
+
+          let offersRes;
+          let pitchesRes;
+          if (u.role === "COMPANY") {
+            const [oRes, pRes] = await Promise.all([
+              apiCall<{ success: boolean; data: Offer[] }>("/offers/my").catch(
+                (err) => {
+                  console.error("Failed to load company offers", err);
+                  return null;
+                },
+              ),
+              apiCall<{ success: boolean; data: Offer[] }>(
+                "/pitches/incoming",
+              ).catch((err) => {
+                console.error("Failed to load incoming pitches", err);
+                return null;
+              }),
+            ]);
+            offersRes = oRes;
+            pitchesRes = pRes;
+          } else {
+            const [oRes, pRes] = await Promise.all([
+              apiCall<{ success: boolean; data: Offer[] }>(
+                "/offers/incoming",
+              ).catch((err) => {
+                console.error("Failed to load incoming offers", err);
+                return null;
+              }),
+              apiCall<{ success: boolean; data: Offer[] }>("/pitches/my").catch(
+                (err) => {
+                  console.error("Failed to load eo pitches", err);
+                  return null;
+                },
+              ),
+            ]);
+            offersRes = oRes;
+            pitchesRes = pRes;
           }
+
+          const allOffers: Offer[] = [];
+          if (offersRes?.success && Array.isArray(offersRes.data)) {
+            allOffers.push(...offersRes.data);
+          }
+          if (pitchesRes?.success && Array.isArray(pitchesRes.data)) {
+            allOffers.push(...pitchesRes.data);
+          }
+          // Sort by latest createdAt descending
+          allOffers.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          );
+          setOffers(allOffers);
         }
       } catch (err) {
         console.error("Failed to load user or offers", err);
@@ -100,6 +151,33 @@ export default function PesanPage() {
     };
     init();
   }, []);
+
+  const fetchOfferDetail = async (
+    offerId: string,
+    role: string,
+    initiatedBy?: string,
+  ) => {
+    try {
+      let endpoint = "";
+      if (initiatedBy === "EO") {
+        endpoint =
+          role === "COMPANY"
+            ? `/pitches/incoming/${offerId}`
+            : `/pitches/my/${offerId}`;
+      } else {
+        endpoint =
+          role === "COMPANY"
+            ? `/offers/my/${offerId}`
+            : `/offers/incoming/${offerId}`;
+      }
+      const res = await apiCall<{ success: boolean; data: Offer }>(endpoint);
+      if (res?.success) {
+        setSelectedOffer(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch detail", err);
+    }
+  };
 
   const fetchMessages = async (offerId: string) => {
     try {
@@ -122,7 +200,6 @@ export default function PesanPage() {
   useEffect(() => {
     if (selectedOffer) {
       fetchMessages(selectedOffer.id);
-      // Asynchronous polling every 3 seconds for new messages
       const interval = setInterval(() => {
         fetchMessages(selectedOffer.id);
       }, 3000);
@@ -130,7 +207,7 @@ export default function PesanPage() {
     } else {
       setMessages([]);
     }
-  }, [selectedOffer]);
+  }, [selectedOffer?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -211,24 +288,34 @@ export default function PesanPage() {
             const isEO = user?.role === "EO";
             const title = isEO
               ? offer.companyProfile?.companyName || "Sponsor"
-              : offer.event?.title;
+              : offer.event?.title || "Event";
             const subtitle = isEO
-              ? offer.event?.title
-              : offer.companyProfile?.companyName || "Sponsor";
-            const badgeText = isEO
-              ? offer.status.replace("_", " ")
-              : offer.tier?.name;
+              ? offer.event?.title || "Event"
+              : offer.event?.eoProfile?.organizationName || "Organizer";
+            const badgeText = offer.status.replace("_", " ");
 
             return (
               <div
                 key={offer.id}
-                onClick={() => setSelectedOffer(offer)}
+                onClick={() => {
+                  setSelectedOffer(offer);
+                  if (user) {
+                    fetchOfferDetail(offer.id, user.role);
+                  }
+                }}
                 className={`p-4 border-b border-gray-100 cursor-pointer transition flex gap-3 ${isSelected ? "bg-blue-50/50" : "hover:bg-gray-50"}`}
               >
                 <div className="w-10 h-10 rounded-full bg-white border border-gray-200 overflow-hidden shrink-0 relative flex items-center justify-center">
                   {isEO && offer.companyProfile?.logoUrl ? (
                     <Image
                       src={offer.companyProfile.logoUrl}
+                      alt={title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : !isEO && offer.event?.eoProfile?.logoUrl ? (
+                    <Image
+                      src={offer.event.eoProfile.logoUrl}
                       alt={title}
                       fill
                       className="object-cover"
@@ -255,21 +342,27 @@ export default function PesanPage() {
                     {offer.message || "Memulai percakapan..."}
                   </p>
 
-                  <span
-                    className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded ${
-                      isEO
-                        ? offer.status === "ACCEPTED"
+                  <div className="flex flex-wrap gap-1.5">
+                    <span
+                      className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded ${
+                        offer.status === "ACCEPTED" ||
+                        offer.status === "APPROVED"
                           ? "bg-green-100 text-green-700"
                           : offer.status === "REJECTED"
                             ? "bg-red-100 text-red-700"
                             : offer.status === "PENDING"
                               ? "bg-gray-100 text-gray-700"
                               : "bg-yellow-100 text-yellow-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
-                    {badgeText}
-                  </span>
+                      }`}
+                    >
+                      {badgeText}
+                    </span>
+                    {offer.tier?.name && (
+                      <span className="inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-blue-100 text-blue-700">
+                        {offer.tier.name}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -341,18 +434,19 @@ export default function PesanPage() {
             {/* Display the initial offer message */}
             {selectedOffer.message &&
               (() => {
-                const isMe = user?.role === "COMPANY";
+                const isMe = selectedOffer.initiatedBy === user?.role;
+                const senderName = isMe
+                  ? user?.name
+                  : (user?.role === "COMPANY"
+                      ? selectedOffer.event?.eoProfile?.organizationName
+                      : selectedOffer.companyProfile?.companyName) || "Mitra";
                 return (
                   <div
                     className={`flex gap-3 max-w-[80%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}
                   >
                     <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0 flex items-center justify-center overflow-hidden">
                       <span className="text-xs font-bold text-gray-600">
-                        {isMe
-                          ? user?.name?.charAt(0).toUpperCase()
-                          : selectedOffer.companyProfile?.companyName
-                              ?.charAt(0)
-                              .toUpperCase() || "S"}
+                        {senderName?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
@@ -366,7 +460,7 @@ export default function PesanPage() {
                         <p
                           className={`font-semibold mb-1 text-[10px] uppercase ${isMe ? "text-blue-200" : "text-gray-500"}`}
                         >
-                          Pesan Penawaran Awal
+                          Pesan Penawaran Awal ({senderName})
                         </p>
                         {selectedOffer.message}
                       </div>
@@ -424,7 +518,9 @@ export default function PesanPage() {
 
           {/* Input Area */}
           <div className="p-4 bg-white border-t border-gray-200 shrink-0">
-            {selectedOffer.status === "NEGOTIATING" ? (
+            {selectedOffer.status === "NEGOTIATING" ||
+            selectedOffer.status === "UNDER_REVIEW" ||
+            selectedOffer.status === "PENDING" ? (
               <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition shadow-sm">
                 <form onSubmit={handleSend} className="bg-white p-3 relative">
                   <textarea
@@ -439,19 +535,13 @@ export default function PesanPage() {
                       }
                     }}
                   />
-                  <div className="flex justify-between text-[10px] mt-1">
-                    <span className="text-gray-500">
-                      ({newMessage.length} / 2000 characters)
-                    </span>
-                  </div>
+
                   <div className="flex justify-between items-end">
-                    <span className="text-[10px] text-gray-400">
-                      Draft disimpan otomatis pada{" "}
-                      {new Date().toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                    <div className="flex justify-between text-[10px] mt-1">
+                      <span className="text-gray-500">
+                        ({newMessage.length} / 2000 characters)
+                      </span>
+                    </div>
                     <Button
                       type="submit"
                       disabled={isSending || !newMessage.trim()}

@@ -190,3 +190,44 @@ Pastikan Anda sudah menginstal **Node.js** (versi 18 ke atas) dan paket manajer 
     ```
 
 ---
+
+## Alur Penggunaan Aplikasi (User Flow)
+
+Berikut adalah panduan langkah demi langkah untuk menguji dan menggunakan fungsionalitas utama platform EventHub berdasarkan peran akun:
+
+### Untuk Event Organizer (EO)
+
+*   **Membuat Event**:
+    Dashboard -> Buat Event -> Isi Form -> Generate/Upload Proposal
+
+*   **Kelola Event / Lanjutkan Draft Event**:
+    Dashboard -> Event Kamu -> Klik Lanjutkan Draft/Kelola Event pada card event
+
+*   **Kirim Pitch ke Company**:
+    Dashboard -> Cari Sponsor -> Tab "Temukan Sponsor" -> Klik Kirim Pitch pada salah satu company card
+
+*   **Melihat Offer dari Perusahaan**:
+    Dashboard -> Cari Sponsor -> Sponsor Masuk -> Bisa lihat detail untuk melihat detail offer atau langsung setujui/tolak offer
+
+### Untuk Perusahaan (Company / Sponsor)
+
+*   **Melihat Proposal Masuk dari EO**:
+    Dashboard -> Proposal Masuk
+
+*   **Melihat Rekomendasi Event yang Cocok dengan Perusahaan**:
+    Dashboard -> Events
+
+*   **Mengirimkan Offer kepada Event**:
+    Dashboard -> Events -> Lihat Detail -> Saya Tertarik
+
+### Untuk Kedua Peran (EO & Company)
+
+*   **Top Up Token**:
+    Dashboard -> Token Management -> Pilih produk dan klik "Pilih" -> Bayar menggunakan Credit Card/Debit Card Sandbox pada antarmuka Midtrans.
+
+*   **Kredensial Kartu Kredit Pengujian (Midtrans Sandbox)**:
+    *   **Card Number**: `4811 1111 1111 1114`
+    *   **CVV**: `123`
+    *   **Exp**: `12/30` (atau bulan/tahun mana saja di masa depan)
+    *   **OTP/3DS**: `112233`
+

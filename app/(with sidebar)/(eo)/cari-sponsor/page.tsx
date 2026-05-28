@@ -641,27 +641,6 @@ export default function CariSponsor() {
                     );
                   })}
                 </div>
-
-                {/* Token Bar */}
-                <div className="bg-gradient-to-r from-[#4338CA] to-[#7C3AED] rounded-xl p-5 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-white/80 text-xs font-medium">
-                        Remaining Proposal Tokens
-                      </p>
-                      <p className="text-white text-xl font-bold">140 Tokens</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="bg-white text-[#4338CA] border-white hover:bg-gray-100 font-semibold px-6"
-                  >
-                    Top Up Tokens
-                  </Button>
-                </div>
               </>
             )}
           </div>

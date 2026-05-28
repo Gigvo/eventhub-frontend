@@ -46,10 +46,6 @@ export default function BantuanPage() {
               </span>
             </li>
           </ol>
-          <div className="mt-3 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg text-xs text-amber-800 italic">
-            <strong>Note:</strong> &quot;Pastikan data profil Anda sudah lengkap
-            sebelum membuat event.&quot;
-          </div>
         </div>
       ),
     },
@@ -164,8 +160,7 @@ export default function BantuanPage() {
       {/* 4 Steps Section */}
       <div className="max-w-6xl mx-auto space-y-6 pt-4">
         <h2 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-amber-500 animate-pulse" />4 Langkah
-          Sukses di EventHub
+          4 Langkah Sukses di EventHub
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

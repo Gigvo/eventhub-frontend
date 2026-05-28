@@ -336,7 +336,7 @@ export default function EventDetailPage() {
               size="sm"
               className="gap-2"
               onClick={handleDownloadPDF}
-              disabled={!event?.proposal?.fileUrl || isDownloading}
+              disabled={isDownloading}
               title={
                 !event?.proposal?.fileUrl
                   ? "Proposal PDF belum tersedia untuk event ini"

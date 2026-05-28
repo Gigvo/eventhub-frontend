@@ -27,6 +27,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { apiCall } from "@/lib/api-client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 
@@ -1005,32 +1012,36 @@ function BuatEventForm() {
                   <label className="text-[12px] font-semibold text-gray-700 block mb-2 uppercase">
                     Kategori Event
                   </label>
-                  <select
-                    name="kategoriEvent"
+                  <Select
                     value={formData.kategoriEvent}
-                    onChange={(e) => {
-                      handleInputChange(e);
+                    onValueChange={(val) => {
+                      setFormData((prev) => ({ ...prev, kategoriEvent: val }));
                       setErrors((prev) => ({ ...prev, kategoriEvent: "" }));
                     }}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none text-sm bg-white ${
-                      errors.kategoriEvent
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-300 focus:border-blue-600"
-                    }`}
                   >
-                    <option value="">Pilih Kategori</option>
-                    <option value="TECHNOLOGY">Technology</option>
-                    <option value="BUSINESS">Business</option>
-                    <option value="ARTS">Arts</option>
-                    <option value="SPORTS">Sports</option>
-                    <option value="EDUCATION">Education</option>
-                    <option value="SOCIAL">Social</option>
-                    <option value="ENTERTAINMENT">Entertainment</option>
-                    <option value="COMPETITION">Competition</option>
-                    <option value="CONFERENCE">Conference</option>
-                    <option value="WORKSHOP">Workshop</option>
-                    <option value="OTHER">Other</option>
-                  </select>
+                    <SelectTrigger
+                      className={`w-full h-11 border rounded-lg text-sm bg-white ${
+                        errors.kategoriEvent
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-blue-600"
+                      }`}
+                    >
+                      <SelectValue placeholder="Pilih Kategori" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="TECHNOLOGY">Technology</SelectItem>
+                      <SelectItem value="BUSINESS">Business</SelectItem>
+                      <SelectItem value="ARTS">Arts</SelectItem>
+                      <SelectItem value="SPORTS">Sports</SelectItem>
+                      <SelectItem value="EDUCATION">Education</SelectItem>
+                      <SelectItem value="SOCIAL">Social</SelectItem>
+                      <SelectItem value="ENTERTAINMENT">Entertainment</SelectItem>
+                      <SelectItem value="COMPETITION">Competition</SelectItem>
+                      <SelectItem value="CONFERENCE">Conference</SelectItem>
+                      <SelectItem value="WORKSHOP">Workshop</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {errors.kategoriEvent && (
                     <p className="text-red-600 text-xs font-medium mt-1">
                       {errors.kategoriEvent}
@@ -1341,25 +1352,33 @@ function BuatEventForm() {
                     + Tambah interest...
                   </button>
                   {openDropdown === -1 && (
-                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-max">
-                      {availableInterests
-                        .filter((d) => !formData.audienceInterests.includes(d))
-                        .map((d) => (
-                          <button
-                            key={d}
-                            onClick={() => {
-                              addDemografi(d);
-                              setErrors((prev) => ({
-                                ...prev,
-                                audienceInterests: "",
-                              }));
-                            }}
-                            className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-sm first:rounded-t-lg last:rounded-b-lg"
-                          >
-                            {d}
-                          </button>
-                        ))}
-                    </div>
+                    <>
+                      {/* Invisible backdrop to capture clicks outside the dropdown */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setOpenDropdown(null)}
+                      />
+                      <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-20 min-w-max">
+                        {availableInterests
+                          .filter((d) => !formData.audienceInterests.includes(d))
+                          .map((d) => (
+                            <button
+                              key={d}
+                              onClick={() => {
+                                addDemografi(d);
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  audienceInterests: "",
+                                }));
+                                setOpenDropdown(null);
+                              }}
+                              className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-sm first:rounded-t-lg last:rounded-b-lg"
+                            >
+                              {d}
+                            </button>
+                          ))}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

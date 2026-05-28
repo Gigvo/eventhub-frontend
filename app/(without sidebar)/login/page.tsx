@@ -84,22 +84,22 @@ export default function Login() {
 
       {/* Left Side - Blue Section */}
       <div
-        className="hidden lg:block lg:w-1/2 bg-[#003EC7]/80 text-white bg-cover bg-center lg:h-screen lg:overflow-y-auto px-16 xl:px-32 py-24 xl:py-48 relative"
+        className="hidden lg:block lg:w-1/2 bg-[#003EC7]/80 text-white bg-cover bg-center lg:h-screen lg:overflow-y-auto px-16 xl:px-32 py-24 xl:py-25 relative"
         style={{
           backgroundImage:
             "linear-gradient(135deg, rgba(0, 62, 199, 0.6), rgba(0, 62, 199, 0.6)), url(/bg-login.png)",
         }}
       >
-        <div className="flex flex-col h-full p-12 justify-between">
+        <div className="flex flex-col h-full justify-between">
           {/* Header Section */}
-          <div className="space-y-12">
+          <div className="space-y-10">
             {/* Logo */}
             <div className="flex items-center gap-2">
               <span className="text-[20px] font-bold">EventHub</span>
             </div>
 
             {/* Main Heading */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h1 className="text-[32px] font-bold leading-tight">
                 Connecting Organizers with Global Sponsors.
               </h1>

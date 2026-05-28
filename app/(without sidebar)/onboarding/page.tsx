@@ -254,6 +254,11 @@ export default function Onboarding() {
           return;
         }
 
+        if (organizerData.description.length < 10) {
+          setSubmitError("Deskripsi organisasi minimal 10 karakter.");
+          return;
+        }
+
         await apiCall("/auth/register", {
           method: "POST",
           requireAuth: true,
@@ -590,8 +595,17 @@ export default function Onboarding() {
                     value={organizerData.description}
                     onChange={handleOrganizerChange}
                     rows={4}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 transition ${
+                      organizerData.description && organizerData.description.length < 10
+                        ? "border-amber-550 focus:border-amber-550 focus:ring-amber-200"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                    }`}
                   />
+                  {organizerData.description && organizerData.description.length < 10 && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      ⚠️ Deskripsi terlalu singkat (minimal 10 karakter).
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -803,8 +817,17 @@ export default function Onboarding() {
                     value={sponsorData.description}
                     onChange={handleSponsorChange}
                     rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 transition ${
+                      sponsorData.description && sponsorData.description.length < 10
+                        ? "border-amber-550 focus:border-amber-550 focus:ring-amber-200"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                    }`}
                   />
+                  {sponsorData.description && sponsorData.description.length < 10 && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      ⚠️ Deskripsi terlalu singkat (minimal 10 karakter).
+                    </p>
+                  )}
                 </div>
 
                 <div>

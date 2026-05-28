@@ -210,7 +210,9 @@ export default function DashboardEO() {
               <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
                 {stat.label}
               </p>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {stat.value}
+              </p>
             </div>
           );
         })}
@@ -219,7 +221,9 @@ export default function DashboardEO() {
       {/* Events */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Event Kamu</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Event Kamu
+          </h2>
           <Button
             onClick={() => router.push("/katalog-event-eo")}
             className="text-blue-600 font-semibold hover:underline"
@@ -303,11 +307,6 @@ export default function DashboardEO() {
                       </div>
                     )}
                   </div>
-                </div>
-                <div className="p-4 pt-0">
-                  <button className="w-full text-blue-600 font-semibold text-sm hover:underline text-left">
-                    Lanjutkan Draft →
-                  </button>
                 </div>
               </div>
             ))

@@ -120,12 +120,15 @@ export default function DashboardCompany() {
           apiCall<{ data: userData }>("/auth/me"),
         ]);
 
-        const rawRecommendations = eventsRes?.recommendations || eventsRes?.data || [];
-        const sortedRecommendations = [...rawRecommendations].sort((a: any, b: any) => {
-          const scoreA = a.finalScore ?? a.similarity ?? 0;
-          const scoreB = b.finalScore ?? b.similarity ?? 0;
-          return scoreB - scoreA;
-        });
+        const rawRecommendations =
+          eventsRes?.recommendations || eventsRes?.data || [];
+        const sortedRecommendations = [...rawRecommendations].sort(
+          (a: any, b: any) => {
+            const scoreA = a.finalScore ?? a.similarity ?? 0;
+            const scoreB = b.finalScore ?? b.similarity ?? 0;
+            return scoreB - scoreA;
+          },
+        );
 
         setRecommendations(sortedRecommendations);
         setPitches(pitchesRes.data);
@@ -307,18 +310,18 @@ export default function DashboardCompany() {
                         </span>
 
                         {/* AI Match Badge */}
-                        {(r.finalScore !== undefined || r.similarity !== undefined) && (
+                        {(r.finalScore !== undefined ||
+                          r.similarity !== undefined) && (
                           <div className="absolute bottom-2 left-2 bg-indigo-600/90 backdrop-blur-sm text-white text-[10px] font-extrabold px-2 py-1 rounded-full flex items-center gap-1 shadow z-10 border border-white/10">
-                            <Zap size={10} className="fill-yellow-400 text-yellow-400" />
-                            AI Match: {Math.round((r.finalScore ?? r.similarity ?? 0) * 100)}%
+                            AI Match:{" "}
+                            {Math.round(
+                              (r.finalScore ?? r.similarity ?? 0) * 100,
+                            )}
+                            %
                           </div>
                         )}
 
                         <div className="absolute top-2 right-2 bg-white/90 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 z-10">
-                          <Star
-                            size={10}
-                            className="fill-blue-500 text-blue-500"
-                          />
                           {r._count?.offers !== undefined && r._count.offers > 0
                             ? `${r._count.offers} offer`
                             : "Baru"}
@@ -326,7 +329,9 @@ export default function DashboardCompany() {
                       </div>
                       <div className="p-4 pb-4">
                         <p className="text-[11px] text-gray-500 mb-1">
-                          {r.eoOrganizationName || r.eoProfile?.organizationName || "Organizer"}
+                          {r.eoOrganizationName ||
+                            r.eoProfile?.organizationName ||
+                            "Organizer"}
                         </p>
                         <h3 className="font-bold text-gray-900 text-sm mb-2 leading-tight line-clamp-1">
                           {r.title}
