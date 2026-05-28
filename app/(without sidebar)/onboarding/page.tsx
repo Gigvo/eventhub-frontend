@@ -14,6 +14,13 @@ import NavbarOnboarding from "@/components/onboarding/navbar-onboarding";
 import { useAuth } from "@/providers/auth-provider";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Role = "EO" | "COMPANY" | null;
 
@@ -66,11 +73,15 @@ export default function Onboarding() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
 
+  // Resolve userName (from responsive version — handles firebase displayName fallback)
   useEffect(() => {
     if (authLoading) return;
     if (typeof window !== "undefined") {
       const sessionName = sessionStorage.getItem("pendingFullName");
-      const firebaseName = auth.currentUser?.displayName || auth.currentUser?.email?.split("@")[0] || "User";
+      const firebaseName =
+        auth.currentUser?.displayName ||
+        auth.currentUser?.email?.split("@")[0] ||
+        "User";
       let resolvedName = sessionName || firebaseName;
       if (resolvedName.trim().length < 2) {
         resolvedName = "User Hub";
@@ -227,6 +238,7 @@ export default function Onboarding() {
     setSponsorData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Full API submit from responsive version, goes to step 3 (review) on success
   const handleSubmitProfile = async () => {
     try {
       setIsSubmitting(true);
@@ -357,7 +369,7 @@ export default function Onboarding() {
       sessionStorage.removeItem("pendingFullName");
       localStorage.removeItem(DRAFT_KEY);
 
-      setCurrentStep(4);
+      setCurrentStep(3);
     } catch (error: any) {
       console.error("Failed to submit profile:", error);
       setSubmitError(
@@ -375,13 +387,13 @@ export default function Onboarding() {
     return (
       <>
         <NavbarOnboarding />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 pt-24 sm:pt-4">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-2xl p-6 sm:p-12">
             <div className="text-center mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Apa peran Anda?
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">
+              <p className="text-gray-600">
                 Pilih peran yang sesuai dengan tujuan Anda di EventHub.
               </p>
             </div>
@@ -453,15 +465,15 @@ export default function Onboarding() {
     return (
       <>
         <NavbarOnboarding />
-        <div className="min-h-screen bg-gray-50 px-4 py-8 sm:p-6 md:p-8 mt-20">
+        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 mt-16 sm:mt-20">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">
               Lengkapi Profil Eventmu
             </h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
               {/* Form Section */}
-              <div className="col-span-1 lg:col-span-2 space-y-6 p-4 sm:p-6 bg-white rounded-[8px] shadow-sm border border-[#C3C5D9]">
+              <div className="lg:col-span-2 space-y-6 p-4 sm:p-6 bg-white rounded-[8px] shadow-sm border border-[#C3C5D9]">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nama Organisasi
@@ -472,7 +484,7 @@ export default function Onboarding() {
                     placeholder="Contoh: BEM KM Universitas Gadjah Mada"
                     value={organizerData.organizationName}
                     onChange={handleOrganizerChange}
-                    className="w-full"
+                    className="w-full h-10"
                   />
                 </div>
 
@@ -480,18 +492,45 @@ export default function Onboarding() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Jenis Organisasi
                   </label>
-                  <select
-                    name="organizationType"
+                  <Select
                     value={organizerData.organizationType}
-                    onChange={handleOrganizerChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    onValueChange={(value) =>
+                      setOrganizerData((prev) => ({
+                        ...prev,
+                        organizationType: value,
+                      }))
+                    }
                   >
-                    <option value="">Pilih jenis</option>
-                    <option value="BEM">BEM</option>
-                    <option value="HIMA">HIMA</option>
-                    <option value="UKM">UKM</option>
-                    <option value="OTHER">Lainnya</option>
-                  </select>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Pilih jenis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        value="BEM"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        BEM
+                      </SelectItem>
+                      <SelectItem
+                        value="HIMA"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        HIMA
+                      </SelectItem>
+                      <SelectItem
+                        value="UKM"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        UKM
+                      </SelectItem>
+                      <SelectItem
+                        value="OTHER"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        Lainnya
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -504,7 +543,7 @@ export default function Onboarding() {
                     placeholder="Contoh: Yogyakarta"
                     value={organizerData.city}
                     onChange={handleOrganizerChange}
-                    className="w-full"
+                    className="w-full h-10"
                   />
                 </div>
 
@@ -518,7 +557,7 @@ export default function Onboarding() {
                     placeholder="Nama universitas atau institusi asal"
                     value={organizerData.campus}
                     onChange={handleOrganizerChange}
-                    className="w-full"
+                    className="w-full h-10"
                   />
                 </div>
 
@@ -527,7 +566,7 @@ export default function Onboarding() {
                     Nomor WhatsApp / Telepon
                   </label>
                   <div className="flex">
-                    <span className="bg-gray-100 border border-gray-300 rounded-l-lg px-4 py-2 text-gray-600">
+                    <span className="bg-gray-100 border border-gray-300 border-r-0 rounded-l-lg px-3 flex items-center text-gray-600 text-sm self-stretch">
                       +62
                     </span>
                     <Input
@@ -536,7 +575,7 @@ export default function Onboarding() {
                       placeholder="812-3456-7890"
                       value={organizerData.phoneNumber}
                       onChange={handleOrganizerChange}
-                      className="flex-1 rounded-l-none"
+                      className="flex-1 rounded-l-none border-l-0 h-10"
                     />
                   </div>
                 </div>
@@ -547,7 +586,7 @@ export default function Onboarding() {
                   </label>
                   <textarea
                     name="description"
-                    placeholder="Ceritakan sedikit tentang visi atau fokus acara organisasi Anda..."
+                    placeholder="Ceritakan sedikit tentang visi atau fokus acara organisasi Anda"
                     value={organizerData.description}
                     onChange={handleOrganizerChange}
                     rows={4}
@@ -556,12 +595,12 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              {/* Preview Section */}
-              <div className="col-span-1 w-full max-w-md mx-auto lg:max-w-none">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4 text-center lg:text-left">
+              {/* Preview Section — hidden on mobile, shown on lg+ */}
+              <div className="hidden lg:block max-w-103 sticky top-6 self-start">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">
                   PREVIEW PROFIL EO
                 </h3>
-                <div className="p-6 sticky top-6 rounded-[8px] bg-white lg:bg-transparent shadow-sm lg:shadow-none border border-gray-200 lg:border-none">
+                <div className="p-6 rounded-[8px]">
                   <div className="relative">
                     <Image
                       src={"/bg-eo.jpg"}
@@ -606,17 +645,24 @@ export default function Onboarding() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-4 justify-between w-full mt-10 pt-6 border-t border-[#C3C5D9]">
+
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[8px] text-sm mt-6">
+                {submitError}
+              </div>
+            )}
+
+            <div className="flex gap-4 justify-between w-full mt-8 sm:mt-10 pt-6 border-t border-[#C3C5D9]">
               <Button
                 variant="outline"
                 onClick={() => setCurrentStep(1)}
-                className="px-8"
+                className="px-6 sm:px-8"
               >
                 ← Kembali
               </Button>
               <Button
                 onClick={handleSubmitProfile}
-                className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-8"
+                className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Menyimpan..." : "Lanjutkan →"}
@@ -634,15 +680,15 @@ export default function Onboarding() {
     return (
       <>
         <NavbarOnboarding />
-        <div className="min-h-screen bg-gray-50 px-4 py-8 sm:p-6 md:p-8 mt-20">
+        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 mt-16 sm:mt-20">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">
               Lengkapi Profil Perusahaanmu
             </h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
               {/* Form Section */}
-              <div className="col-span-1 lg:col-span-2 space-y-6 p-4 sm:p-6 bg-white rounded-[8px] shadow-sm border border-[#C3C5D9]">
+              <div className="lg:col-span-2 space-y-6 p-4 sm:p-6 bg-white rounded-[8px] shadow-sm border border-[#C3C5D9]">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nama Perusahaan
@@ -653,7 +699,7 @@ export default function Onboarding() {
                     placeholder="Contoh: PT Teknologi Maju"
                     value={sponsorData.companyName}
                     onChange={handleSponsorChange}
-                    className="w-full"
+                    className="w-full h-10"
                   />
                 </div>
 
@@ -661,19 +707,48 @@ export default function Onboarding() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Industri
                   </label>
-                  <select
-                    name="industry"
+                  <Select
                     value={sponsorData.industry}
-                    onChange={handleSponsorChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    onValueChange={(value) =>
+                      setSponsorData((prev) => ({ ...prev, industry: value }))
+                    }
                   >
-                    <option value="">Pilih industri</option>
-                    <option value="Teknologi">Teknologi</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Retail">Retail</option>
-                    <option value="Manufaktur">Manufaktur</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Pilih industri" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        value="Teknologi"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        Teknologi
+                      </SelectItem>
+                      <SelectItem
+                        value="Finance"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        Finance
+                      </SelectItem>
+                      <SelectItem
+                        value="Retail"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        Retail
+                      </SelectItem>
+                      <SelectItem
+                        value="Manufaktur"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        Manufaktur
+                      </SelectItem>
+                      <SelectItem
+                        value="Lainnya"
+                        className="data-[highlighted]:!bg-[#0052FF] data-[highlighted]:!text-white"
+                      >
+                        Lainnya
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -686,13 +761,13 @@ export default function Onboarding() {
                     placeholder="Contoh: Jakarta"
                     value={sponsorData.city}
                     onChange={handleSponsorChange}
-                    className="w-full"
+                    className="w-full h-10"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nomor WhatsApp / Telepon
+                    Nomor Telepon
                   </label>
                   <Input
                     type="text"
@@ -700,7 +775,7 @@ export default function Onboarding() {
                     placeholder="021-555-1234"
                     value={sponsorData.phoneNumber}
                     onChange={handleSponsorChange}
-                    className="w-full"
+                    className="w-full h-10"
                   />
                 </div>
 
@@ -714,7 +789,7 @@ export default function Onboarding() {
                     placeholder="https://perusahaan.com"
                     value={sponsorData.website}
                     onChange={handleSponsorChange}
-                    className="w-full"
+                    className="w-full h-10"
                   />
                 </div>
 
@@ -736,7 +811,6 @@ export default function Onboarding() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Target Audiens Sponsorship
                   </label>
-                  {/* Chip display */}
                   <div className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 flex flex-wrap gap-2 mb-2">
                     {sponsorData.targetAudience.map((tag) => (
                       <span
@@ -754,7 +828,6 @@ export default function Onboarding() {
                       </span>
                     ))}
                   </div>
-                  {/* Tag input */}
                   <input
                     type="text"
                     value={audienceInput}
@@ -765,10 +838,16 @@ export default function Onboarding() {
                         addTag("targetAudience", audienceInput);
                       }
                     }}
-                    placeholder="Tambah target audiens (tekan Enter)"
+                    placeholder="Tambah target audiens (cth: Mahasiswa, UMKM) - tekan Enter"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
                   />
-                  <p className={`text-xs mt-1.5 ${sponsorData.targetAudience.join(", ").length >= 10 ? "text-green-600 font-semibold" : "text-amber-600"}`}>
+                  <p
+                    className={`text-xs mt-1.5 ${
+                      sponsorData.targetAudience.join(", ").length >= 10
+                        ? "text-green-600 font-semibold"
+                        : "text-amber-600"
+                    }`}
+                  >
                     {sponsorData.targetAudience.join(", ").length >= 10
                       ? "✓ Target audiens telah memenuhi panjang minimum (minimal 10 karakter)."
                       : `⚠ Total panjang tag target audiens saat ini: ${sponsorData.targetAudience.join(", ").length}/10 karakter (minimal 10 karakter).`}
@@ -885,12 +964,12 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              {/* Preview Section */}
-              <div className="col-span-1 w-full max-w-md mx-auto lg:max-w-none">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4 text-center lg:text-left">
+              {/* Preview Section — hidden on mobile, shown on lg+ */}
+              <div className="hidden lg:block max-w-103 sticky top-6 self-start">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">
                   PREVIEW PROFIL COMPANY
                 </h3>
-                <div className="p-6 sticky top-6 rounded-[8px] bg-white lg:bg-transparent shadow-sm lg:shadow-none border border-gray-200 lg:border-none">
+                <div className="p-6 rounded-[8px]">
                   <div className="relative">
                     <Image
                       src={"/bg-eo.jpg"}
@@ -925,13 +1004,11 @@ export default function Onboarding() {
                         "Deskripsi perusahaan akan muncul di sini."}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-4">
-                      {sponsorData.targetAudience.map((target) => {
-                        return (
-                          <Badge key={target} variant={"outline"}>
-                            {target}
-                          </Badge>
-                        );
-                      })}
+                      {sponsorData.targetAudience.map((target) => (
+                        <Badge key={target} variant={"outline"}>
+                          {target}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -942,7 +1019,8 @@ export default function Onboarding() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-4 w-full mt-10 pt-6 border-t border-[#C3C5D9]">
+
+            <div className="flex flex-col gap-4 w-full mt-8 sm:mt-10 pt-6 border-t border-[#C3C5D9]">
               {submitError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[8px] text-sm">
                   {submitError}
@@ -952,13 +1030,13 @@ export default function Onboarding() {
                 <Button
                   variant="outline"
                   onClick={() => setCurrentStep(1)}
-                  className="px-8"
+                  className="px-6 sm:px-8"
                 >
                   ← Kembali
                 </Button>
                 <Button
                   onClick={handleSubmitProfile}
-                  className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-8"
+                  className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Menyimpan..." : "Lanjutkan →"}
@@ -972,13 +1050,109 @@ export default function Onboarding() {
     );
   }
 
+  // Step 3: Review/Confirmation
+  if (currentStep === 3) {
+    return (
+      <>
+        <NavbarOnboarding />
+        <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+          <div className="max-w-2xl mx-auto">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">
+              Review Profil Anda
+            </h1>
+
+            <Card className="p-6 sm:p-8 mb-8">
+              {role === "EO" ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Nama Organisasi</p>
+                    <p className="font-semibold text-gray-900">
+                      {organizerData.organizationName}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Jenis Organisasi</p>
+                    <p className="font-semibold text-gray-900">
+                      {organizerData.organizationType}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Kota</p>
+                    <p className="font-semibold text-gray-900">
+                      {organizerData.city}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Kampus / Institusi</p>
+                    <p className="font-semibold text-gray-900">
+                      {organizerData.campus || "Tidak ada"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Deskripsi</p>
+                    <p className="font-semibold text-gray-900">
+                      {organizerData.description || "Tidak ada"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Nama Perusahaan</p>
+                    <p className="font-semibold text-gray-900">
+                      {sponsorData.companyName}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Industri</p>
+                    <p className="font-semibold text-gray-900">
+                      {sponsorData.industry}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Kota</p>
+                    <p className="font-semibold text-gray-900">
+                      {sponsorData.city}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Target Audiens</p>
+                    <p className="font-semibold text-gray-900">
+                      {sponsorData.targetAudience.join(", ") || "Tidak ada"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(2)}
+                className="px-6 sm:px-8"
+              >
+                ← Kembali Edit
+              </Button>
+              <Button
+                onClick={() => setCurrentStep(4)}
+                className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8"
+              >
+                Konfirmasi →
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   // Step 4: Success
   if (currentStep === 4) {
     return (
       <>
         <div className="min-h-screen bg-gray-50 flex flex-col gap-4 items-center justify-center p-4">
-          <div className="w-full max-w-md p-12 text-center  ">
+          <div className="w-full max-w-md p-8 sm:p-12 text-center">
             <div className="mb-6 flex justify-center">
               <BadgeCheck size={58} className="text-[#003EC7]" />
             </div>
@@ -987,16 +1161,13 @@ export default function Onboarding() {
             </h1>
             <p className="text-gray-600 mb-8">
               Akun Anda sudah siap. Selamat datang di EventHub untuk
-              memaksimalkan kemampuan strategi dan mengalami acara dengan
-              efisien.
+              memaksimalkan kemampuan strategi sponsorship dan membangun
+              kolaborasi bisnis secara lebih efisien.
             </p>
 
             <div className="flex gap-4">
-              {/* <Button variant="outline" className="flex-1">
-                Lihat Panduan
-              </Button> */}
               <Link href={"/dashboard"} className="flex-1">
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   Buka Dashboard
                 </Button>
               </Link>

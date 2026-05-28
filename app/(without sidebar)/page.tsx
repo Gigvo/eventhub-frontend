@@ -530,6 +530,7 @@ export default function Home() {
             <Button
               variant="outline"
               className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 text-[16px] font-bold rounded-[12px] h-auto bg-transparent w-full sm:w-auto"
+              onClick={() => (window.location.href = "/bantuan")}
             >
               Lihat Cara Kerjanya
             </Button>

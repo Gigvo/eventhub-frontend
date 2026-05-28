@@ -33,9 +33,19 @@ export default function NavbarLanding() {
     <nav className="bg-white border-b border-[#E5E7EB] py-4 px-4 sm:px-8">
       <div className="max-w-7xl flex items-center justify-between mx-auto w-full">
         <div className="flex items-center gap-4 sm:gap-6">
-          <span className="text-[18px] font-bold text-[#111827] mr-1 sm:mr-2">
-            EventHub
-          </span>
+          <div className="flex flex-row items-center gap-2">
+            <div className="w-8 h-8 rounded-[4px] flex items-center justify-center bg-[#003EC7] flex-shrink-0">
+              <Image
+                src={"/icons/eventhub-logo.svg"}
+                alt="Event Curator"
+                width={20}
+                height={24}
+              />
+            </div>
+            <div>
+              <p className="text-[18px] font-bold">EventHub</p>
+            </div>
+          </div>
 
           <Link
             href={"/katalog-event"}

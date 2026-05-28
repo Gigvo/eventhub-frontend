@@ -112,7 +112,7 @@ export default function Login() {
           </div>
 
           {/* Stats Section */}
-          <div className="grid grid-cols-2 gap-8 mb-12">
+          <div className="grid grid-cols-2 gap-8 mb-12 mt-8">
             <div className="bg-white/10 backdrop-blur rounded-lg p-6 border-1 border-white/20">
               <p className="text-[24px] font-light mb-2">500+</p>
               <p className="text-xs text-gray-200 uppercase font-semibold">

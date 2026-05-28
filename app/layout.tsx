@@ -19,6 +19,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "EventHub",
   description: "Connecting Organizers with Global Sponsors",
+  icons: {
+    icon: "/favicon/favicon-32x32.png",
+    shortcut: "/favicon/favicon.ico",
+  },
 };
 
 export default function RootLayout({
