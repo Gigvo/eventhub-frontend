@@ -279,7 +279,7 @@ const TokenManagement = () => {
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 animate-fadeIn">
       {/* Midtrans Snap Script dynamically loaded */}
       <Script
-        src="https://app.midtrans.com/snap/snap.js"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
         strategy="afterInteractive"
       />
@@ -378,8 +378,8 @@ const TokenManagement = () => {
                     } ${selectedPackage === pkg.id ? "ring-2 ring-indigo-600" : ""}`}
                   >
                     {pkg.popular && (
-                      <div className="absolute right-0 top-0">
-                        <p className="bg-[#505F76] px-3 py-1 text-white text-[10px] font-bold tracking-wide rounded-bl-lg">
+                      <div className="absolute right-0 top-0 ">
+                        <p className="bg-[#505F76] px-3 py-1 text-white text-[10px] font-bold tracking-wide rounded-bl-lg rounded-tr-2xl">
                           POPULER
                         </p>
                       </div>
@@ -579,6 +579,9 @@ const TokenManagement = () => {
               <Button
                 variant="outline"
                 className="border-white text-black hover:bg-white hover:text-gray-900 px-4 py-1.5 rounded-[4px]"
+                onClick={() =>
+                  window.open("https://wa.me/6282313571740", "_blank")
+                }
               >
                 Hubungi Support
               </Button>

@@ -401,7 +401,7 @@ export default function CariSponsor() {
     const body = encodeURIComponent(
       `Halo ${companyName},\n\nTerima kasih atas penawaran sponsorship yang Anda kirimkan untuk event "${eventTitle}". Kami sangat tertarik untuk berkolaborasi dengan Anda.\n\nMari kita jadwalkan sesi diskusi lebih lanjut.\n\nSalam,\n[Nama Event Organizer]`,
     );
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_self");
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
   // Gated contact filters
@@ -477,7 +477,9 @@ export default function CariSponsor() {
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Cari Sponsor</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+          Cari Sponsor
+        </h1>
         <p className="text-xs sm:text-sm text-gray-500 mt-1">
           Temukan mitra strategis yang sesuai dengan profil event Anda melalui
           AI Matching.
@@ -832,9 +834,7 @@ export default function CariSponsor() {
                             <p className="text-[11px] text-gray-400">
                               {formatDateTime(offer.createdAt)}
                             </p>
-                            <div>
-                              {getStatusBadge(offer.status)}
-                            </div>
+                            <div>{getStatusBadge(offer.status)}</div>
                           </div>
                         </div>
 

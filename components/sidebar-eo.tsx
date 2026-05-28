@@ -236,7 +236,7 @@ export default function Sidebar() {
         )}
         <Button
           onClick={handleLogout}
-          className={`bg-red-600 hover:bg-red-700 text-white rounded-[8px] mt-2 transition-all duration-300 ${
+          className={`text-[#BA1A1A] bg-transparent rounded-[8px] mt-2 transition-all duration-300 ${
             isCollapsed
               ? "w-12 h-10 p-0 flex items-center justify-center mx-auto"
               : "w-full px-4 py-2"

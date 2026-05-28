@@ -188,13 +188,13 @@ export default function GatedContactDetail({ offerId }: Props) {
   // ─── Loading ───
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
         <div className="max-w-4xl mx-auto">
           <div className="h-6 bg-gray-200 rounded w-1/4 mb-8 animate-pulse" />
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 animate-pulse">
-            <div className="flex gap-5 mb-8">
-              <div className="w-20 h-20 bg-gray-200 rounded-2xl" />
-              <div className="flex-1 space-y-3 py-1">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-8 animate-pulse">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 mb-8 text-center sm:text-left">
+              <div className="w-20 h-20 bg-gray-200 rounded-2xl flex-shrink-0" />
+              <div className="flex-grow space-y-3 py-1 w-full flex flex-col items-center sm:items-start">
                 <div className="h-5 bg-gray-200 rounded w-1/3" />
                 <div className="h-4 bg-gray-200 rounded w-1/4" />
               </div>
@@ -337,7 +337,7 @@ export default function GatedContactDetail({ offerId }: Props) {
             </div>
 
             {/* Status Badge */}
-            <div className="flex justify-center md:justify-end flex-shrink-0">
+            <div className="flex justify-center sm:justify-start md:justify-end flex-shrink-0">
               <span
                 className={`text-xs font-bold px-4 py-1.5 rounded-full ${currentStatus.className}`}
               >
